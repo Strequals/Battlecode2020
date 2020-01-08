@@ -5,7 +5,7 @@ import battlecode.common.*;
 public strictfp class RobotPlayer {
 	
 	public static void run(RobotController rc) throws GameActionException {
-		Robot r;
+		Robot r = null;
 		switch (rc.getType()) {
 		case HQ:
 			r = new HQRobot(rc);
@@ -34,6 +34,8 @@ public strictfp class RobotPlayer {
 		case NET_GUN:
 			r = new NetGunRobot(rc);
 		}
+		
+		r.loop();
 	}
 
 }

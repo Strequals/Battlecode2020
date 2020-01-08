@@ -1,19 +1,165 @@
 package rw1;
 
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 public strictfp class MinerRobot extends Robot {
+
+	public MapLocation hqLocation;
+	public MinerState minerState;
+	public MapLocation soupMine;
+
+	enum MinerState {
+		SEEKING, MINING, RETURNING
+	}
 
 	public MinerRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		// TODO Auto-generated constructor stub
+		minerState = MinerState.SEEKING;
 	}
 
 	@Override
 	public void run() throws GameActionException {
-		// TODO Auto-generated method stub
-		
+		RobotInfo[] ri = nearbyRobots;
+		RobotInfo r;
+		for (int i = ri.length; --i >= 0;) {
+			r = ri[i];
+			if (r.getTeam() == team) {
+				//Friendly Units
+				switch (r.getType()) {
+				case HQ:
+					if (hqLocation == null) {
+						hqLocation = r.getLocation();
+					}
+				default:
+					break;
+
+				}
+			} else if (r.getTeam() == Team.NEUTRAL) {
+				//yeet the cow
+				if (round > 100) {
+					//Call the drones
+					Communications.sendMessage(rc);
+				}
+			} else {
+				//Enemy Units
+				switch (r.getType()) {
+				default:
+
+					break;
+				}
+			}
+		}
+		switch (minerState) {
+		case SEEKING:
+			if (soupMine == null) {
+				//search for a soup deposit
+				int rSq = senseRadiusSq;
+				int radius = (int)(Math.sqrt(rSq));
+				MapLocation ml;
+				int dx;
+				int dy;
+				search: for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
+					for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
+						dx = x - location.x;
+						dy = y - location.y;
+						if (dx * dx + dy * dy > rSq) continue;
+						ml = new MapLocation(x, y);
+						if (rc.senseSoup(ml) > 0 && !rc.senseFlooding(ml)) {
+							soupMine = ml;
+							break search;
+						}
+					}
+				}
+				if (soupMine == null) {
+					//random walk boi
+					fuzzy(rc, Utility.directions[(int) (Math.random() * 8)]);
+					return;
+				}
+			}
+
+			if (rc.canSenseLocation(soupMine)) {
+				if (rc.senseSoup(soupMine) == 0) {
+					soupMine = null;
+				} else {
+					//move towards mine
+					fuzzy(rc, location.directionTo(soupMine));
+					if (location.distanceSquaredTo(soupMine) <= 2) {
+						minerState = MinerState.MINING;
+					}
+					return;
+				}
+			} else {
+				//move towards mine
+				fuzzy(rc, location.directionTo(soupMine));
+				if (location.distanceSquaredTo(soupMine) <= 2) {
+					minerState = MinerState.MINING;
+				}
+				return;
+			}
+
+
+			break;
+		case MINING:
+			int soupLeft = rc.senseSoup(soupMine);
+			if (soupLeft == 0) {
+				MapLocation ml;
+				search: for (int x = Math.max(0, location.x - 1); x <= Math.min(mapWidth - 1, location.x + 1); x++) {
+					for (int y = Math.max(0, location.y - 1); y <= Math.min(mapHeight - 1, location.y + 1); y++) {
+						ml = new MapLocation(x, y);
+						if (rc.senseSoup(ml) > 0 && !rc.senseFlooding(ml)) {
+							soupMine = ml;
+							break search;
+						}
+					}
+				}
+				if (soupMine == null) {
+					//Revise this so that no turn is wasted
+					minerState = MinerState.SEEKING;
+					return;
+				}
+			}
+			System.out.println("CARRYING " + soupCarrying +" / " + type.soupLimit + " SOUPS");
+			rc.mineSoup(location.directionTo(soupMine));
+			if (soupCarrying + Math.min(soupLeft, GameConstants.SOUP_MINING_RATE) >= type.soupLimit) {
+				minerState = MinerState.RETURNING;
+			}
+
+			break;
+		case RETURNING:
+			if (hqLocation != null) {
+				Direction dirToHq = location.directionTo(hqLocation);
+				if (location.distanceSquaredTo(hqLocation) <= 2) {
+					rc.depositSoup(dirToHq, rc.getSoupCarrying());
+					minerState = MinerState.SEEKING;
+					return;
+				}
+				fuzzy(rc, dirToHq);
+				return;
+			}
+
+		}
 	}
 
+	public void mine(RobotController rc) {
+
+	}
+
+	public boolean fuzzy(RobotController rc, Direction d) throws GameActionException {
+		if (rc.canMove(d) && !rc.senseFlooding(rc.adjacentLocation(d))) {
+			rc.move(d);
+			return true;
+		}
+		Direction dr = d.rotateRight();
+		if (rc.canMove(dr) && !rc.senseFlooding(rc.adjacentLocation(dr))) {
+			rc.move(dr);
+			return true;
+		}
+		Direction dl = d.rotateRight();
+		if (rc.canMove(dl) && !rc.senseFlooding(rc.adjacentLocation(dl))) {
+			rc.move(dl);
+			return true;
+		}
+		return false;
+	}
 }
