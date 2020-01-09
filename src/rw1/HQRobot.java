@@ -5,6 +5,7 @@ import battlecode.common.*;
 public strictfp class HQRobot extends Robot {
 	
 	public HQState hqState;
+	public int numMiners = 0;
 	
 	enum HQState {
 		NORMAL
@@ -71,6 +72,7 @@ public strictfp class HQRobot extends Robot {
 		for (int i = dirs.length; --i >= 0;) {
 			if (rc.canBuildRobot(RobotType.MINER, dirs[i])) {
 				rc.buildRobot(RobotType.MINER, dirs[i]);
+				numMiners++;
 			}
 		}
 		

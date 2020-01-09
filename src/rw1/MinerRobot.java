@@ -59,7 +59,8 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 		if (cooldownTurns >= 1) return;
-
+		
+		if (soupMine != null)System.out.println("TARGETING: " + soupMine.x + ", " + soupMine.y);
 		switch (minerState) {
 		case MINING:
 			System.out.println("MINING");

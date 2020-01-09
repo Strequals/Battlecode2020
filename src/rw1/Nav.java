@@ -41,7 +41,6 @@ public class Nav {
 			}
 			state = BugState.BUGGING;
 			startBug(rc);
-			break;
 		case BUGGING:
 			bug(r, rc);
 		}
@@ -83,7 +82,7 @@ public class Nav {
 		if (detectEdge(r, rc)) {
 			startBug(rc);
 		}
-
+		
 		movesSinceObstacle++;
 		Direction d = lookDirection;
 		int i = 0;
@@ -105,18 +104,18 @@ public class Nav {
 			d = null;
 		}
 		
-		int rots = (i + 1) % 8;
+		int rots = 7 - i;
 		
 		if (d != null) {
 			rc.move(d);
-		
+			
 			switch (side) {
 			case LEFT:
-				rotations += rots - (lookDirection.ordinal()-bugDirection.ordinal()) % 8;
+				rotations += rots - (bugDirection.ordinal()-lookDirection.ordinal()) % 8;
 				lookDirection = d.rotateLeft().rotateLeft();
 				break;
 			case RIGHT:
-				rotations += rots - (bugDirection.ordinal()-lookDirection.ordinal()) % 8;
+				rotations += rots - (lookDirection.ordinal()-bugDirection.ordinal()) % 8;
 				lookDirection = d.rotateRight().rotateRight();
 			}
 		
