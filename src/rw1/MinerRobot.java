@@ -7,6 +7,7 @@ public strictfp class MinerRobot extends Robot {
 	public MapLocation hqLocation;
 	public MinerState minerState;
 	public MapLocation soupMine;
+	public boolean navigatingHQ;
 
 	enum MinerState {
 		SEEKING, MINING, RETURNING
@@ -16,6 +17,7 @@ public strictfp class MinerRobot extends Robot {
 		super(rc);
 		// TODO Auto-generated constructor stub
 		minerState = MinerState.SEEKING;
+		navigatingHQ = false;
 		
 	}
 
@@ -60,6 +62,7 @@ public strictfp class MinerRobot extends Robot {
 
 		switch (minerState) {
 		case MINING:
+			System.out.println("MINING");
 			int soupLeft = rc.senseSoup(soupMine);
 			if (soupLeft == 0) {
 				soupMine = null;
@@ -98,10 +101,13 @@ public strictfp class MinerRobot extends Robot {
 					minerState = MinerState.RETURNING;
 				}
 				break;
+			} else {
+				minerState = MinerState.SEEKING;
 			}
 			//this code is executed if mining fails
 			minerState = MinerState.SEEKING;
 		case SEEKING:
+			System.out.println("SEEKING");
 			//search for a soup deposit, check optimal soup deposit within radius
 			if (soupMine == null) {
 			int rSq = senseRadiusSq;
@@ -135,6 +141,9 @@ public strictfp class MinerRobot extends Robot {
 				} else {
 					//move towards mine
 					//fuzzy(rc, location.directionTo(soupMine));
+					if (Nav.target != soupMine) {
+						Nav.beginNav(rc, this, soupMine);
+					}
 					Nav.nav(rc, this);
 					if (location.distanceSquaredTo(soupMine) <= 2) {
 						minerState = MinerState.MINING;
@@ -154,14 +163,21 @@ public strictfp class MinerRobot extends Robot {
 
 			break;
 		case RETURNING:
+			System.out.println("RETURNING");
+			if (!navigatingHQ) {
+				Nav.beginNav(rc, this, hqLocation);
+				navigatingHQ = true;
+			}
+			
 			if (hqLocation != null) {
 				Direction dirToHq = location.directionTo(hqLocation);
 				if (location.distanceSquaredTo(hqLocation) <= 2) {
 					rc.depositSoup(dirToHq, rc.getSoupCarrying());
 					minerState = MinerState.SEEKING;
+					navigatingHQ = false;
 					return;
 				}
-				fuzzy(rc, dirToHq);
+				Nav.nav(rc, this);
 				return;
 			}
 

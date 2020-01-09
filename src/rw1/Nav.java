@@ -87,10 +87,10 @@ public class Nav {
 		movesSinceObstacle++;
 		Direction d = lookDirection;
 		int i = 0;
-		switch (side) {
+		wiggle: switch (side) {
 		case LEFT:
 			for (i = 8; i-->0;) {
-				if (canMove(rc, d)) break;
+				if (canMove(rc, d)) break wiggle;
 				d = d.rotateRight();
 				movesSinceObstacle = 0;
 			}
@@ -98,7 +98,7 @@ public class Nav {
 			break;
 		case RIGHT:
 			for (i = 8; i-->0;) {
-				if (canMove(rc, d)) break;
+				if (canMove(rc, d)) break wiggle;
 				d = d.rotateLeft();
 				movesSinceObstacle = 0;
 			}
