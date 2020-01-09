@@ -16,6 +16,7 @@ public strictfp class MinerRobot extends Robot {
 		super(rc);
 		// TODO Auto-generated constructor stub
 		minerState = MinerState.SEEKING;
+		
 	}
 
 	@Override
@@ -28,9 +29,11 @@ public strictfp class MinerRobot extends Robot {
 				//Friendly Units
 				switch (r.getType()) {
 				case HQ:
-					if (hqLocation == null) {
-						hqLocation = r.getLocation();
-					}
+					hqLocation = r.getLocation();
+					break;
+				case MINER:
+					
+					break;
 				default:
 					break;
 
@@ -44,38 +47,83 @@ public strictfp class MinerRobot extends Robot {
 			} else {
 				//Enemy Units
 				switch (r.getType()) {
+				case HQ:
+					//Notify other units of enemy HQ location
 				default:
 
 					break;
 				}
 			}
 		}
+
+		if (cooldownTurns >= 1) return;
+
 		switch (minerState) {
-		case SEEKING:
-			if (soupMine == null) {
-				//search for a soup deposit
-				int rSq = senseRadiusSq;
-				int radius = (int)(Math.sqrt(rSq));
+		case MINING:
+			int soupLeft = rc.senseSoup(soupMine);
+			if (soupLeft == 0) {
+				soupMine = null;
+
+				//Check adjacent locations for soup deposits
 				MapLocation ml;
-				int dx;
-				int dy;
-				search: for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
-					for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
-						dx = x - location.x;
-						dy = y - location.y;
-						if (dx * dx + dy * dy > rSq) continue;
-						ml = new MapLocation(x, y);
-						if (rc.senseSoup(ml) > 0 && !rc.senseFlooding(ml)) {
-							soupMine = ml;
-							break search;
+				if (senseRadiusSq > 1) {
+					search: for (int x = Math.max(0, location.x - 1); x <= Math.min(mapWidth - 1, location.x + 1); x++) {
+						for (int y = Math.max(0, location.y - 1); y <= Math.min(mapHeight - 1, location.y + 1); y++) {
+							ml = new MapLocation(x, y);
+							if (rc.senseSoup(ml) > 0 && !rc.senseFlooding(ml)) {
+								soupMine = ml;
+								soupLeft = rc.senseSoup(soupMine);
+								break search;
+							}
+						}
+					}
+				} else if (senseRadiusSq == 1) {
+					search: for (int x = Math.max(0, location.x - 1); x <= Math.min(mapWidth - 1, location.x + 1); x++) {
+						for (int y = Math.max(0, location.y - 1); y <= Math.min(mapHeight - 1, location.y + 1); y++) {
+							if ((x < 0 ? -x : x) + (y < 0 ? -y : y) > 1) continue;
+							ml = new MapLocation(x, y);
+							if (rc.senseSoup(ml) > 0 && !rc.senseFlooding(ml)) {
+								soupMine = ml;
+								soupLeft = rc.senseSoup(soupMine);
+								break search;
+							}
 						}
 					}
 				}
-				if (soupMine == null) {
-					//random walk boi
-					fuzzy(rc, Utility.directions[(int) (Math.random() * 8)]);
-					return;
+			}
+			if (soupMine != null) {
+				System.out.println("CARRYING " + soupCarrying +" / " + type.soupLimit + " SOUPS");
+				rc.mineSoup(location.directionTo(soupMine));
+				if (soupCarrying + Math.min(soupLeft, GameConstants.SOUP_MINING_RATE) >= type.soupLimit) {
+					minerState = MinerState.RETURNING;
 				}
+				break;
+			}
+			//this code is executed if mining fails
+			minerState = MinerState.SEEKING;
+		case SEEKING:
+			//search for a soup deposit, check optimal soup deposit within radius
+			int rSq = senseRadiusSq;
+			int radius = (int)(Math.sqrt(rSq));
+			MapLocation ml;
+			int dx;
+			int dy;
+			search: for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
+				for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
+					dx = x - location.x;
+					dy = y - location.y;
+					if (dx * dx + dy * dy > rSq) continue;
+					ml = new MapLocation(x, y);
+					if (rc.senseSoup(ml) > 0 && !rc.senseFlooding(ml)) {
+						soupMine = ml;
+						break search;
+					}
+				}
+			}
+			if (soupMine == null) {
+				//random walk boi
+				fuzzy(rc, Utility.directions[(int) (Math.random() * 8)]);
+				return;
 			}
 
 			if (rc.canSenseLocation(soupMine)) {
@@ -98,32 +146,6 @@ public strictfp class MinerRobot extends Robot {
 				return;
 			}
 
-
-			break;
-		case MINING:
-			int soupLeft = rc.senseSoup(soupMine);
-			if (soupLeft == 0) {
-				MapLocation ml;
-				search: for (int x = Math.max(0, location.x - 1); x <= Math.min(mapWidth - 1, location.x + 1); x++) {
-					for (int y = Math.max(0, location.y - 1); y <= Math.min(mapHeight - 1, location.y + 1); y++) {
-						ml = new MapLocation(x, y);
-						if (rc.senseSoup(ml) > 0 && !rc.senseFlooding(ml)) {
-							soupMine = ml;
-							break search;
-						}
-					}
-				}
-				if (soupMine == null) {
-					//Revise this so that no turn is wasted
-					minerState = MinerState.SEEKING;
-					return;
-				}
-			}
-			System.out.println("CARRYING " + soupCarrying +" / " + type.soupLimit + " SOUPS");
-			rc.mineSoup(location.directionTo(soupMine));
-			if (soupCarrying + Math.min(soupLeft, GameConstants.SOUP_MINING_RATE) >= type.soupLimit) {
-				minerState = MinerState.RETURNING;
-			}
 
 			break;
 		case RETURNING:

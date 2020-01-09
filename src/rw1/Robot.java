@@ -17,6 +17,7 @@ public abstract strictfp class Robot {
 	public int senseRadiusSq;
 	public int dirtCarrying;
 	public int soupCarrying;
+	public float cooldownTurns;
 	
 	
 	public Robot(RobotController rc) throws GameActionException {
@@ -41,6 +42,7 @@ public abstract strictfp class Robot {
 				senseRadiusSq = rc.getCurrentSensorRadiusSquared();
 				dirtCarrying = rc.getDirtCarrying();
 				soupCarrying = rc.getSoupCarrying();
+				cooldownTurns = rc.getCooldownTurns();
 				
 				run();
 			} catch (Exception e) {
