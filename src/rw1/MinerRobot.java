@@ -103,6 +103,7 @@ public strictfp class MinerRobot extends Robot {
 			minerState = MinerState.SEEKING;
 		case SEEKING:
 			//search for a soup deposit, check optimal soup deposit within radius
+			if (soupMine == null) {
 			int rSq = senseRadiusSq;
 			int radius = (int)(Math.sqrt(rSq));
 			MapLocation ml;
@@ -124,14 +125,17 @@ public strictfp class MinerRobot extends Robot {
 				//random walk boi
 				fuzzy(rc, Utility.directions[(int) (Math.random() * 8)]);
 				return;
+			} else {
+				Nav.beginNav(rc, this, soupMine);
 			}
-
+			}
 			if (rc.canSenseLocation(soupMine)) {
 				if (rc.senseSoup(soupMine) == 0) {
 					soupMine = null;
 				} else {
 					//move towards mine
-					fuzzy(rc, location.directionTo(soupMine));
+					//fuzzy(rc, location.directionTo(soupMine));
+					Nav.nav(rc, this);
 					if (location.distanceSquaredTo(soupMine) <= 2) {
 						minerState = MinerState.MINING;
 					}
@@ -139,7 +143,8 @@ public strictfp class MinerRobot extends Robot {
 				}
 			} else {
 				//move towards mine
-				fuzzy(rc, location.directionTo(soupMine));
+				//fuzzy(rc, location.directionTo(soupMine));
+				Nav.nav(rc, this);
 				if (location.distanceSquaredTo(soupMine) <= 2) {
 					minerState = MinerState.MINING;
 				}

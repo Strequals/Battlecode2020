@@ -22,13 +22,13 @@ public class Nav {
 	public static int startDistanceSq;
 
 	//Cory Li's Bug Algorithm - https://github.com/TheDuck314/battlecode2015/blob/master/teams/zephyr26_final/Nav.java
-	public void beginNav(RobotController rc, Robot r, MapLocation ml) {
+	public static void beginNav(RobotController rc, Robot r, MapLocation ml) {
 		target = ml;
 		position = r.location;
 		state = BugState.MOTION_TO_GOAL;
 	}
 
-	public void nav(RobotController rc, Robot r) throws GameActionException{
+	public static void nav(RobotController rc, Robot r) throws GameActionException{
 		position = r.location;
 		if (state == BugState.BUGGING && canEndBug()) {
 			state = BugState.MOTION_TO_GOAL;
@@ -41,17 +41,18 @@ public class Nav {
 			}
 			state = BugState.BUGGING;
 			startBug(rc);
+			break;
 		case BUGGING:
 			bug(r, rc);
 		}
 	}
 
-	public boolean canMove(RobotController rc, Direction d) throws GameActionException {
+	public static boolean canMove(RobotController rc, Direction d) throws GameActionException {
 		MapLocation ml = rc.adjacentLocation(d);
 		return rc.canMove(d) && !rc.senseFlooding(ml);
 	}
 
-	public void startBug(RobotController rc) throws GameActionException {
+	public static void startBug(RobotController rc) throws GameActionException {
 		startDistanceSq = position.distanceSquaredTo(target);
 		bugDirection = position.directionTo(target);
 		lookDirection = bugDirection;
@@ -78,7 +79,7 @@ public class Nav {
 		}
 	}
 
-	public void bug(Robot r, RobotController rc) throws GameActionException {
+	public static void bug(Robot r, RobotController rc) throws GameActionException {
 		if (detectEdge(r, rc)) {
 			startBug(rc);
 		}
@@ -94,6 +95,7 @@ public class Nav {
 				movesSinceObstacle = 0;
 			}
 			d = null;
+			break;
 		case RIGHT:
 			for (i = 8; i-->0;) {
 				if (canMove(rc, d)) break;
@@ -112,6 +114,7 @@ public class Nav {
 			case LEFT:
 				rotations += rots - (lookDirection.ordinal()-bugDirection.ordinal()) % 8;
 				lookDirection = d.rotateLeft().rotateLeft();
+				break;
 			case RIGHT:
 				rotations += rots - (bugDirection.ordinal()-lookDirection.ordinal()) % 8;
 				lookDirection = d.rotateRight().rotateRight();
@@ -125,12 +128,12 @@ public class Nav {
 
 	}
 
-	public boolean canEndBug() {
+	public static boolean canEndBug() {
 		if (movesSinceObstacle >= 4) return true;
 		return (rotations < 0 || rotations >= 8) && position.isWithinDistanceSquared(target, startDistanceSq);
 	}
 
-	public boolean detectEdge(Robot r, RobotController rc) {
+	public static boolean detectEdge(Robot r, RobotController rc) {
 		//TODO: add edge detection
 		MapLocation ml = position.add(bugDirection.rotateLeft());
 		if (side == BugSide.LEFT) {
@@ -141,14 +144,14 @@ public class Nav {
 		return (ml.x < 0 || ml.x >= r.mapWidth || ml.y < 0 || ml.y >= r.mapHeight);
 	}
 
-	public boolean tryDirect(RobotController rc) throws GameActionException {
+	public static boolean tryDirect(RobotController rc) throws GameActionException {
 		if (fuzzy(rc, position.directionTo(target))) {
 			return true;
 		}
 		return false;
 	}
 
-	public boolean fuzzy(RobotController rc, Direction d) throws GameActionException {
+	public static boolean fuzzy(RobotController rc, Direction d) throws GameActionException {
 		int dsq = position.distanceSquaredTo(target);
 		if (rc.canMove(d) && !rc.senseFlooding(rc.adjacentLocation(d))) {
 			rc.move(d);
