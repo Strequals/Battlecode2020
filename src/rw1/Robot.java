@@ -27,14 +27,30 @@ public abstract strictfp class Robot {
 		mapWidth = rc.getMapWidth();
 		mapHeight = rc.getMapHeight();
 		type = rc.getType();
+		round = 0;
 	}
 	
 	public abstract void run() throws GameActionException;
+	
+	public abstract void processMessage(int m, int x, int y);
 	
 	public void loop() {
 		while (true) {
 			try {
 				//put code common to all units here, such as communication processing
+				
+				//Read messages from last round
+				if (round == 0 && type != RobotType.HQ) {
+					//The robot has just been created, find the HQ location
+					System.out.println("FIRST");
+					Communications.processFirstBlock(rc, this);
+				} if (round > 1) {
+					System.out.println("LAST");
+					int x = Clock.getBytecodesLeft();
+					Communications.processLastBlock(rc, this);
+					System.out.println("PROCESSING MESSAGES: " + (x - Clock.getBytecodesLeft()) + " bytecodes");
+				}
+				
 				//Update Game State
 				nearbyRobots = rc.senseNearbyRobots();
 				round = rc.getRoundNum();
@@ -44,7 +60,15 @@ public abstract strictfp class Robot {
 				soupCarrying = rc.getSoupCarrying();
 				cooldownTurns = rc.getCooldownTurns();
 				
+				//Communications
+				Communications.calculateSecret(round);
+				
+				
+				
+				
+				
 				run();
+				System.out.println("BC left: " + Clock.getBytecodesLeft());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

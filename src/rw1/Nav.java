@@ -42,6 +42,7 @@ public class Nav {
 			state = BugState.BUGGING;
 			startBug(rc);
 		case BUGGING:
+			int c1 = Clock.getBytecodesLeft();
 			bug(r, rc);
 		}
 	}

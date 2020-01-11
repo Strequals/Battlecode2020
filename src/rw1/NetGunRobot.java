@@ -16,4 +16,10 @@ public strictfp class NetGunRobot extends Robot {
 		
 	}
 
+	@Override
+	public void processMessage(int m, int x, int y) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

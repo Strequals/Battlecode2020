@@ -35,18 +35,18 @@ public strictfp class HQRobot extends Robot {
 				//It's a cow, yeet it from our base
 				if (round > 100) {
 					//Call the drones
-					Communications.sendMessage(rc);
+					//Communications.sendMessage(rc);
 				}
 			} else {
 				//Enemy Units
 				switch (r.getType()) {
 				case MINER:
 					//Call the drones
-					Communications.sendMessage(rc);
+					//Communications.sendMessage(rc);
 					break;
 				case LANDSCAPER:
 					//Call the drones
-					Communications.sendMessage(rc);
+					//Communications.sendMessage(rc);
 					break;
 				case DELIVERY_DRONE:
 					//pew pew pew
@@ -54,18 +54,23 @@ public strictfp class HQRobot extends Robot {
 					return;
 				case NET_GUN:
 					//Direct units to bury the net gun
-					Communications.sendMessage(rc);
+					//Communications.sendMessage(rc);
 					break;
 				case REFINERY:
 					//Direct units to bury the refinery
-					Communications.sendMessage(rc);
+					//Communications.sendMessage(rc);
 					break;
 				default:
 					//Probably some structure, bury it if possible but low priority
-					Communications.sendMessage(rc);
+					//Communications.sendMessage(rc);
 					break;
 				}
 			}
+		}
+		
+		//Broadcast HQ location on round 0
+		if (round == 1) {
+			Communications.sendMessage(rc, 20, 1, location.x, location.y);
 		}
 		
 		Direction[] dirs = Utility.directions;
@@ -76,6 +81,12 @@ public strictfp class HQRobot extends Robot {
 			}
 		}
 		
+		
+	}
+
+	@Override
+	public void processMessage(int m, int x, int y) {
+		// TODO Auto-generated method stub
 		
 	}
 

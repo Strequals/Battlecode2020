@@ -1,5 +1,7 @@
 package rw1;
 
+import java.util.TreeSet;
+
 import battlecode.common.*;
 
 public strictfp class MinerRobot extends Robot {
@@ -8,6 +10,7 @@ public strictfp class MinerRobot extends Robot {
 	public MinerState minerState;
 	public MapLocation soupMine;
 	public boolean navigatingHQ;
+	//public TreeSet<MapLocation> soupLocations;
 
 	enum MinerState {
 		SEEKING, MINING, RETURNING
@@ -25,6 +28,7 @@ public strictfp class MinerRobot extends Robot {
 	public void run() throws GameActionException {
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
+		int nearbyMiners = 0;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -34,7 +38,7 @@ public strictfp class MinerRobot extends Robot {
 					hqLocation = r.getLocation();
 					break;
 				case MINER:
-					
+					nearbyMiners++;
 					break;
 				default:
 					break;
@@ -44,7 +48,7 @@ public strictfp class MinerRobot extends Robot {
 				//yeet the cow
 				if (round > 100) {
 					//Call the drones
-					Communications.sendMessage(rc);
+					//Communications.sendMessage(rc);
 				}
 			} else {
 				//Enemy Units
@@ -56,6 +60,10 @@ public strictfp class MinerRobot extends Robot {
 					break;
 				}
 			}
+		}
+		
+		if (soupMine != null && nearbyMiners < 2) {
+			Communications.sendMessage(rc, 1, 2, soupMine.x, soupMine.y);
 		}
 
 		if (cooldownTurns >= 1) return;
@@ -116,6 +124,7 @@ public strictfp class MinerRobot extends Robot {
 			MapLocation ml;
 			int dx;
 			int dy;
+			int bytecode1 = Clock.getBytecodesLeft();
 			search: for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
 				for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
 					dx = x - location.x;
@@ -128,6 +137,7 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 			}
+			System.out.println("SEARCH bytecodes: " + (bytecode1 - Clock.getBytecodesLeft()));
 			if (soupMine == null) {
 				//random walk boi
 				fuzzy(rc, Utility.directions[(int) (Math.random() * 8)]);
@@ -205,5 +215,21 @@ public strictfp class MinerRobot extends Robot {
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public void processMessage(int m, int x, int y) {
+		switch (m) {
+		case 1:
+			hqLocation = new MapLocation(x,y);
+			System.out.println("Recieved HQ location: " + x + ", " + y);
+		case 2:
+			if (soupMine == null) {
+				soupMine = new MapLocation(x, y);
+				Nav.beginNav(rc, this, soupMine);
+			}
+			System.out.println("Recieved soup location: " + x + ", " + y);
+		}
+		
 	}
 }
