@@ -87,15 +87,15 @@ public strictfp class LandscaperRobot extends Robot {
         if (cooldownTurns >= 1) return;
 
         // Determine next place to go or mine
-        // Will either dig from highest place it should dig from, fill the lowest place if fills to, or moves closer to
+        // Will either dig from highest place it should dig from, fill the lowest place if fills to, or move closer to
         // where it should be
-        // Should prioritize movement
+        // Should prioritize movement over mining
         int robotRank = Utility.chebyshev(location, hqLocation);
-        int expectedLandscapers = 0; // How many landscapers should be in the area. Shouldn't mine until this matches reality
+        int expectedLandscapers = 0; // How many landscapers should be nearby. Shouldn't mine until this matches reality
         Direction[] dirs = Utility.directionsC;
         Direction d;
         MapLocation ml;
-        int locRank; // Each concentric square around HQ has a rank. HQ is 0, around that is 1, around that (wall) is 2
+        int locRank; // Each concentric square around HQ has a rank. HQ is 0, around that is 1, around that is 2 (wall)
         int elev;
         MapLocation high = null; // Highest location to mine from
         Direction dHigh = null;
@@ -125,7 +125,7 @@ public strictfp class LandscaperRobot extends Robot {
                 // TODO: Do this better
                 if (locRank > 2) elev += 100000;
 
-                // Dig from here if we can and it's the highest spot we've seen
+                // Dig from here if: we can, and it's the highest spot we've seen
                 if (elev > hd && rc.canDigDirt(d)) {
                     high = ml;
                     hd = elev;
@@ -133,33 +133,46 @@ public strictfp class LandscaperRobot extends Robot {
                 }
             }
 
-            // Finish this iteration early if it's the center because we never want to move to our current location
+            // Finish this iteration early if it's the center, because we never want to move to our current location
             if (d == Direction.CENTER) continue;
 
             if (locRank <= 2 && locRank != 0 && !ml.equals(dsLocation)) {
+                // If the location is within or on top of the walls (but not HQ or the design school), expect to see a
+                // landscaper there.
                 expectedLandscapers++;
             }
+
             if (rc.canMove(d)) {
+                // Move only if we can move to the tile
+
                 if (locRank < robotRank) {
+                    // Move down in rank (toward HQ) whenever possible
                     rc.move(d);
                     return;
                 } else if (locRank == robotRank) {
+                    // If we can't move down in rank, stay at rank
                     if (!isEnemyRushing) {
                         if (inverseDsLocation != null) {
+                            // Move away from the design school and toward the opposite side of HQ from the school
                             int dsDist = location.distanceSquaredTo(scaledDsLocation);
                             int iDsDist = location.distanceSquaredTo(inverseDsLocation);
+
                             if (dsDist <= iDsDist) {
                                 if (dsDist < ml.distanceSquaredTo(scaledDsLocation)) {
+                                    // Move there if it's farther from the school than we are now
                                     rc.move(d);
                                     return;
                                 }
                             } else {
                                 if (iDsDist > ml.distanceSquaredTo(inverseDsLocation)) {
+                                    // Move there if it's closer to opposite the school than we are now
                                     rc.move(d);
                                     return;
                                 }
                             }
                         }
+                    } else {
+                        // TODO: Handle enemy rushing
                     }
                 }
             }
