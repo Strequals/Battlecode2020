@@ -4,95 +4,95 @@ import battlecode.common.*;
 
 public strictfp class HQRobot extends Robot {
 
-	public HQState hqState;
-	public int numMiners = 0;
-	
-	public static final int MAX_MINERS = 10;
+    public HQState hqState;
+    public int numMiners = 0;
 
-	enum HQState {
-		NORMAL
-	}
+    public static final int MAX_MINERS = 10;
 
-	public HQRobot(RobotController rc) throws GameActionException {
-		super(rc);
-		// TODO Auto-generated constructor stub
-	}
+    enum HQState {
+        NORMAL
+    }
 
-	@Override
-	public void run() throws GameActionException {
+    public HQRobot(RobotController rc) throws GameActionException {
+        super(rc);
+        // TODO Auto-generated constructor stub
+    }
 
-		//Process nearby robots
-		RobotInfo[] ri = nearbyRobots;
-		RobotInfo r;
-		for (int i = ri.length; --i >= 0;) {
-			r = ri[i];
-			if (r.getTeam() == team) {
-				//Friendly Units
-				switch (r.getType()) {
-				default:
-					break;
+    @Override
+    public void run() throws GameActionException {
 
-				}
-			} else if (r.getTeam() == Team.NEUTRAL) {
-				//It's a cow, yeet it from our base
-				if (round > 100) {
-					//Call the drones
-					//Communications.sendMessage(rc);
-				}
-			} else {
-				//Enemy Units
-				switch (r.getType()) {
-				case MINER:
-					//Call the drones
-					//Communications.sendMessage(rc);
-					break;
-				case LANDSCAPER:
-					//Call the drones
-					//Communications.sendMessage(rc);
-					break;
-				case DELIVERY_DRONE:
-					//pew pew pew
-					rc.shootUnit(r.getID());
-					return;
-				case NET_GUN:
-					//Direct units to bury the net gun
-					//Communications.sendMessage(rc);
-					break;
-				case REFINERY:
-					//Direct units to bury the refinery
-					//Communications.sendMessage(rc);
-					break;
-				default:
-					//Probably some structure, bury it if possible but low priority
-					//Communications.sendMessage(rc);
-					break;
-				}
-			}
-		}
+        //Process nearby robots
+        RobotInfo[] ri = nearbyRobots;
+        RobotInfo r;
+        for (int i = ri.length; --i >= 0;) {
+            r = ri[i];
+            if (r.getTeam() == team) {
+                //Friendly Units
+                switch (r.getType()) {
+                    default:
+                        break;
 
-		//Broadcast HQ location on round 0
-		if (round == 1) {
-			Communications.sendMessage(rc, 20, 1, location.x, location.y);
-		}
+                }
+            } else if (r.getTeam() == Team.NEUTRAL) {
+                //It's a cow, yeet it from our base
+                if (round > 100) {
+                    //Call the drones
+                    //Communications.sendMessage(rc);
+                }
+            } else {
+                //Enemy Units
+                switch (r.getType()) {
+                    case MINER:
+                        //Call the drones
+                        //Communications.sendMessage(rc);
+                        break;
+                    case LANDSCAPER:
+                        //Call the drones
+                        //Communications.sendMessage(rc);
+                        break;
+                    case DELIVERY_DRONE:
+                        //pew pew pew
+                        rc.shootUnit(r.getID());
+                        return;
+                    case NET_GUN:
+                        //Direct units to bury the net gun
+                        //Communications.sendMessage(rc);
+                        break;
+                    case REFINERY:
+                        //Direct units to bury the refinery
+                        //Communications.sendMessage(rc);
+                        break;
+                    default:
+                        //Probably some structure, bury it if possible but low priority
+                        //Communications.sendMessage(rc);
+                        break;
+                }
+            }
+        }
 
-		if ((round < TURTLE_ROUND && numMiners < MAX_MINERS) || soup > RobotType.DESIGN_SCHOOL.cost + 20 * RobotType.LANDSCAPER.cost) {
-			//Try building miner
-			Direction[] dirs = Utility.directions;
-			for (int i = dirs.length; --i >= 0;) {
-				if (rc.canBuildRobot(RobotType.MINER, dirs[i])) {
-					rc.buildRobot(RobotType.MINER, dirs[i]);
-					numMiners++;
-				}
-			}
-		}
+        //Broadcast HQ location on round 0
+        if (round == 1) {
+            Communications.sendMessage(rc, 20, 1, location.x, location.y);
+        }
+
+        if ((round < TURTLE_ROUND && numMiners < MAX_MINERS) || soup > RobotType.DESIGN_SCHOOL.cost + 20 * RobotType.LANDSCAPER.cost) {
+            //Try building miner
+            Direction[] dirs = Utility.directions;
+            for (int i = dirs.length; --i >= 0;) {
+                if (rc.canBuildRobot(RobotType.MINER, dirs[i])) {
+                    rc.buildRobot(RobotType.MINER, dirs[i]);
+                    numMiners++;
+                }
+            }
+        }
 
 
-	}
+    }
 
-	@Override
-	public void processMessage(int m, int x, int y) {
-		// TODO Auto-generated method stub
+    @Override
+    public void processMessage(int m, int x, int y) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
 }
