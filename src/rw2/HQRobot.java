@@ -1,14 +1,12 @@
-package rw1;
+package rw2;
 
 import battlecode.common.*;
 
 public strictfp class HQRobot extends Robot {
-
+	
 	public HQState hqState;
 	public int numMiners = 0;
 	
-	public static final int MAX_MINERS = 10;
-
 	enum HQState {
 		NORMAL
 	}
@@ -20,7 +18,7 @@ public strictfp class HQRobot extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
-
+		
 		//Process nearby robots
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
@@ -31,7 +29,7 @@ public strictfp class HQRobot extends Robot {
 				switch (r.getType()) {
 				default:
 					break;
-
+				
 				}
 			} else if (r.getTeam() == Team.NEUTRAL) {
 				//It's a cow, yeet it from our base
@@ -69,30 +67,27 @@ public strictfp class HQRobot extends Robot {
 				}
 			}
 		}
-
+		
 		//Broadcast HQ location on round 0
 		if (round == 1) {
-			Communications.sendMessage(rc, 20, 1, location.x, location.y);
+			Communications.queueMessage(20, 1, new LocationData(location, 0));
 		}
-
-		if ((round < TURTLE_ROUND && numMiners < MAX_MINERS) || soup > RobotType.DESIGN_SCHOOL.cost + 20 * RobotType.LANDSCAPER.cost) {
-			//Try building miner
-			Direction[] dirs = Utility.directions;
-			for (int i = dirs.length; --i >= 0;) {
-				if (rc.canBuildRobot(RobotType.MINER, dirs[i])) {
-					rc.buildRobot(RobotType.MINER, dirs[i]);
-					numMiners++;
-				}
+		
+		Direction[] dirs = Utility.directions;
+		for (int i = dirs.length; --i >= 0;) {
+			if (rc.canBuildRobot(RobotType.MINER, dirs[i])) {
+				rc.buildRobot(RobotType.MINER, dirs[i]);
+				numMiners++;
 			}
 		}
-
-
+		
+		
 	}
 
 	@Override
-	public void processMessage(int m, int x, int y) {
+	public void processMessage(int m, int v, int x, int y) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 }

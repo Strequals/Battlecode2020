@@ -1,7 +1,9 @@
 package rw1;
 
+import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 
 public strictfp class DesignSchoolRobot extends Robot {
 
@@ -12,7 +14,12 @@ public strictfp class DesignSchoolRobot extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
-		// TODO Auto-generated method stub
+		Direction[] dirs = Utility.directions;
+		for (int i = dirs.length; --i >= 0;) {
+			if (rc.canBuildRobot(RobotType.LANDSCAPER, dirs[i])) {
+				rc.buildRobot(RobotType.LANDSCAPER, dirs[i]);
+			}
+		}
 		
 	}
 

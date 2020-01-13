@@ -1,4 +1,4 @@
-package rw1;
+package rw2;
 
 import battlecode.common.*;
 
@@ -10,11 +10,9 @@ public abstract strictfp class Robot {
 	public final int mapWidth;
 	public final int mapHeight;
 	public final RobotType type;
-	public final int TURTLE_ROUND = 100;
 
 	public RobotInfo[] nearbyRobots;
 	public int round;
-	public int soup;
 	public MapLocation location;
 	public int senseRadiusSq;
 	public int dirtCarrying;
@@ -34,21 +32,20 @@ public abstract strictfp class Robot {
 	
 	public abstract void run() throws GameActionException;
 	
-	public abstract void processMessage(int m, int x, int y);
+	public abstract void processMessage(int m, int v, int x, int y);
 	
 	public void loop() {
 		while (true) {
 			try {
 				//put code common to all units here, such as communication processing
 				
-				
 				//Read messages from last round
 				if (round == 0 && type != RobotType.HQ) {
 					//The robot has just been created, find the HQ location
 					Communications.processFirstBlock(rc, this);
-				}if (round > 1) {
+				} if (round > 1) {
+					int x = Clock.getBytecodesLeft();
 					Communications.processLastBlock(rc, this);
-					System.out.println("CODE:"+Communications.verySecretNumber);
 				}
 				
 				//Update Game State
@@ -59,7 +56,6 @@ public abstract strictfp class Robot {
 				dirtCarrying = rc.getDirtCarrying();
 				soupCarrying = rc.getSoupCarrying();
 				cooldownTurns = rc.getCooldownTurns();
-				soup = rc.getTeamSoup();
 				
 				//Communications
 				Communications.calculateSecret(round);
@@ -69,6 +65,8 @@ public abstract strictfp class Robot {
 				
 				
 				run();
+				
+				Communications.sendMessages(rc);
 				System.out.println("BC left: " + Clock.getBytecodesLeft());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block

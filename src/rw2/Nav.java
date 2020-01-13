@@ -1,4 +1,4 @@
-package rw1;
+package rw2;
 
 import battlecode.common.*;
 
@@ -20,7 +20,6 @@ public class Nav {
 	public static int movesSinceObstacle;
 	public static int rotations;
 	public static int startDistanceSq;
-	public static int turnsBugged;
 
 	//Cory Li's Bug Algorithm - https://github.com/TheDuck314/battlecode2015/blob/master/teams/zephyr26_final/Nav.java
 	public static void beginNav(RobotController rc, Robot r, MapLocation ml) {
@@ -37,14 +36,12 @@ public class Nav {
 
 		switch (state) {
 		case MOTION_TO_GOAL:
-			System.out.println("MTG");
 			if (tryDirect(rc)) {
 				return;
 			}
 			state = BugState.BUGGING;
 			startBug(rc);
 		case BUGGING:
-			System.out.println("BUG");
 			int c1 = Clock.getBytecodesLeft();
 			bug(r, rc);
 		}
@@ -61,7 +58,6 @@ public class Nav {
 		lookDirection = bugDirection;
 		rotations = 0;
 		movesSinceObstacle = 0;
-		turnsBugged = 0;
 
 		Direction left = bugDirection.rotateLeft();
 		for (int i = 0; i < 3; i++) {
@@ -87,7 +83,7 @@ public class Nav {
 		if (detectEdge(r, rc)) {
 			startBug(rc);
 		}
-		turnsBugged++;
+		
 		movesSinceObstacle++;
 		Direction d = lookDirection;
 		int i = 0;
@@ -133,7 +129,7 @@ public class Nav {
 	}
 
 	public static boolean canEndBug() {
-		if (movesSinceObstacle >= 4 || turnsBugged > 100) return true;
+		if (movesSinceObstacle >= 4) return true;
 		return (rotations < 0 || rotations >= 8) && position.isWithinDistanceSquared(target, startDistanceSq);
 	}
 
@@ -164,7 +160,7 @@ public class Nav {
 		Direction dr = d.rotateRight();
 		MapLocation mlr = rc.adjacentLocation(dr);
 		int dsqr = mlr.distanceSquaredTo(target);
-		Direction dl = d.rotateLeft();
+		Direction dl = d.rotateRight();
 		MapLocation mll = rc.adjacentLocation(dl);
 		int dsql = mll.distanceSquaredTo(target);
 		if (dsqr <= dsql) {

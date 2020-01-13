@@ -1,25 +1,23 @@
-package rw1;
+package rw2;
 
-import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
-import battlecode.common.RobotType;
 
-public strictfp class RefineryRobot extends Robot {
+public strictfp class DesignSchoolRobot extends Robot {
 
-	public RefineryRobot(RobotController rc) throws GameActionException {
+	public DesignSchoolRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	public void run() throws GameActionException {
-		
+		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void processMessage(int m, int x, int y) {
+	public void processMessage(int m, int v, int x, int y) {
 		// TODO Auto-generated method stub
 		
 	}
