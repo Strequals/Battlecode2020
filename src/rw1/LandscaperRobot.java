@@ -23,9 +23,6 @@ public strictfp class LandscaperRobot extends Robot {
 
     @Override
     public void run() throws GameActionException {
-        System.out.println();
-        System.out.println("================ Welcome to my next turn!!! ================");
-
         isEnemyRushing = false;
 
         // Process nearby robots
@@ -109,7 +106,6 @@ public strictfp class LandscaperRobot extends Robot {
     }
 
     private void doMoving(int nearbyLandscapers, boolean turtledThisTurn) throws GameActionException {
-        System.out.println("Decided to move");
         Direction[] dirs = Utility.directionsC;
         Direction d;
         MapLocation ml;
@@ -126,22 +122,15 @@ public strictfp class LandscaperRobot extends Robot {
 
                 if (locRank < robotRank) {
                     // Move down in rank (toward HQ) whenever possible
-                    System.out.println("Decided to move down in rank");
                     rc.move(d);
                     return;
                 } else if (locRank == robotRank) {
                     // If we can't move down in rank, stay at rank
                     if (!isEnemyRushing) {
                         if (inverseDsLocation != null) {
-                            System.out.println("Through ifs");
                             // Move away from the design school and toward the opposite side of HQ from the school
                             int dsDist = location.distanceSquaredTo(scaledDsLocation);
                             int iDsDist = location.distanceSquaredTo(inverseDsLocation);
-
-                            System.out.println("DS dist: " + dsDist);
-                            System.out.println("IDS dist: " + iDsDist);
-                            System.out.println("DS location: " + dsLocation);
-                            System.out.println("Scaled DS location: " + scaledDsLocation);
 
                             if (dsDist <= iDsDist) {
                                 if (dsDist < ml.distanceSquaredTo(scaledDsLocation)) {
@@ -156,8 +145,6 @@ public strictfp class LandscaperRobot extends Robot {
                                     return;
                                 }
                             }
-
-                            System.out.println("After ifs");
                         }
                     } else {
                         // TODO: Handle enemy rushing
@@ -166,7 +153,6 @@ public strictfp class LandscaperRobot extends Robot {
             }
         }
 
-        System.out.println("Going to turtle");
         // Switch to turtling or reset to turtling, either way set new state
         state = LandscaperState.TURTLING;
 
@@ -210,8 +196,7 @@ public strictfp class LandscaperRobot extends Robot {
                 // Location is not HQ or on wall
 
                 // Prioritize mining outside outer wall
-                // TODO: Do this better
-                if (locRank > 2) elev += 100000;
+                if (locRank > 2) elev = Integer.MAX_VALUE;
 
                 // Dig from here if: we can, and it's the highest spot we've seen
                 if (elev > hd && rc.canDigDirt(d)) {
@@ -221,8 +206,6 @@ public strictfp class LandscaperRobot extends Robot {
                 }
             }
 
-            // TODO: Address these next two if statements
-            // Finish this iteration early if it's the center, because we never want to move to our current location
             if (d == Direction.CENTER) continue;
 
             if (locRank <= 2 && locRank != 0 && !ml.equals(dsLocation)) {
@@ -261,7 +244,6 @@ public strictfp class LandscaperRobot extends Robot {
     }
 
     private void moveOrTunnelOrBridge(MapLocation ml, Direction d, int robotElevation) throws GameActionException {
-        System.out.println("Tunneling");
         int elDistance = rc.senseElevation(ml) - robotElevation;
         if (elDistance > 3) {
             if (rc.getDirtCarrying() > 0) {
