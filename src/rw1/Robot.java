@@ -48,7 +48,6 @@ public abstract strictfp class Robot {
 					Communications.processFirstBlock(rc, this);
 				}if (round > 1) {
 					Communications.processLastBlock(rc, this);
-					System.out.println("CODE:"+Communications.verySecretNumber);
 				}
 				
 				//Update Game State

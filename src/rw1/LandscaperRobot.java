@@ -29,12 +29,15 @@ public strictfp class LandscaperRobot extends Robot {
 				switch (r.getType()) {
 				case HQ:
 					hqLocation = r.getLocation();
+					break;
 				case DESIGN_SCHOOL:
 					dsLocation = r.getLocation();
+					break;
 				case LANDSCAPER:
 					if (r.location.isWithinDistanceSquared(location, 2)) {
 						nearbyLandscapers++;
 					}
+					break;
 				default:
 					break;
 
@@ -80,8 +83,10 @@ public strictfp class LandscaperRobot extends Robot {
 		if (inverseDsLocation == null && hqLocation != null && dsLocation != null) {
 			Direction dir = dsLocation.directionTo(hqLocation);
 			inverseDsLocation = hqLocation.add(dir).add(dir);
+			System.out.println(inverseDsLocation);
 			dir = hqLocation.directionTo(dsLocation);
 			scaledDsLocation = dsLocation.add(dir);
+			System.out.println(scaledDsLocation);
 		}
 		
 		if (cooldownTurns >= 1) return;
@@ -105,7 +110,8 @@ public strictfp class LandscaperRobot extends Robot {
 			lrank = Utility.chebyshev(ml,hqLocation);
 			if (!rc.canSenseLocation(ml)) continue;
 			elev = rc.senseElevation(ml);
-			
+			if (lrank >= 3 || (rc.isLocationOccupied(ml) && rc.senseRobotAtLocation(ml).type == RobotType.LANDSCAPER)) {
+
 			if (lrank == 2) {
 				if (elev < ld && rc.canDepositDirt(d)) {
 					low = ml;
@@ -121,6 +127,7 @@ public strictfp class LandscaperRobot extends Robot {
 					dHigh = d;
 				}
 			}
+			}
 			if (d == Direction.CENTER) continue;
 			if (lrank <= 2 && lrank != 0 && !ml.equals(dsLocation)) {
 				expectedLandscapers++;
@@ -132,8 +139,14 @@ public strictfp class LandscaperRobot extends Robot {
 				} else if (lrank == robotRank) {
 					if (!isEnemyRushing) {
 						if (inverseDsLocation != null) {
+							System.out.println("ERANK:"+ml);
+							System.out.println("LOC:"+location);
+							System.out.println("scaledDsLocation:" + scaledDsLocation);
+							System.out.println("inverseDsLocation:"+inverseDsLocation);
+							System.out.println("hqLocation:"+hqLocation);
 							int dsDist = location.distanceSquaredTo(scaledDsLocation);
 							int iDsDist = location.distanceSquaredTo(inverseDsLocation);
+							System.out.println(dsDist + " " + iDsDist);
 							if (dsDist <= iDsDist) {
 								if (dsDist < ml.distanceSquaredTo(scaledDsLocation)) {
 									rc.move(d);
@@ -152,7 +165,7 @@ public strictfp class LandscaperRobot extends Robot {
 			
 		}
 		
-		if (nearbyLandscapers < expectedLandscapers && round < 2 * TURTLE_ROUND + 50) return;
+		if (nearbyLandscapers < expectedLandscapers) return;
 		
 		if (high != null) System.out.println("HIGH: " + high.x + ", " + high.y);
 		else System.out.println("ERR CANNOT FIND HIGH");
