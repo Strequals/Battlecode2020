@@ -70,7 +70,7 @@ public strictfp class HQRobot extends Robot {
             }
         }
 
-        //Broadcast HQ location on round 0
+        //Broadcast HQ location on round 1
         if (round == 1) {
             Communications.sendMessage(rc, 20, 1, location.x, location.y);
         }

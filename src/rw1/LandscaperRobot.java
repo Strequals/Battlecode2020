@@ -4,21 +4,37 @@ import battlecode.common.*;
 
 public strictfp class LandscaperRobot extends Robot {
 
-    enum LandscaperState {
-        MOVING,
+    private enum LandscaperState {
+        MOVING_TO_TURTLE_POSITION,
         TURTLING
     }
 
-    boolean isEnemyRushing;
-    MapLocation hqLocation;
-    MapLocation dsLocation;
-    MapLocation scaledDsLocation;
-    MapLocation inverseDsLocation;
-    LandscaperState state;
+    private boolean isEnemyRushing;
+    private MapLocation hqLocation;
+    // TODO: This probably shouldn't matter. Eliminate it.
+    private MapLocation homeDsLocation;
+    private MapLocation scaledDsLocation;
+    private MapLocation inverseDsLocation;
+    private LandscaperState state;
 
-    public LandscaperRobot(RobotController rc) throws GameActionException {
+    LandscaperRobot(RobotController rc) throws GameActionException {
         super(rc);
-        state = LandscaperState.MOVING;
+
+        // HQ location comes from processing first message
+
+        // Process nearby robots to get probable home design school
+        RobotInfo[] ri = rc.senseNearbyRobots(-1, rc.getTeam());
+        RobotInfo r;
+        for (int i = ri.length; --i >= 0;) {
+            r = ri[i];
+            // Friendly Units
+            if (r.getType() == RobotType.DESIGN_SCHOOL && rc.getLocation().isAdjacentTo(r.getLocation())) {
+                homeDsLocation = r.getLocation();
+                break;
+            }
+        }
+
+        state = LandscaperState.MOVING_TO_TURTLE_POSITION;
     }
 
     @Override
@@ -32,52 +48,42 @@ public strictfp class LandscaperRobot extends Robot {
         for (int i = ri.length; --i >= 0;) {
             r = ri[i];
             if (r.getTeam() == team) {
-                //Friendly Units
+                // Friendly Units
                 switch (r.getType()) {
-                    case HQ:
-                        hqLocation = r.getLocation();
-                        break;
-                    case DESIGN_SCHOOL:
-                        dsLocation = r.getLocation();
-                        break;
                     case LANDSCAPER:
                         if (r.location.isWithinDistanceSquared(location, 2)) {
                             nearbyLandscapers++;
                         }
                         break;
-                    default:
-                        break;
-
                 }
-            } else if (r.getTeam() == Team.NEUTRAL) {
-                //It's a cow, yeet it from our base
-                if (round > 100) {
-                    //Call the drones
-                    //Communications.sendMessage(rc);
-                }
-            } else {
-                //Enemy Units
+            } else if (r.getTeam() != Team.NEUTRAL) {
+                // Enemy Units
                 switch (r.getType()) {
-                    case MINER:
-                        //Call the drones
-                        //Communications.sendMessage(rc);
-                        break;
-                    case LANDSCAPER:
-                        //Call the drones
-                        //Communications.sendMessage(rc);
-                        isEnemyRushing = true;
-                        break;
                     case DELIVERY_DRONE:
                         // We don't care
                         break;
+                    case MINER:
+                        // TODO: Block or bury
+                        break;
+                    case LANDSCAPER:
+                        isEnemyRushing = true;
+                        break;
                     case NET_GUN:
-                        //Direct units to bury the net gun
-                        //Communications.sendMessage(rc);
+                        // TODO: Bury
                         break;
                     case REFINERY:
-                        //Direct units to bury the refinery
-                        //Communications.sendMessage(rc);
+                        // TODO: Bury
                         break;
+                    case DESIGN_SCHOOL:
+                        // TODO: Bury
+                        break;
+                    case FULFILLMENT_CENTER:
+                        // TODO: Bury
+                        break;
+                    case VAPORATOR:
+                        // TODO: Bury
+                    case HQ:
+                        // We found it!
                     default:
                         //Probably some structure, bury it if possible but low priority
                         //Communications.sendMessage(rc);
@@ -86,22 +92,31 @@ public strictfp class LandscaperRobot extends Robot {
             }
         }
 
-        if (inverseDsLocation == null && hqLocation != null && dsLocation != null) {
-            Direction dir = dsLocation.directionTo(hqLocation);
+        if (inverseDsLocation == null && hqLocation != null && homeDsLocation != null) {
+            Direction dir = homeDsLocation.directionTo(hqLocation);
             inverseDsLocation = hqLocation.add(dir).add(dir);
-            dir = hqLocation.directionTo(dsLocation);
-            scaledDsLocation = dsLocation.add(dir);
+            dir = hqLocation.directionTo(homeDsLocation);
+            scaledDsLocation = homeDsLocation.add(dir);
         }
 
         if (!rc.isReady()) return;
 
         switch (state) {
-            case MOVING:
+            case MOVING_TO_TURTLE_POSITION:
                 doMoving(nearbyLandscapers, false);
                 break;
             case TURTLING:
                 doTurtling(nearbyLandscapers, false);
                 break;
+        }
+    }
+
+    /**
+     * Assign the Landscaper a role.
+     */
+    private void assignRole() {
+        if (hqLocation.isWithinDistanceSquared(location, 25)) {
+            state = LandscaperState.MOVING_TO_TURTLE_POSITION;
         }
     }
 
@@ -195,8 +210,9 @@ public strictfp class LandscaperRobot extends Robot {
             } else if (locRank != 0) {
                 // Location is not HQ or on wall
 
+                // TODO: Do this better
                 // Prioritize mining outside outer wall
-                if (locRank > 2) elev = Integer.MAX_VALUE;
+                if (locRank > 2) elev += 10000;
 
                 // Dig from here if: we can, and it's the highest spot we've seen
                 if (elev > hd && rc.canDigDirt(d)) {
@@ -208,7 +224,7 @@ public strictfp class LandscaperRobot extends Robot {
 
             if (d == Direction.CENTER) continue;
 
-            if (locRank <= 2 && locRank != 0 && !ml.equals(dsLocation)) {
+            if (locRank <= 2 && locRank != 0 && !ml.equals(homeDsLocation)) {
                 // If the location is within or on top of the walls (but not HQ or the design school), expect to see a
                 // landscaper there.
                 expectedLandscapers++;
@@ -219,7 +235,7 @@ public strictfp class LandscaperRobot extends Robot {
 //        if (nearbyLandscapers < expectedLandscapers && round < 2 * TURTLE_ROUND + 50) return;
         if (nearbyLandscapers < expectedLandscapers || round < 400) {
             // Set or reset state, either way, set variable
-            state = LandscaperState.MOVING;
+            state = LandscaperState.MOVING_TO_TURTLE_POSITION;
 
             // Don't move if we already tried
             if (!movedThisTurn) doMoving(nearbyLandscapers, true);
@@ -267,7 +283,7 @@ public strictfp class LandscaperRobot extends Robot {
         switch (m) {
             case 1:
                 hqLocation = new MapLocation(x,y);
-                System.out.println("Recieved HQ location: " + x + ", " + y);
+                System.out.println("Received HQ location: " + x + ", " + y);
                 break;
         }
 
