@@ -201,7 +201,7 @@ public strictfp class LandscaperRobot extends Robot {
 
             if (locRank == 2) {
                 // Location is on wall
-
+            	
                 if (elev < ld && rc.canDepositDirt(d)) {
                     low = ml;
                     ld = elev;
@@ -213,12 +213,15 @@ public strictfp class LandscaperRobot extends Robot {
                 // TODO: Do this better
                 // Prioritize mining outside outer wall
                 if (locRank > 2) elev += 10000;
+                
+            	System.out.println("Location: " + ml + ", elev:" + elev + ", hd:"+hd);
 
                 // Dig from here if: we can, and it's the highest spot we've seen
                 if (elev > hd && rc.canDigDirt(d)) {
                     high = ml;
                     hd = elev;
                     dHigh = d;
+                    System.out.println("HIGH:"+high);
                 }
             }
 
@@ -233,7 +236,7 @@ public strictfp class LandscaperRobot extends Robot {
         }
 
 //        if (nearbyLandscapers < expectedLandscapers && round < 2 * TURTLE_ROUND + 50) return;
-        if (nearbyLandscapers < expectedLandscapers || round < 400) {
+        if (nearbyLandscapers < expectedLandscapers && round < 5*TURTLE_ROUND) {
             // Set or reset state, either way, set variable
             state = LandscaperState.MOVING_TO_TURTLE_POSITION;
 
@@ -262,13 +265,13 @@ public strictfp class LandscaperRobot extends Robot {
     private void moveOrTunnelOrBridge(MapLocation ml, Direction d, int robotElevation) throws GameActionException {
         int elDistance = rc.senseElevation(ml) - robotElevation;
         if (elDistance > 3) {
-            if (rc.getDirtCarrying() > 0) {
+            if (rc.getDirtCarrying() >= elDistance - 3 || dirtCarrying == RobotType.LANDSCAPER.dirtLimit) {
                 rc.depositDirt(Direction.CENTER);
             } else {
                 rc.digDirt(d);
             }
         } else if (elDistance < -3) {
-            if (rc.getDirtCarrying() > 0) {
+            if (rc.getDirtCarrying() == RobotType.LANDSCAPER.dirtLimit) {
                 rc.depositDirt(d);
             } else {
                 rc.digDirt(Direction.CENTER);
