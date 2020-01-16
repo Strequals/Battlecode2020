@@ -137,7 +137,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 				if (locRank < robotRank) {
 					// Move down in rank (toward HQ) whenever possible
-					rc.move(d);
+					moveOrTunnelOrBridge(ml, d, robotElevation);
 					return;
 				} else if (locRank == robotRank) {
 					// If we can't move down in rank, stay at rank
@@ -150,13 +150,13 @@ public strictfp class LandscaperRobot extends Robot {
 							if (dsDist <= iDsDist) {
 								if (dsDist < ml.distanceSquaredTo(scaledDsLocation)) {
 									// Move there if it's farther from the school than we are now
-									this.moveOrTunnelOrBridge(ml, d, robotElevation);
+									moveOrTunnelOrBridge(ml, d, robotElevation);
 									return;
 								}
 							} else {
 								if (iDsDist > ml.distanceSquaredTo(inverseDsLocation)) {
 									// Move there if it's closer to opposite the school than we are now
-									this.moveOrTunnelOrBridge(ml, d, robotElevation);
+									moveOrTunnelOrBridge(ml, d, robotElevation);
 									return;
 								}
 							}
@@ -236,7 +236,7 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 
 		//        if (nearbyLandscapers < expectedLandscapers && round < 2 * TURTLE_ROUND + 50) return;
-		if (nearbyLandscapers < expectedLandscapers && round < 5*TURTLE_ROUND) {
+		if (nearbyLandscapers < expectedLandscapers && round < 10*TURTLE_ROUND) {
 			// Set or reset state, either way, set variable
 			state = LandscaperState.MOVING_TO_TURTLE_POSITION;
 
