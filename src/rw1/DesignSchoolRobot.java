@@ -13,6 +13,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
+		System.out.println("HQCOOL:"+RobotType.HQ.actionCooldown);
 		
 		boolean sourceOccupied = false;
 		//Process nearby robots
