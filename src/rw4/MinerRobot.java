@@ -1,4 +1,4 @@
-package rw1;
+package rw4;
 
 import java.util.ArrayList;
 
@@ -172,13 +172,14 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 		//Build Design School
-		if (round > TURTLE_ROUND && !dsBuilt && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 5*TURTLE_ROUND) && location.isWithinDistanceSquared(hqLocation, 8)) {
+		if (round > TURTLE_ROUND && !dsBuilt && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 5*TURTLE_ROUND) && !location.isWithinDistanceSquared(hqLocation, 5)) {
 			Direction[] dirs = Utility.directions;
+			Direction d;
 			ml = null;
 			for (int i = 8; i-->0;) {
-				ml = hqLocation.add(dirs[i]);
-				if (location.distanceSquaredTo(ml)<=2) {
-					Direction d = location.directionTo(ml);
+				d = dirs[i];
+				ml = location.add(d);
+				if (Utility.chebyshev(ml, hqLocation) > 3) {
 					if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
 						rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
 						dsBuilt = true;
