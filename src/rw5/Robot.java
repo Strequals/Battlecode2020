@@ -70,7 +70,6 @@ public abstract strictfp class Robot {
 				if (hqLocation != null) {
 					hqX2 = hqLocation.x%2;
 					hqY2 = hqLocation.y%2;
-					System.out.println("hqX2:" + hqX2 + ", hqY2:" + hqY2);
 				}
 				
 				

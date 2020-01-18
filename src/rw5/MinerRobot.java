@@ -153,10 +153,23 @@ public strictfp class MinerRobot extends Robot {
 			ArrayList<MapLocation> refs = refineries;
 			int dist = 1000000;
 			int rld;
+			RobotInfo botInfo;
 			MapLocation rl;
 			for (int i = refs.size(); i-->0;) {
 				rl = refs.get(i);
 				rld = location.distanceSquaredTo(rl);
+				if (rc.canSenseLocation(rl)) {
+					botInfo = rc.senseRobotAtLocation(rl);
+					if (botInfo == null || botInfo.team != team || botInfo.type != RobotType.REFINERY) {
+						refineries.remove(rl);
+						if (returnLoc != null && returnLoc.equals(rl)) {
+							returnLoc = null;
+							navigatingReturn = false;
+						}
+						if (soup>1)Communications.queueMessage(rc, 1, 8, rl.x, rl.y);
+						continue;
+					}
+				}
 				if (rld < dist) {
 					nearestRefinery = rl;
 					dist = rld;
@@ -555,9 +568,17 @@ public strictfp class MinerRobot extends Robot {
 			System.out.println("Recieved soup location: " + x + ", " + y);
 			break;
 		case 5:
-			MapLocation ml = new MapLocation(x,y);
+			MapLocation ml5 = new MapLocation(x,y);
 			System.out.println("Recieved Refinery location: " + x + ", " + y);
-			if (!refineries.contains(ml)) refineries.add(ml);
+			if (!refineries.contains(ml5)) refineries.add(ml5);
+			break;
+		case 8:
+			MapLocation ml8 = new MapLocation(x, y);
+			refineries.remove(ml8);
+			if (returnLoc != null && returnLoc.equals(ml8)) {
+				returnLoc = null;
+				navigatingReturn = false;
+			}
 		}
 
 	}
