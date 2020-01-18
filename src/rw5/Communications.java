@@ -1,4 +1,4 @@
-package rw1;
+package rw5;
 
 import battlecode.common.*;
 
@@ -15,11 +15,19 @@ public class Communications {
 	 *3:
 	 *4:
 	 *5:Refinery location
-	 *6:Refinery removed
+	 *6:Design school location
 	 *7:
 	 *8:
 	 *9:
-	 *10: */
+	 *10:
+	 *11:Request 1 Landscaper for HQ defense
+	 *12:Request 2 Landscapers for HQ defense
+	 *13:Request 3 Landscapers for HQ defense
+	 *14:Request 4 Landscapers for HQ defense
+	 *15:Request 5 Landscapers for HQ defense
+	 *16:Request 6 Landscapers for HQ defense
+	 *17:Request 7 Landscapers for HQ defense
+	 *18:Request 8 Landscapers for HQ defense */
 	
 	enum Message {
 		HQ_LOC
@@ -36,7 +44,7 @@ public class Communications {
 	}
 	
 	public static int getSecret(int round) {
-		return (int)(A*round+C);
+		return (int)(A*round+C+1);
 	}
 	
 	public static void calculateSecret(int round) {

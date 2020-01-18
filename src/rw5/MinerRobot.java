@@ -1,4 +1,4 @@
-package rw1;
+package rw5;
 
 import java.util.ArrayList;
 
@@ -136,16 +136,6 @@ public strictfp class MinerRobot extends Robot {
 			for (int i = refs.size(); i-->0;) {
 				rl = refs.get(i);
 				rld = location.distanceSquaredTo(rl);
-				if (rc.canSenseLocation(rl)) {
-					RobotInfo botInfo = rc.senseRobotAtLocation(rl);
-					if (botInfo == null || botInfo.team != team || botInfo.type != RobotType.REFINERY) {
-						if (soup > 0) Communications.queueMessage(rc, 1, 6, rl.x, rl.y);
-						refineries.remove(i);
-						
-						continue;
-						
-					}
-				}
 				if (rld < dist) {
 					nearestRefinery = rl;
 					dist = rld;
@@ -182,13 +172,14 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 		//Build Design School
-		if (round > TURTLE_ROUND && !dsBuilt && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 5*TURTLE_ROUND) && location.isWithinDistanceSquared(hqLocation, 8)) {
+		if (round > TURTLE_ROUND && !dsBuilt && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 5*TURTLE_ROUND) && !location.isWithinDistanceSquared(hqLocation, 3)) {
 			Direction[] dirs = Utility.directions;
+			Direction d;
 			ml = null;
 			for (int i = 8; i-->0;) {
-				ml = hqLocation.add(dirs[i]);
-				if (location.distanceSquaredTo(ml)<=2) {
-					Direction d = location.directionTo(ml);
+				d = dirs[i];
+				ml = location.add(d);
+				if (Utility.chebyshev(ml, hqLocation) > 4) {
 					if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
 						rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
 						dsBuilt = true;
@@ -307,8 +298,6 @@ public strictfp class MinerRobot extends Robot {
 		case RETURNING:
 			System.out.println("RETURNING");
 			if (returnLoc != null ) {
-				
-				
 				if (!navigatingReturn) {
 					Nav.beginNav(rc, this, returnLoc);
 					navigatingReturn = true;
@@ -412,13 +401,9 @@ public strictfp class MinerRobot extends Robot {
 			System.out.println("Recieved soup location: " + x + ", " + y);
 			break;
 		case 5:
-			MapLocation ml5 = new MapLocation(x,y);
+			MapLocation ml = new MapLocation(x,y);
 			System.out.println("Recieved Refinery location: " + x + ", " + y);
-			if (!refineries.contains(ml5)) refineries.add(ml5);
-			break;
-		case 6:
-			MapLocation ml6 = new MapLocation(x, y);
-			refineries.remove(ml6);
+			if (!refineries.contains(ml)) refineries.add(ml);
 		}
 
 	}

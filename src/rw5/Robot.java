@@ -1,4 +1,4 @@
-package rw1;
+package rw5;
 
 import battlecode.common.*;
 
@@ -11,6 +11,7 @@ public abstract strictfp class Robot {
 	public final int mapHeight;
 	public final RobotType type;
 	public final int TURTLE_ROUND = 100;
+	public final int TURTLE_END = 700;
 
 	public RobotInfo[] nearbyRobots;
 	public int round;
@@ -21,6 +22,10 @@ public abstract strictfp class Robot {
 	public int soupCarrying;
 	public float cooldownTurns;
 	
+	public int roundCreated;
+	
+	public int hqX2;
+	public int hqY2;
 	
 	public Robot(RobotController rc) throws GameActionException {
 		this.rc = rc;
@@ -46,6 +51,11 @@ public abstract strictfp class Robot {
 				if (round == 0 && type != RobotType.HQ) {
 					//The robot has just been created, find the HQ location
 					Communications.processFirstBlock(rc, this);
+					roundCreated = rc.getRoundNum();
+					if (hqLocation != null) {
+						hqX2 = hqLocation.x%2;
+						hqY2 = hqLocation.y%2;
+					}
 				}if (round > 1) {
 					Communications.processLastBlock(rc, this);
 				}
@@ -78,6 +88,14 @@ public abstract strictfp class Robot {
 			}
 			Clock.yield();
 		}
+	}
+	
+	public boolean pathTile(MapLocation ml) {
+		return ml.x%2 != hqX2 || ml.y%2 != hqY2;
+	}
+	
+	public boolean Tile(MapLocation ml) {
+		return ml.x%2 == hqX2 && ml.y%2 == hqY2;
 	}
 
 }

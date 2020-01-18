@@ -1,26 +1,53 @@
-package rw1;
+package rw5;
+
+import java.util.ArrayList;
 
 import battlecode.common.*;
 
 public strictfp class HQRobot extends Robot {
 
-    public HQState hqState;
-    public int numMiners = 0;
+	public HQState hqState;
+	public int numMiners = 0;
+	public boolean completed3 = false;
+	public boolean completed5 = false;
+	public boolean giveUp5;
+	
+	public int wallBoundLower;
+	public int wallBoundUpper;
+	public int wallBoundRight;
+	public int wallBoundLeft;
+	public int landscaperRequestCooldown = 0;
+	public boolean dsAvailable = false;
+	
+	public ArrayList<MapLocation> designSchoolLocations;
+	public MapLocation closestDesignSchool;
+	
+	public static final int ROUND_3x3 = 400; //If 3x3 wall not completed by round 400, do not try 5x5
+	public static final int MAX_MINERS = 10;
+	
+	enum HQState {
+		NORMAL
+	}
 
-    public static final int MAX_MINERS = 10;
-
-    enum HQState {
-        NORMAL
-    }
-
-    public HQRobot(RobotController rc) throws GameActionException {
-        super(rc);
-        // TODO Auto-generated constructor stub
-    }
+	public HQRobot(RobotController rc) throws GameActionException {
+		super(rc);
+		// TODO Auto-generated constructor stub
+		
+		giveUp5 = false;
+		
+		designSchoolLocations = new ArrayList<MapLocation>();
+	}
 
     @Override
     public void run() throws GameActionException {
         propaganda();
+        
+        if (round == 1) {
+        	wallBoundLower = Math.max(location.y - 2, 0);
+    		wallBoundLeft = Math.max(location.x - 2, 0);
+    		wallBoundUpper = Math.min(location.y + 2, mapHeight-1);
+    		wallBoundRight = Math.min(location.x + 2, mapWidth-1);
+        }
 
         //Process nearby robots
         RobotInfo[] ri = nearbyRobots;
@@ -86,6 +113,64 @@ public strictfp class HQRobot extends Robot {
                 }
             }
         }
+        
+        completed3 = true;
+        int landscapersNeeded3 = 0;
+		completed5 = true;
+		int landscapersNeeded5 = 0;
+		MapLocation defenseLocation;
+		RobotInfo botInfo;
+		int rank;
+		for (int i = wallBoundLeft; i <= wallBoundRight; i++) {
+			for (int j = wallBoundLower; j <= wallBoundUpper; j++) {
+				
+				defenseLocation = new MapLocation(i,j);
+				rank = Utility.chebyshev(location, defenseLocation);
+				if (rank == 0) continue;
+				if (rc.canSenseLocation(defenseLocation)) {
+					botInfo = rc.senseRobotAtLocation(defenseLocation);
+					if (botInfo == null || botInfo.team != team || botInfo.type != RobotType.LANDSCAPER) {
+						if (rank == 1) {
+							landscapersNeeded3++;
+							completed3 = false;
+						}
+						if (rank == 2) {
+							landscapersNeeded5++;
+							completed5 = false;
+						}
+					}
+				}
+				
+			}
+		}
+		
+		if (round > ROUND_3x3 && !completed3) giveUp5 = true;
+		
+		if (round < TURTLE_END && dsAvailable && landscaperRequestCooldown == 0 && ((!giveUp5 && !completed5) || !completed3)) {
+			MapLocation nearest = null;
+			int d = 1000;
+			ArrayList<MapLocation> locs = designSchoolLocations;
+			MapLocation ml = null;
+			int dl = 0;
+			for (int i = locs.size(); i-->0;) {
+				ml = locs.get(i);
+				dl = Utility.chebyshev(ml, location);
+				if (dl < d) {
+					d = dl;
+					nearest = ml;
+				}
+			}
+			
+			if (soup > 2 && ml != null) {
+				rc.setIndicatorLine(location, nearest, 0, 255, 0);
+				int amount = (completed3 || !giveUp5? Math.min(8, landscapersNeeded5+landscapersNeeded3) : Math.min(8, landscapersNeeded3));
+				Communications.queueMessage(rc, 2, 10+amount, nearest.x, nearest.y);
+				landscaperRequestCooldown += amount + dl + 20;
+			}
+			landscaperRequestCooldown += 10;
+		}
+		
+		if (landscaperRequestCooldown > 0) landscaperRequestCooldown--;
     }
 
     /**
@@ -132,7 +217,13 @@ public strictfp class HQRobot extends Robot {
 
     @Override
     public void processMessage(int m, int x, int y) {
-        // TODO Auto-generated method stub
+        switch (m) {
+        case 6:
+        	MapLocation ml = new MapLocation(x, y);
+        	if (!designSchoolLocations.contains(ml)) designSchoolLocations.add(ml);
+        	dsAvailable = true;
+        	break;
+        }
 
     }
 
