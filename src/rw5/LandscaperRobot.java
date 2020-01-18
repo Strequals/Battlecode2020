@@ -218,7 +218,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 		Direction[] dirs = Utility.directions;
 
-		if (dirtCarrying > 0) {
+		if (dirtCarrying == 0) {
 			if (pitDirection != null) rc.digDirt(pitDirection);
 		} else {
 			if (round < TURTLE_END) {
@@ -282,7 +282,7 @@ public strictfp class LandscaperRobot extends Robot {
 				}
 
 				//Move towards location
-				if (!ml.equals(Nav.target)) {
+				if (Nav.target == null || !ml.equals(Nav.target)) {
 					Nav.beginNav(rc, this, ml);
 				}
 				Nav.nav(rc, this);
@@ -310,7 +310,7 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 		
 		//Move towards location
-		if (!ml.equals(Nav.target)) {
+		if (Nav.target == null || !ml.equals(Nav.target)) {
 			Nav.beginNav(rc, this, ml);
 		}
 		Nav.nav(rc, this);
@@ -444,7 +444,7 @@ public strictfp class LandscaperRobot extends Robot {
 	
 	public void doRushing() throws GameActionException {
 		if (location.distanceSquaredTo(enemyHqLocation) > 2) {
-			if (!Nav.target.equals(enemyHqLocation)) {
+			if (Nav.target == null || !Nav.target.equals(enemyHqLocation)) {
 				Nav.beginNav(rc, this, enemyHqLocation);
 			}
 			Nav.nav(rc, this);
