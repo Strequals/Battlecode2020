@@ -118,7 +118,7 @@ public strictfp class MinerRobot extends Robot {
 		System.out.println("SEARCH bytecodes: " + (bytecode1 - Clock.getBytecodesLeft()));
 
 		if (soupMine !=null && totalSoup / nearbyMiners > 100 && nearbyMiners < 4) {
-			Communications.sendMessage(rc, 1, 2, soupMine.x, soupMine.y);
+			Communications.queueMessage(rc, 1, 2, soupMine.x, soupMine.y);
 		}
 		
 		if (round >= TURTLE_ROUND && returnLoc == hqLocation && refineries.size() > 0) {
@@ -163,7 +163,7 @@ public strictfp class MinerRobot extends Robot {
 					if (rc.canBuildRobot(RobotType.REFINERY, d)) {
 						rc.buildRobot(RobotType.REFINERY, d);
 						MapLocation refineryLoc = location.add(d);
-						if (soup>5) Communications.sendMessage(rc, 5, 5, refineryLoc.x, refineryLoc.y);
+						if (soup>5) Communications.queueMessage(rc, 5, 5, refineryLoc.x, refineryLoc.y);
 						refineries.add(refineryLoc);
 						return;
 					}
@@ -172,14 +172,14 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 		//Build Design School
-		if (round > TURTLE_ROUND && !dsBuilt && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 5*TURTLE_ROUND) && !location.isWithinDistanceSquared(hqLocation, 5)) {
+		if (round > TURTLE_ROUND && !dsBuilt && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 5*TURTLE_ROUND) && !location.isWithinDistanceSquared(hqLocation, 3)) {
 			Direction[] dirs = Utility.directions;
 			Direction d;
 			ml = null;
 			for (int i = 8; i-->0;) {
 				d = dirs[i];
 				ml = location.add(d);
-				if (Utility.chebyshev(ml, hqLocation) > 3) {
+				if (Utility.chebyshev(ml, hqLocation) > 4) {
 					if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
 						rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
 						dsBuilt = true;

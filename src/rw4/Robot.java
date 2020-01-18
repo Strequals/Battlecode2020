@@ -11,6 +11,7 @@ public abstract strictfp class Robot {
 	public final int mapHeight;
 	public final RobotType type;
 	public final int TURTLE_ROUND = 100;
+	public final int TURTLE_END = 700;
 
 	public RobotInfo[] nearbyRobots;
 	public int round;
@@ -20,6 +21,8 @@ public abstract strictfp class Robot {
 	public int dirtCarrying;
 	public int soupCarrying;
 	public float cooldownTurns;
+	
+	public int roundCreated;
 	
 	
 	public Robot(RobotController rc) throws GameActionException {
@@ -46,6 +49,7 @@ public abstract strictfp class Robot {
 				if (round == 0 && type != RobotType.HQ) {
 					//The robot has just been created, find the HQ location
 					Communications.processFirstBlock(rc, this);
+					roundCreated = rc.getRoundNum();
 				}if (round > 1) {
 					Communications.processLastBlock(rc, this);
 				}
@@ -68,6 +72,9 @@ public abstract strictfp class Robot {
 				
 				
 				run();
+				
+				
+				Communications.sendMessages(rc);
 				System.out.println("BC left: " + Clock.getBytecodesLeft());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
