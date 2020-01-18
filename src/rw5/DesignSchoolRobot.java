@@ -107,6 +107,9 @@ public strictfp class DesignSchoolRobot extends Robot {
 
 			}
 			numHQRequested--;
+			if (numHQRequested == 0) {
+				Communications.queueMessage(rc, 1, 19, location.x, location.y);
+			}
 
 		}
 

@@ -1,69 +1,36 @@
-package rw5;
-
-import java.util.ArrayList;
+package rw6;
 
 import battlecode.common.*;
 
 public strictfp class HQRobot extends Robot {
 
-	public HQState hqState;
-	public int numMiners = 0;
-	public boolean completedWall = false;
-	public int numLandscapers = 0;
-	
-	public int wallBoundLower;
-	public int wallBoundUpper;
-	public int wallBoundRight;
-	public int wallBoundLeft;
-	public int landscaperRequestCooldown = 0;
-	public boolean dsAvailable = false;
-	
-	public ArrayList<MapLocation> designSchoolLocations;
-	public MapLocation closestDesignSchool;
-	
-	public static final int ROUND_3x3 = 400; //If 3x3 wall not completed by round 400, do not try 5x5
-	public static final int INITIAL_MINERS = 3;
-	public static final int MAX_MINERS = 10;
-	
-	public boolean minerRequested = false;
-	
-	enum HQState {
-		NORMAL
-	}
+    public HQState hqState;
+    public int numMiners = 0;
 
-	public HQRobot(RobotController rc) throws GameActionException {
-		super(rc);
-		// TODO Auto-generated constructor stub
-		
-		
-		designSchoolLocations = new ArrayList<MapLocation>();
-	}
+    public static final int MAX_MINERS = 10;
+
+    enum HQState {
+        NORMAL
+    }
+
+    public HQRobot(RobotController rc) throws GameActionException {
+        super(rc);
+        // TODO Auto-generated constructor stub
+    }
 
     @Override
     public void run() throws GameActionException {
         propaganda();
-        
-        if (round == 1) {
-        	wallBoundLower = Math.max(location.y - 1, 0);
-    		wallBoundLeft = Math.max(location.x - 1, 0);
-    		wallBoundUpper = Math.min(location.y + 1, mapHeight-1);
-    		wallBoundRight = Math.min(location.x + 1, mapWidth-1);
-        }
 
         //Process nearby robots
         RobotInfo[] ri = nearbyRobots;
         RobotInfo r;
-        numLandscapers = 0;
         for (int i = ri.length; --i >= 0;) {
             r = ri[i];
             if (r.getTeam() == team) {
                 //Friendly Units
                 switch (r.getType()) {
-                case LANDSCAPER:
-                	if (Utility.chebyshev(r.location, location) == 1) {
-                		numLandscapers++;
-                	}
-                default:
+                    default:
                         break;
 
                 }
@@ -109,70 +76,16 @@ public strictfp class HQRobot extends Robot {
             Communications.queueMessage(rc, 20, 1, location.x, location.y);
         }
 
-        if ((numMiners < INITIAL_MINERS) || (round < TURTLE_ROUND && minerRequested) || soup > RobotType.DESIGN_SCHOOL.cost + 8 * RobotType.VAPORATOR.cost + RobotType.VAPORATOR.cost) {
+        if ((round < TURTLE_ROUND && numMiners < MAX_MINERS) || soup > RobotType.DESIGN_SCHOOL.cost + 20 * RobotType.LANDSCAPER.cost) {
             //Try building miner
             Direction[] dirs = Utility.directions;
             for (int i = dirs.length; --i >= 0;) {
                 if (rc.canBuildRobot(RobotType.MINER, dirs[i])) {
                     rc.buildRobot(RobotType.MINER, dirs[i]);
-                    minerRequested = false;
                     numMiners++;
                 }
             }
         }
-        
-		/*MapLocation defenseLocation;
-		RobotInfo botInfo;
-		int rank;
-		for (int i = wallBoundLeft; i <= wallBoundRight; i++) {
-			for (int j = wallBoundLower; j <= wallBoundUpper; j++) {
-				
-				defenseLocation = new MapLocation(i,j);
-				rank = Utility.chebyshev(location, defenseLocation);
-				if (rank == 0) continue;
-				if (rc.canSenseLocation(defenseLocation)) {
-					botInfo = rc.senseRobotAtLocation(defenseLocation);
-					if (botInfo == null || botInfo.team != team || botInfo.type != RobotType.LANDSCAPER) {
-						if (rank == 1) {
-							++;
-							completedWall = false;
-						}
-					}
-				}
-				
-			}
-		}*/
-        
-        completedWall = numLandscapers >= 8;
-		
-		
-		if (!completedWall && round < TURTLE_END && dsAvailable && landscaperRequestCooldown == 0) {
-			MapLocation nearest = null;
-			int d = 1000;
-			ArrayList<MapLocation> locs = designSchoolLocations;
-			MapLocation ml = null;
-			int dl = 0;
-			for (int i = locs.size(); i-->0;) {
-				ml = locs.get(i);
-				dl = Utility.chebyshev(ml, location);
-				if (dl < d) {
-					d = dl;
-					nearest = ml;
-				}
-			}
-			
-			if (soup > 2 && ml != null) {
-				rc.setIndicatorLine(location, nearest, 0, 255, 0);
-				int amount = 8 - numLandscapers;
-				Communications.queueMessage(rc, 2, 10+amount, nearest.x, nearest.y);
-				landscaperRequestCooldown += amount + dl + 20;
-				designSchoolLocations.remove(nearest);
-				
-			}
-			landscaperRequestCooldown += 10;
-		}
-		
-		if (landscaperRequestCooldown > 0) landscaperRequestCooldown--;
     }
 
     /**
@@ -219,21 +132,7 @@ public strictfp class HQRobot extends Robot {
 
     @Override
     public void processMessage(int m, int x, int y) {
-        switch (m) {
-        case 2:
-        	minerRequested = true;
-        	break;
-        case 6:
-        	MapLocation ml6 = new MapLocation(x, y);
-        	if (!designSchoolLocations.contains(ml6)) designSchoolLocations.add(ml6);
-        	dsAvailable = true;
-        	break;
-        case 19:
-        	MapLocation ml19 = new MapLocation(x, y);
-        	if (!designSchoolLocations.contains(ml19)) designSchoolLocations.add(ml19);
-        	dsAvailable = true;
-        	break;
-        }
+        // TODO Auto-generated method stub
 
     }
 
