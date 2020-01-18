@@ -27,6 +27,8 @@ public strictfp class LandscaperRobot extends Robot {
  	private MapLocation enemyHqLocation;
 	private boolean isDroneThreat;
 	private MapLocation targetBuildingLocation;
+	
+	private static final int TERRAFORM_THRESHOLD = 25; //If change in elevation is greater, do not terraform this tile
 
 	LandscaperRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -214,7 +216,7 @@ public strictfp class LandscaperRobot extends Robot {
 			return;
 		}
 		
-		//TODO: check if can move or bridge
+		//TODO: check if can move or bridge to lower wall location
 
 		Direction[] dirs = Utility.directions;
 
@@ -237,8 +239,6 @@ public strictfp class LandscaperRobot extends Robot {
 					if (!(Utility.chebyshev(ml, hqLocation) == 1)) {
 						continue;
 					}
-					if (pitTile(ml)) {
-						if (rc.canDigDirt(d)) {
 							if (rc.canSenseLocation(ml)) {
 								elev = rc.senseElevation(ml);
 								if (elev < lowElev) {
@@ -246,8 +246,6 @@ public strictfp class LandscaperRobot extends Robot {
 									lowElev = elev;
 								}
 							}
-						}
-					}
 				}
 				
 				if (lowDir != null) {
@@ -270,6 +268,7 @@ public strictfp class LandscaperRobot extends Robot {
 				for (int i = 8; i-->0; ) {
 					d = dirs[i];
 					m = location.add(d);
+					if (pitTile(m) || Utility.chebyshev(m, hqLocation) != 1) continue;
 					if (rc.canSenseLocation(m)) {
 						elev = rc.senseElevation(m);
 						elevDiff = robotElevation - elev;
@@ -298,11 +297,12 @@ public strictfp class LandscaperRobot extends Robot {
 		for (int i = 8; i-->0; ) {
 			d = dirs[i];
 			m = location.add(d);
+			if (pitTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
 			if (rc.canSenseLocation(m)) {
 				elev = rc.senseElevation(m);
 				elevDiff = robotElevation - elev;
 				if (elevDiff < 0) elevDiff = -elevDiff;
-				if (elevDiff > GameConstants.MAX_DIRT_DIFFERENCE) {
+				if (elevDiff > 0 && elevDiff <= TERRAFORM_THRESHOLD) {
 					tunnelOrBridge(m, d);
 					return;
 				}
@@ -325,13 +325,13 @@ public strictfp class LandscaperRobot extends Robot {
 			} else {
 				if (pitDirection != null) rc.digDirt(pitDirection);
 			}
-		} else if (elDistance > GameConstants.MAX_DIRT_DIFFERENCE) {
+		} else if (elDistance > 0) {
 			if (dirtCarrying > 0) {
 				rc.depositDirt(Direction.CENTER);
 			} else {
 				if (pitDirection != null) rc.digDirt(pitDirection);
 			}
-		} else if (elDistance < -GameConstants.MAX_DIRT_DIFFERENCE) {
+		} else if (elDistance < 0) {
 			if (dirtCarrying > 0) {
 				rc.depositDirt(d);
 			} else {
@@ -367,8 +367,11 @@ public strictfp class LandscaperRobot extends Robot {
 	}
 	
 	public void doTerraforming() throws GameActionException {
+		
 		//Destroy enemy building
 		if (targetBuildingLocation != null) {
+			System.out.println("targeting Building at " + targetBuildingLocation);
+			rc.setIndicatorLine(location, targetBuildingLocation, 255, 50, 50);
 			int csDist = Utility.chebyshev(location, targetBuildingLocation);
 			if (csDist <= 1) {
 				if (dirtCarrying == 0) {
@@ -384,6 +387,20 @@ public strictfp class LandscaperRobot extends Robot {
 			} else {
 				moveTerraform(targetBuildingLocation);
 				return;
+			}
+		}
+		
+		//Move off of pit
+		if (pitTile(location)) {
+			System.out.println("Moving off pit");
+			Direction[] dirs = Utility.directions;
+			Direction d;
+			for (int i = 8; i-->0;) {
+				d=dirs[i];
+				if (rc.canMove(d)) {
+					rc.move(d);
+					return;
+				}
 			}
 		}
 
@@ -407,14 +424,16 @@ public strictfp class LandscaperRobot extends Robot {
 				rad = dx * dx + dy * dy;
 				if (rad > rSq) continue;
 				ml = new MapLocation(x, y);
+				if (pitTile(ml)) continue;
 				elev = rc.senseElevation(ml);
 				ri = rc.senseRobotAtLocation(ml);
-				if (ri != null && ri.type.isBuilding()) continue;
+				if (ri != null && (ri.type.isBuilding() || (ri.team == team && ri.type == RobotType.LANDSCAPER))) continue;
 				dElev = robotElevation - elev;
 				if (dElev < 0) {
 					dElev = -dElev;
 					rad -= 1000; //Prioritize filling in lower tiles rather than digging higher ones
 				}
+				if (dElev > TERRAFORM_THRESHOLD) rad += 10000;
 				if (dElev > GameConstants.MAX_DIRT_DIFFERENCE) {
 					if (rad < rad0) {
 						rad0 = rad;
@@ -426,11 +445,14 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 		
 		if (nearestFillTile != null) {
+			System.out.println("Filling in...");
+			rc.setIndicatorLine(location, nearestFillTile, 50, 255, 100);
 			moveTerraform(nearestFillTile);
 			return;
 		}
 
 		//Start increasing height of terraform
+		System.out.println("Increase terraform height");
 		if (dirtCarrying == 0) {
 			rc.digDirt(pitDirection);
 		} else {

@@ -17,7 +17,7 @@ public class Communications {
 	 *5:Refinery location
 	 *6:Design school location
 	 *7:
-	 *8:
+	 *8:Refinery removed
 	 *9:
 	 *10:
 	 *11:Request 1 Landscaper for HQ defense
