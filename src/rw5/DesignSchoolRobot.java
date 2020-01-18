@@ -3,27 +3,42 @@ package rw5;
 import battlecode.common.*;
 
 public strictfp class DesignSchoolRobot extends Robot {
-	MapLocation hqLocation;
+	private MapLocation hqLocation;
+	private MapLocation enemyHqLocation;
 
-	int numHQRequested = 0;
+	private int numHQRequested = 0;
+
+	private int nearbyAlliedLandscapers = 0;
+
+	private DesignSchoolState designSchoolState = DesignSchoolState.BUILDING_TURTLES;
 
 	enum DesignSchoolState {
 		BUILDING_TURTLES, RUSHING
 	}
 
-	public DesignSchoolRobot(RobotController rc) throws GameActionException {
+	DesignSchoolRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		// TODO Auto-generated constructor stub
+
+		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(2, rc.getTeam().opponent());
+		RobotInfo robot;
+		for (int i = nearbyRobots.length; i-->0;) {
+			robot = nearbyRobots[i];
+			if (robot.type == RobotType.HQ) {
+				enemyHqLocation = robot.location;
+				designSchoolState = DesignSchoolState.RUSHING;
+			}
+		}
 	}
 
 	@Override
 	public void run() throws GameActionException {
+		nearbyAlliedLandscapers = 0;
+
 		if (round == roundCreated) {
 			Communications.queueMessage(rc, 2, 6, location.x, location.y);
 		}
 
-
-		//Process nearby robots
+		// Process nearby robots
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
 		for (int i = ri.length; --i >= 0;) {
@@ -34,11 +49,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 				case HQ:
 					hqLocation = r.getLocation();
 					break;
-				case DESIGN_SCHOOL:
-					break;
 				case LANDSCAPER:
-					break;
-				default:
+					nearbyAlliedLandscapers++;
 					break;
 
 				}
@@ -78,14 +90,19 @@ public strictfp class DesignSchoolRobot extends Robot {
 				}
 			}
 		}
-		/*Direction[] dirs = Utility.directions;
-		for (int i = dirs.length; --i >= 0;) {
-			if (rc.canBuildRobot(RobotType.LANDSCAPER, dirs[i])) {
-				rc.buildRobot(RobotType.LANDSCAPER, dirs[i]);
-			}
-		}*/
-		if (numHQRequested > 0) {
 
+		switch (designSchoolState) {
+			case BUILDING_TURTLES:
+				buildTurtles();
+				break;
+			case RUSHING:
+				rush();
+				break;
+		}
+	}
+
+	private void buildTurtles() throws GameActionException {
+		if (numHQRequested > 0) {
 			Direction hqDirection = location.directionTo(hqLocation);
 			if (rc.canBuildRobot(RobotType.LANDSCAPER, hqDirection)) {
 				rc.buildRobot(RobotType.LANDSCAPER, hqDirection);
@@ -112,7 +129,34 @@ public strictfp class DesignSchoolRobot extends Robot {
 			}
 
 		}
+	}
 
+	private void rush() throws GameActionException {
+	    if (nearbyAlliedLandscapers < Utility.MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL) {
+            Direction[] dirs = Utility.directions;
+
+            Direction d;
+            MapLocation ml;
+
+            Direction potentialBuildDirection = null;
+
+            for (int i = dirs.length; --i >= 0; ) {
+                d = dirs[i];
+                if (rc.canBuildRobot(RobotType.LANDSCAPER, d)) {
+                    ml = location.add(d);
+                    if (ml.isAdjacentTo(enemyHqLocation)) {
+                        rc.buildRobot(RobotType.LANDSCAPER, d);
+                        return;
+                    } else {
+                        potentialBuildDirection = d;
+                    }
+                }
+            }
+
+            if (potentialBuildDirection != null) {
+                rc.buildRobot(RobotType.LANDSCAPER, potentialBuildDirection);
+            }
+        }
 	}
 
 	@Override

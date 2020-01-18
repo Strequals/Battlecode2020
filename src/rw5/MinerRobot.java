@@ -4,15 +4,30 @@ import java.util.ArrayList;
 
 import battlecode.common.*;
 
+import static rw5.Utility.SCOUT_ROUND;
+
 public strictfp class MinerRobot extends Robot {
 
 	public MapLocation hqLocation;
 	public MinerState minerState;
+
+	/**
+	 * This is the possible position of the enemy HQ that the miner is currently scouting. Its value is undefined if the
+	 * `minerState` is not `SCOUTING_ENEMY_HQ`. Otherwise, it must not be null.
+	 */
+	private EnemyHqPossiblePosition enemyHqScouting;
+	/**
+	 * While `minerState` is `SCOUTING_ENEMY_HQ`, this must be location of the possible HQ that the miner is currently
+	 * scouting. While `minerState` is `RUSHING_ENEMY_HQ` and `DRONE_NETTING_ENEMY_HQ`, this must be the actual, known
+	 * location of the enemy HQ.
+	 */
+	private MapLocation enemyHqLocation;
+
 	public MapLocation soupMine;
 	public boolean navigatingReturn;
 	public boolean dsBuilt;
 	public MapLocation returnLoc;
-	public int random; //A random number from 0 to 255
+	public int random; // A random number from 0 to 255
 	public static final int A = 623;
 	public static final int B = 49;
 	public Direction lastDirection;
@@ -23,7 +38,13 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DISTANCE_SOUP_THRESHOLD = 25; //maximum distance from refinery to soup deposit upon creation
 
 	enum MinerState {
-		SEEKING, MINING, RETURNING
+		SEEKING, MINING, RETURNING, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
+	}
+
+	enum EnemyHqPossiblePosition {
+		X_FLIP,
+		Y_FLIP,
+		ROTATION
 	}
 
 	public MinerRobot(RobotController rc) throws GameActionException {
@@ -199,6 +220,17 @@ public strictfp class MinerRobot extends Robot {
 		
 		if (soupMine != null)System.out.println("TARGETING: " + soupMine.x + ", " + soupMine.y);
 		if (Nav.target != null) System.out.println("NAVTARGET: " + Nav.target.x + ", " + Nav.target.y);
+
+		System.out.println(round);
+		System.out.println(SCOUT_ROUND);
+
+		// Possibly switch state to scouting if this is the first miner built
+		if (round == SCOUT_ROUND && roundCreated <= 2) {
+			minerState = MinerState.SCOUTING_ENEMY_HQ;
+			EnemyHqPossiblePosition[] positions = EnemyHqPossiblePosition.values();
+			setScoutEnemyHq(positions[random % positions.length]);
+		}
+
 		switch (minerState) {
 		case MINING:
 			System.out.println("MINING");
@@ -317,6 +349,16 @@ public strictfp class MinerRobot extends Robot {
 			}
 			
 			moveScout(rc);
+			break;
+		case SCOUTING_ENEMY_HQ:
+			scoutEnemyHq();
+			break;
+		case RUSHING_ENEMY_HQ:
+			rushEnemyHq();
+			break;
+		case DRONE_NETTING_ENEMY_HQ:
+			droneNetEnemyHq();
+			break;
 		}
 	}
 
@@ -386,6 +428,116 @@ public strictfp class MinerRobot extends Robot {
 		return false;
 	}
 
+	private void setScoutEnemyHq(EnemyHqPossiblePosition possiblePosition) {
+		System.out.println("Set enemy HQ to scout");
+		enemyHqScouting = possiblePosition;
+
+		int enemyHqX;
+		int enemyHqY;
+
+		int maxXPosition;
+		int maxYPosition;
+
+		switch (possiblePosition) {
+			case X_FLIP:
+				maxXPosition = mapWidth - 1;
+				enemyHqX = maxXPosition - hqLocation.x;
+				enemyHqY = hqLocation.y;
+				break;
+			case Y_FLIP:
+				maxYPosition = mapHeight - 1;
+				enemyHqX = hqLocation.x;
+				enemyHqY = maxYPosition - hqLocation.y;
+				break;
+			case ROTATION:
+				maxXPosition = mapWidth - 1;
+				maxYPosition = mapHeight - 1;
+				enemyHqX = maxXPosition - hqLocation.x;
+				enemyHqY = maxYPosition - hqLocation.y;
+				break;
+			default:
+				// There's not even anything left
+				// But this prevents an error in IDEA :/
+				throw new Error("how did this even happen");
+		}
+
+		enemyHqLocation = new MapLocation(enemyHqX, enemyHqY);
+		Nav.beginNav(rc, this, enemyHqLocation);
+	}
+
+	private void scoutEnemyHq() throws GameActionException {
+		System.out.println("Scouting enemy HQ");
+		Nav.nav(rc, this);
+
+		if (rc.canSenseLocation(enemyHqLocation)) {
+			RobotInfo potentialRobot = rc.senseRobotAtLocation(enemyHqLocation);
+			// Will never sense our HQ because it's not one of the possibilities for enemyHqPossibleLocation
+			// Therefore, if it sees any HQ, it's the enemy's
+			if (potentialRobot != null && potentialRobot.type == RobotType.HQ) {
+				// TODO: Do better setting the cost, ensuring that the message is sent, etc.
+				Communications.queueMessage(rc, 40, 10, enemyHqLocation.x, enemyHqLocation.y);
+
+				setRushEnemyHq();
+			} else {
+				EnemyHqPossiblePosition[] values = EnemyHqPossiblePosition.values();
+				setScoutEnemyHq(values[(enemyHqScouting.ordinal() + 1) % values.length]);
+			}
+		}
+	}
+
+	private void setRushEnemyHq() throws GameActionException {
+		Nav.beginNav(rc, this, enemyHqLocation);
+		minerState = MinerState.RUSHING_ENEMY_HQ;
+	}
+
+	/**
+	 * Should place a design school adjacent to the enemy HQ, then switch to looking for soup.
+	 */
+	private void rushEnemyHq() throws GameActionException {
+		Direction[] dirs = Utility.directions;
+		Direction d;
+		MapLocation ml;
+
+		for (int i = 8; i-- > 0; ) {
+			d = dirs[i];
+			ml = location.add(d);
+
+			if (!ml.equals(enemyHqLocation) && ml.isAdjacentTo(enemyHqLocation) && rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
+				rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
+				setDroneNettingEnemyHq();
+				return;
+			}
+		}
+
+		Nav.nav(rc, this);
+	}
+
+	private void setDroneNettingEnemyHq() {
+		Nav.beginNav(rc, this, enemyHqLocation);
+		minerState = MinerState.DRONE_NETTING_ENEMY_HQ;
+	}
+
+	private void droneNetEnemyHq() throws GameActionException {
+		Direction[] dirs = Utility.directions;
+		Direction d;
+		MapLocation ml;
+
+		for (int i = 8; i-- > 0; ) {
+			d = dirs[i];
+			ml = location.add(d);
+
+			if (Utility.chebyshev(ml, enemyHqLocation) < 3 && rc.canBuildRobot(RobotType.NET_GUN, d)) {
+				rc.buildRobot(RobotType.NET_GUN, d);
+				minerState = MinerState.SEEKING;
+				return;
+			}
+
+			System.out.println("Can'b build here: ");
+		}
+
+		Nav.nav(rc, this);
+	}
+
 	@Override
 	public void processMessage(int m, int x, int y) {
 		switch (m) {
@@ -396,7 +548,9 @@ public strictfp class MinerRobot extends Robot {
 		case 2:
 			if (soupMine == null) {
 				soupMine = new MapLocation(x, y);
-				Nav.beginNav(rc, this, soupMine);
+				if (minerState != MinerState.SCOUTING_ENEMY_HQ) {
+					Nav.beginNav(rc, this, soupMine);
+				}
 			}
 			System.out.println("Recieved soup location: " + x + ", " + y);
 			break;

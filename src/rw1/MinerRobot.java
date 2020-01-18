@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import battlecode.common.*;
 
+import static rw1.Utility.SCOUT_ROUND;
+
 public strictfp class MinerRobot extends Robot {
 
 	public MapLocation hqLocation;
@@ -12,10 +14,12 @@ public strictfp class MinerRobot extends Robot {
 	public boolean navigatingReturn;
 	public boolean dsBuilt;
 	public MapLocation returnLoc;
-	public int random; //A random number from 0 to 255
+	public int random; // A random number from 0 to 255
 	public static final int A = 623;
 	public static final int B = 49;
 	public Direction lastDirection;
+
+	private int creationRound;
 
 	public ArrayList<MapLocation> refineries;
 
@@ -26,6 +30,12 @@ public strictfp class MinerRobot extends Robot {
 		SEEKING, MINING, RETURNING
 	}
 
+	enum EnemyHqPossiblePosition {
+		X_FLIP,
+		Y_FLIP,
+		ROTATION
+	}
+
 	public MinerRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		// TODO Auto-generated constructor stub
@@ -34,6 +44,7 @@ public strictfp class MinerRobot extends Robot {
 		dsBuilt = false;
 		refineries = new ArrayList<MapLocation>();
 		random = round % 256;
+		creationRound = rc.getRoundNum();
 	}
 
 	@Override
@@ -208,6 +219,7 @@ public strictfp class MinerRobot extends Robot {
 		
 		if (soupMine != null)System.out.println("TARGETING: " + soupMine.x + ", " + soupMine.y);
 		if (Nav.target != null) System.out.println("NAVTARGET: " + Nav.target.x + ", " + Nav.target.y);
+
 		switch (minerState) {
 		case MINING:
 			System.out.println("MINING");
@@ -328,6 +340,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 			
 			moveScout(rc);
+			break;
 		}
 	}
 
@@ -422,6 +435,4 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 	}
-	
-	
 }

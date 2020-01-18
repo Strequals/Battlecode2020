@@ -42,7 +42,10 @@ public class Communications {
 	public static void calculateSecret(int round) {
 		verySecretNumber = getSecret(round);
 	}
-	
+
+	// TODO: Switch m to an enum
+	// m=1: HQ location
+	// m=10: enemy HQ location
 	public static void queueMessage(RobotController rc, int cost, int m, int x, int y) throws GameActionException {
 		messageQueue.add(new MessageUnit(cost, (m << 12) + (x << 6) + (y)));
 	}

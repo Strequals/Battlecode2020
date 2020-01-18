@@ -2,12 +2,12 @@ package rw1;
 
 import battlecode.common.*;
 
+import static rw1.Utility.MAX_MINERS;
+
 public strictfp class HQRobot extends Robot {
 
     public HQState hqState;
     public int numMiners = 0;
-
-    public static final int MAX_MINERS = 10;
 
     enum HQState {
         NORMAL
@@ -124,7 +124,7 @@ public strictfp class HQRobot extends Robot {
         rc.setIndicatorLine(new MapLocation(13, 0), new MapLocation(13, 2), 0, 0, 0);
         rc.setIndicatorLine(new MapLocation(13, 2), new MapLocation(11, 2), 0, 0, 0);
 
-        // sz
+        // s
         rc.setIndicatorLine(new MapLocation(15, 2), new MapLocation(14, 2), 0, 0, 0);
         rc.setIndicatorLine(new MapLocation(14, 2), new MapLocation(15, 0), 0, 0, 0);
         rc.setIndicatorLine(new MapLocation(15, 0), new MapLocation(14, 0), 0, 0, 0);
