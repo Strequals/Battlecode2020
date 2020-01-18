@@ -59,7 +59,6 @@ public strictfp class LandscaperRobot extends Robot {
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
 		int nearbyLandscapers = 0;
-		enemyHqLocation = null;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {

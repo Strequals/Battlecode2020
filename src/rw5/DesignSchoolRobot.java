@@ -10,10 +10,10 @@ public strictfp class DesignSchoolRobot extends Robot {
 
 	private int nearbyAlliedLandscapers = 0;
 
-	private DesignSchoolState designSchoolState = DesignSchoolState.BUILDING_TURTLES;
+	private DesignSchoolState designSchoolState = DesignSchoolState.TERRAFORMING;
 
 	enum DesignSchoolState {
-		BUILDING_TURTLES, RUSHING
+		BUILDING_TURTLES, RUSHING, TERRAFORMING
 	}
 
 	DesignSchoolRobot(RobotController rc) throws GameActionException {
@@ -91,12 +91,22 @@ public strictfp class DesignSchoolRobot extends Robot {
 			}
 		}
 
+		// Switch between terraforming and building turtles
+		if (numHQRequested > 0 && designSchoolState == DesignSchoolState.TERRAFORMING) {
+			designSchoolState = DesignSchoolState.BUILDING_TURTLES;
+		} else if (numHQRequested == 0 && designSchoolState == DesignSchoolState.BUILDING_TURTLES) {
+			designSchoolState = DesignSchoolState.TERRAFORMING;
+		}
+
 		switch (designSchoolState) {
 			case BUILDING_TURTLES:
 				buildTurtles();
 				break;
 			case RUSHING:
 				rush();
+				break;
+			case TERRAFORMING:
+				terraform();
 				break;
 		}
 	}
@@ -142,7 +152,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 
             for (int i = dirs.length; --i >= 0; ) {
                 d = dirs[i];
-                if (rc.canBuildRobot(RobotType.LANDSCAPER, d)) {
+                if (rc.canBuildRobot(RobotType.LANDSCAPER, d) && !rc.senseFlooding(location.add(d))) {
                     ml = location.add(d);
                     if (ml.isAdjacentTo(enemyHqLocation)) {
                         rc.buildRobot(RobotType.LANDSCAPER, d);
@@ -157,6 +167,21 @@ public strictfp class DesignSchoolRobot extends Robot {
                 rc.buildRobot(RobotType.LANDSCAPER, potentialBuildDirection);
             }
         }
+	}
+
+	private void terraform() throws GameActionException {
+		if (soup >= Utility.MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER) {
+			Direction[] dirs = Utility.directions;
+			Direction d;
+
+			for (int i = dirs.length; --i >= 0; ) {
+				d = dirs[i];
+				if (rc.canBuildRobot(RobotType.LANDSCAPER, d) && !rc.senseFlooding(location.add(d))) {
+					rc.buildRobot(RobotType.LANDSCAPER, d);
+					return;
+				}
+			}
+		}
 	}
 
 	@Override
