@@ -273,7 +273,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 		//Build Vaporator
-		if (round < MAX_VAPORATOR_BUILD_ROUND && !isRush && soup > RobotType.VAPORATOR.cost && designSchoolBuildCooldown > 0 && hqDist >= 2) {
+		if (round < MAX_VAPORATOR_BUILD_ROUND && !isRush && soup > RobotType.VAPORATOR.cost && (designSchoolBuildCooldown > 0 || round > 150) && hqDist >= 2) {
 			Direction[] dirs = Utility.directions;
 			Direction d;
 			ml = null;

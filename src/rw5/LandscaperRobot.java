@@ -25,6 +25,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private Direction pitDirection;
  	private MapLocation enemyHqLocation;
 	private boolean isDroneThreat;
+	private boolean rushDigging;
 	private MapLocation targetBuildingLocation;
 	
 	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
@@ -53,6 +54,7 @@ public strictfp class LandscaperRobot extends Robot {
 		isExpectedLandscaperCount = false;
 		reachedCorner = false;
 		navigatingHq = false;
+		rushDigging = true;
 	}
 
 	@Override
@@ -89,6 +91,7 @@ public strictfp class LandscaperRobot extends Robot {
 				switch (r.getType()) {
 				case DELIVERY_DRONE:
 					isDroneThreat = true;
+					
 					break;
 				case MINER:
 					// TODO: Block or bury
@@ -509,9 +512,12 @@ public strictfp class LandscaperRobot extends Robot {
 			return;
 		}
 		
-		if (dirtCarrying == 0) {
+		//dig and place in alternating cycles
+		if (((dirtCarrying < RobotType.LANDSCAPER.dirtLimit && rushDigging) || dirtCarrying == 0) && !isDroneThreat) {
+			rushDigging = true;
 			rc.digDirt(Direction.CENTER);
 		} else {
+			rushDigging = false;
 			rc.depositDirt(location.directionTo(enemyHqLocation));
 		}
 		
