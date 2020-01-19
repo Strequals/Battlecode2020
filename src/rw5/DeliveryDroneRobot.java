@@ -67,11 +67,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
                   break;
                case NET_GUN:
                // Avoid
-                  distance = Utility.chebyshev(r.location, location);
-                  if (distance < targetBuildingDistance) {
-                     targetBuildingDistance = distance;
-                     targetBuildingLocation = r.location;
-                  }
+                  
                   break;
                case REFINERY:
                // TODO: target?
