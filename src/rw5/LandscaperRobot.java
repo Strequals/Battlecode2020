@@ -28,7 +28,8 @@ public strictfp class LandscaperRobot extends Robot {
 	private MapLocation targetBuildingLocation;
 	
 	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
-
+	private static final int MAX_TERRAFORM_RANGE = 2; //Chebyshev distance to limit
+	
 	LandscaperRobot(RobotController rc) throws GameActionException {
 		super(rc);
 
@@ -425,6 +426,7 @@ public strictfp class LandscaperRobot extends Robot {
 		int bestPriority = 100000;
 		int priority;
 		int rank;
+		int csDist;
 		RobotInfo ri;
 		MapLocation nearestFillTile = null;
 		for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
@@ -434,6 +436,9 @@ public strictfp class LandscaperRobot extends Robot {
 				rad = dx * dx + dy * dy;
 				if (rad > rSq) continue;
 				ml = new MapLocation(x, y);
+				
+				csDist = Utility.chebyshev(ml, location);
+				if (csDist > MAX_TERRAFORM_RANGE) continue;
 				if (pitTile(ml)) continue;
 				elev = rc.senseElevation(ml);
 				ri = rc.senseRobotAtLocation(ml);

@@ -114,7 +114,7 @@ public strictfp class MinerRobot extends Robot {
 		//Calculate Random
 		random = (A*random+B)%256;
 
-		if (cooldownTurns >= 1) return;
+		
 
 		MapLocation ml;
 		int rSq = senseRadiusSq;
@@ -136,7 +136,7 @@ public strictfp class MinerRobot extends Robot {
 				if (rad > rSq) continue;
 				ml = new MapLocation(x, y);
 				s = rc.senseSoup(ml);
-				if (s > 0 && !rc.senseFlooding(ml)) {
+				if (s > 0) {// && !rc.senseFlooding(ml) Removed because some soup on edge is minable even when flooded
 					if (rad0 == -1 || rad < rad0) {
 						rad0 = rad;
 						nearestSoup = ml;
@@ -202,6 +202,8 @@ public strictfp class MinerRobot extends Robot {
 		int hqDist = 100;
 		if (hqLocation != null) hqDist = Utility.chebyshev(location, hqLocation);
 		
+		if (cooldownTurns >= 1) return;
+		
 		//Build Refinery
 		if (!isRefineryNearby && !isRush && soup > RobotType.REFINERY.cost && (hqDist >= DISTANCE_REFINERY_THRESHOLD || (round > TURTLE_ROUND && hqDist > 2))) {
 			if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
@@ -226,7 +228,7 @@ public strictfp class MinerRobot extends Robot {
 		if (dsBuilt) turnsSinceDesignSchoolSeen = 0;
 		else turnsSinceDesignSchoolSeen++;
 		//Build Design School
-		if (round > TURTLE_ROUND && !isRush && (turnsSinceDesignSchoolSeen>DESIGN_SCHOOL_SEEN_TURNS) && designSchoolBuildCooldown == 0 && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 2*TURTLE_ROUND) && hqDist>=2) {
+		if (round > TURTLE_ROUND && !isRush && (turnsSinceDesignSchoolSeen>DESIGN_SCHOOL_SEEN_TURNS || (soup > 1000 && !dsBuilt)) && designSchoolBuildCooldown == 0 && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 2*TURTLE_ROUND) && hqDist>=2) {
 			Direction[] dirs = Utility.directions;
 			Direction d;
 			ml = null;
@@ -263,11 +265,12 @@ public strictfp class MinerRobot extends Robot {
 		System.out.println("NEAREST REFINERY:"+nearestRefinery);
 		
 		
-		if (soupMine != null)System.out.println("TARGETING: " + soupMine.x + ", " + soupMine.y);
-		if (Nav.target != null) System.out.println("NAVTARGET: " + Nav.target.x + ", " + Nav.target.y);
+		//if (soupMine != null)System.out.println("TARGETING: " + soupMine.x + ", " + soupMine.y);
+		//if (nearestSoup != null)System.out.println("NEARSOUP: " + nearestSoup.x + ", " + nearestSoup.y);
+		//if (Nav.target != null) System.out.println("NAVTARGET: " + Nav.target.x + ", " + Nav.target.y);
 
-		System.out.println(round);
-		System.out.println(SCOUT_ROUND);
+		//System.out.println(round);
+		//System.out.println(SCOUT_ROUND);
 
 		// Possibly switch state to scouting if this is the first miner built
 		if (round == SCOUT_ROUND && roundCreated <= 2) {
@@ -331,15 +334,13 @@ public strictfp class MinerRobot extends Robot {
 
 			//search for a soup deposit, check optimal soup deposit within radius
 			if (soupMine == null) {
-				if (nearestSoup != null) soupMine = nearestSoup;
-
-				if (soupMine == null) {
-					//random walk boi
-					moveScout(rc);
-					return;
-				} else {
+				if (nearestSoup != null) {
+					soupMine = nearestSoup;
 					Nav.beginNav(rc, this, soupMine);
+				} else {
+					moveScout(rc);
 				}
+
 			}
 
 			//Check if can begin mining
