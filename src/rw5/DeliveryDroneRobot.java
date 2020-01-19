@@ -216,7 +216,6 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			if (Utility.chebyshev(location, targetLocation) <= 1) {
 				if (rc.canPickUpUnit(targetRobot.ID)) {
 					rc.pickUpUnit(targetRobot.ID);
-               scanForWater();
 					return;
 				}
 			} else {
