@@ -2,7 +2,7 @@ package rw5;
 
 import battlecode.common.*;
 
-public strictfp class DeliveryDroneRobot extends Robot{
+public strictfp class DeliveryDroneRobot extends Robot {
 	
    private enum DroneState {
       ATTACKING,
@@ -17,6 +17,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
    private DroneState state;
    private int robotElevation;
    private boolean rush = false; //avoid netguns + hq?
+   private boolean sentEHQL = false;
 
    public DeliveryDroneRobot(RobotController rc) throws GameActionException {
       super(rc);
@@ -42,6 +43,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
    	// Process nearby robots (may have to move this into the if statements below)
       RobotInfo[] ri = nearbyRobots;
       RobotInfo r;
+      
       for (int i = ri.length; --i >= 0;) {
          r = ri[i];
          if (r.getTeam() == team) {
@@ -85,25 +87,48 @@ public strictfp class DeliveryDroneRobot extends Robot{
             }
          }
       }
-   	
+   	if(enemyHqLocation != null && !sentEHQL) {
+         Communcations.queueMessage(rc, 3, 3, enemyHqLocation.x, enemyHqLocation.y);
+      }
+      
+      if(nearestWater == null) {
+         //scan for water
+         
+      }
+      
       if(rc.isCurrentlyHoldingUnit()) {
-         //pathfind towards target (water, soup, or base)
+         //pathfind towards target (water, soup)
+         if(nearestWater.distanceSquaredTo(target) <= 2) {
+            if(rc.senseFlooding(nearestWater)) {
+               rc.dropUnit(location.directionTo(nearestWater));
+            }
+            else {
+               nearestWater = null;
+            }
+         }
+         
+   		if (Nav.target == null) {
+   			Nav.beginNav(rc, this, nearestWater);
+   		}
+   		Nav.nav(rc, this);
+         
+         //if any of 8 locations around are flooded, place robot into flood, update nearestWater
       }
       else {
-         ri = rc.senseNearbyRobots(1);
+         ri = rc.senseNearbyRobots(2);
          for (int i = ri.length; --i >= 0;) {
             r = ri[i];
-            if(r.team != team) {
+            if(r.team != team && r.canBePickedUp()) {
                if(rc.canPickUpUnit(r.getID())) {
                   rc.pickUpUnit(r.getID());
                   break;
                }
             }
          }
-         ri = rc.senseNearbyRobots(4);
+         ri = rc.senseNearbyRobots(8);
          for(int i = ri.length; --i >= 0;) {
             r = ri[i];
-            if(r.team != team) {
+            if(r.team != team && r.canBePickedUp()) {
                //step towards then pick up
                
                if(rc.canPickUpUnit(r.getID())) {
@@ -126,6 +151,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
          case 1:
             hqLocation = new MapLocation(x,y);
             System.out.println("Received HQ location: " + x + ", " + y);
+            sentEHQL = true; //if already received enemy hq location, don't rebroadcast
             break;
       }
    }
