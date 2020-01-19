@@ -84,6 +84,9 @@ public class Nav {
 	}
 
 	public static void bug(Robot r, RobotController rc) throws GameActionException {
+		rc.setIndicatorLine(r.location, r.location.add(bugDirection), 50, 255, 255);
+		rc.setIndicatorLine(r.location, r.location.add(lookDirection), 255, 100, 255);
+		
 		if (detectEdge(r, rc)) {
 			startBug(rc);
 		}
@@ -116,11 +119,11 @@ public class Nav {
 			
 			switch (side) {
 			case LEFT:
-				rotations += rots - (bugDirection.ordinal()-lookDirection.ordinal()) % 8;
+				rotations += rots - ((bugDirection.ordinal()-lookDirection.ordinal() + 8) % 8);
 				lookDirection = d.rotateLeft().rotateLeft();
 				break;
 			case RIGHT:
-				rotations += rots - (lookDirection.ordinal()-bugDirection.ordinal()) % 8;
+				rotations += rots - ((lookDirection.ordinal()-bugDirection.ordinal() + 8) % 8);
 				lookDirection = d.rotateRight().rotateRight();
 			}
 		
@@ -133,6 +136,8 @@ public class Nav {
 	}
 
 	public static boolean canEndBug() {
+		System.out.println("MSO:"+movesSinceObstacle);
+		System.out.println("rotations:"+rotations);
 		if (movesSinceObstacle >= 4 || turnsBugged > 100) return true;
 		return (rotations < 0 || rotations >= 8) && position.isWithinDistanceSquared(target, startDistanceSq);
 	}

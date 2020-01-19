@@ -21,14 +21,13 @@ public strictfp class LandscaperRobot extends Robot {
 	private boolean preferEast;
 	private boolean isExpectedLandscaperCount;
 	private boolean navigatingHq;
-	private int robotElevation;
 	private MapLocation pitLocation;
 	private Direction pitDirection;
  	private MapLocation enemyHqLocation;
 	private boolean isDroneThreat;
 	private MapLocation targetBuildingLocation;
 	
-	private static final int TERRAFORM_THRESHOLD = 25; //If change in elevation is greater, do not terraform this tile
+	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
 
 	LandscaperRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -57,7 +56,7 @@ public strictfp class LandscaperRobot extends Robot {
 	@Override
 	public void run() throws GameActionException {
 		isEnemyRushing = false;
-		robotElevation = rc.senseElevation(location);
+		
 		isDroneThreat = false;
 		// Process nearby robots
 		RobotInfo[] ri = nearbyRobots;
@@ -176,11 +175,14 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 		
-		if (enemyHqLocation != null && round < TURTLE_END) {
-			state = LandscaperState.RUSHING;
-		} else if (state != LandscaperState.TURTLING) {
-			state = LandscaperState.TERRAFORMING;
+		if (state != LandscaperState.TURTLING) {
+			if (enemyHqLocation != null && round < TURTLE_END) {
+				state = LandscaperState.RUSHING;
+			} else {
+				state = LandscaperState.TERRAFORMING;
+			}
 		}
+		
 
 		switch (state) {
 		
@@ -189,6 +191,7 @@ public strictfp class LandscaperRobot extends Robot {
 			break;
 		case RUSHING:
 			doRushing();
+			break;
 		case TERRAFORMING:
 			doTerraforming();
 		}
@@ -294,11 +297,14 @@ public strictfp class LandscaperRobot extends Robot {
 		MapLocation m;
 		int elev;
 		int elevDiff;
+		RobotInfo botInfo;
 		for (int i = 8; i-->0; ) {
 			d = dirs[i];
 			m = location.add(d);
 			if (pitTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
 			if (rc.canSenseLocation(m)) {
+				botInfo = rc.senseRobotAtLocation(m);
+				if (botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) continue;
 				elev = rc.senseElevation(m);
 				elevDiff = robotElevation - elev;
 				if (elevDiff < 0) elevDiff = -elevDiff;
@@ -411,10 +417,12 @@ public strictfp class LandscaperRobot extends Robot {
 		ml = null;
 		int dx;
 		int dy;
-		int rad0 = 1000000;
 		int rad;
 		int elev;
 		int dElev;
+		int bestPriority = 100000;
+		int priority;
+		int rank;
 		RobotInfo ri;
 		MapLocation nearestFillTile = null;
 		for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
@@ -429,14 +437,20 @@ public strictfp class LandscaperRobot extends Robot {
 				ri = rc.senseRobotAtLocation(ml);
 				if (ri != null && (ri.type.isBuilding() || (ri.team == team && ri.type == RobotType.LANDSCAPER))) continue;
 				dElev = robotElevation - elev;
+				rank = Utility.chebyshev(ml, hqLocation);
+				if (rank == 1) continue;
+				priority = Utility.chebyshev(location, ml) + rank;
+				if (enemyHqLocation != null) {
+					priority += Utility.chebyshev(ml, enemyHqLocation);
+				}
 				if (dElev < 0) {
 					dElev = -dElev;
-					rad -= 1000; //Prioritize filling in lower tiles rather than digging higher ones
+					priority -= 100; //Prioritize filling in lower tiles rather than digging higher ones
 				}
 				if (dElev > TERRAFORM_THRESHOLD) rad += 10000;
 				if (dElev > GameConstants.MAX_DIRT_DIFFERENCE) {
-					if (rad < rad0) {
-						rad0 = rad;
+					if (priority < bestPriority) {
+						bestPriority = priority;
 						nearestFillTile = ml;
 					}
 
@@ -459,7 +473,22 @@ public strictfp class LandscaperRobot extends Robot {
 			if (!pitTile(location)) {
 				rc.depositDirt(Direction.CENTER);
 			} else {
-				rc.depositDirt(location.directionTo(hqLocation));
+				Direction[] dirs = Utility.directions;
+				Direction d;
+				MapLocation m;
+				RobotInfo botInfo;
+				for (int i = 8; i-->0; ) {
+					d = dirs[i];
+					m = location.add(d);
+					if (pitTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
+					if (rc.canSenseLocation(m)) {
+						botInfo = rc.senseRobotAtLocation(m);
+						if (botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) continue;
+						
+						rc.depositDirt(d);
+						return;
+					}
+				}
 			}
 		}
 	}
@@ -487,6 +516,9 @@ public strictfp class LandscaperRobot extends Robot {
 		case 1:
 			hqLocation = new MapLocation(x,y);
 			System.out.println("Received HQ location: " + x + ", " + y);
+			break;
+		case 3:
+			enemyHqLocation = new MapLocation(x,y);
 			break;
 		case 19:
 			if (x == homeDsLocation.x && y == homeDsLocation.y) {

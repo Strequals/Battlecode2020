@@ -21,8 +21,10 @@ public abstract strictfp class Robot {
 	public int dirtCarrying;
 	public int soupCarrying;
 	public float cooldownTurns;
+	public int robotElevation;
 	
 	public int roundCreated;
+	public MapLocation enemyHqLocation;
 	
 	
 	public static int hqX2;
@@ -66,6 +68,7 @@ public abstract strictfp class Robot {
 				dirtCarrying = rc.getDirtCarrying();
 				soupCarrying = rc.getSoupCarrying();
 				cooldownTurns = rc.getCooldownTurns();
+				robotElevation = rc.senseElevation(location);
 				soup = rc.getTeamSoup();
 				if (hqLocation != null) {
 					hqX2 = hqLocation.x%2;

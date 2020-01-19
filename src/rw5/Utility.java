@@ -8,7 +8,7 @@ public strictfp class Utility {
 
 	static final int SCOUT_ROUND = 30;
 	static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
-	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 5 * RobotType.LANDSCAPER.cost;
+	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = RobotType.VAPORATOR.cost + 50;
 
 	public static Symmetry getSymmetry(RobotController rc) {
 		

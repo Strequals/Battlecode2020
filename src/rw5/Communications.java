@@ -12,7 +12,7 @@ public class Communications {
 	
 	/*1:HQ location
 	 *2:Soup location
-	 *3:
+	 *3:Enemy HQ location
 	 *4:
 	 *5:Refinery location
 	 *6:Design school location

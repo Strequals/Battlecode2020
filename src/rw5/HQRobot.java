@@ -223,6 +223,9 @@ public strictfp class HQRobot extends Robot {
         case 2:
         	minerRequested = true;
         	break;
+        case 3:
+        	enemyHqLocation = new MapLocation(x,y);
+        	break;
         case 6:
         	MapLocation ml6 = new MapLocation(x, y);
         	if (!designSchoolLocations.contains(ml6)) designSchoolLocations.add(ml6);
