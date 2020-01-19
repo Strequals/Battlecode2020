@@ -56,6 +56,11 @@ public abstract strictfp class Robot {
 					Communications.processFirstBlock(rc, this);
 					roundCreated = rc.getRoundNum();
 					System.out.println("hqLoc:"+hqLocation);
+					if (hqLocation != null) {
+						hqX2 = hqLocation.x%2;
+						hqY2 = hqLocation.y%2;
+					}
+					System.out.println("hqX2 "+hqX2+", hqY2 "+hqY2);
 				}if (round > 1) {
 					Communications.processLastBlock(rc, this);
 				}
@@ -70,10 +75,7 @@ public abstract strictfp class Robot {
 				cooldownTurns = rc.getCooldownTurns();
 				robotElevation = rc.senseElevation(location);
 				soup = rc.getTeamSoup();
-				if (hqLocation != null) {
-					hqX2 = hqLocation.x%2;
-					hqY2 = hqLocation.y%2;
-				}
+				
 				
 				
 				//Communications
@@ -97,15 +99,16 @@ public abstract strictfp class Robot {
 	}
 	
 	public static boolean pathTile(MapLocation ml) {
-		return ml.x%2 != hqX2 || ml.y%2 != hqY2;
+		return (ml.x%2 != hqX2) || (ml.y%2 != hqY2);
 	}
 	
 	public static boolean pitTile(MapLocation ml) {
-		return ml.x%2 == hqX2 && ml.y%2 == hqY2;
+		return (ml.x%2 == hqX2) && (ml.y%2 == hqY2);
 	}
 	
 	public static boolean buildingTile(MapLocation ml) {
-		return ml.x%2 != hqX2 && ml.y%2 != hqY2;
+		System.out.println("mlx2: "+(ml.x%2)+", mly2: "+(ml.y%2)+", hqX2: "+hqX2+", hqY2: "+hqY2);
+		return (ml.x%2 != hqX2) && (ml.y%2 != hqY2);
 	}
 
 }

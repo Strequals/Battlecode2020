@@ -288,6 +288,9 @@ public strictfp class LandscaperRobot extends Robot {
 					Nav.beginNav(rc, this, ml);
 				}
 				Nav.nav(rc, this);
+				if (round > TURTLE_END) {
+					state = LandscaperState.TERRAFORMING;
+				}
 	}
 
 	private void moveTerraform(MapLocation ml) throws GameActionException {

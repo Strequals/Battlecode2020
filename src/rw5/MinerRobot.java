@@ -8,7 +8,6 @@ import static rw5.Utility.SCOUT_ROUND;
 
 public strictfp class MinerRobot extends Robot {
 
-	public MapLocation hqLocation;
 	public MinerState minerState;
 
 	/**
