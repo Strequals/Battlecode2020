@@ -204,6 +204,7 @@ task runFromClient(type: JavaExec, dependsOn: 'build') {
             '-Dbc.server.debug=false',
             '-Dbc.server.robot-player-to-system-out=false',
             '-Dbc.engine.debug-methods=true',
+            '-Dbc.engine.enable-profiler='+project.property('profilerEnabled'),
             '-Dbc.game.team-a='+project.property('teamA'),
             '-Dbc.game.team-b='+project.property('teamB'),
             '-Dbc.game.team-a.url='+project.property('classLocation'),
