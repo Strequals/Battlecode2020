@@ -154,35 +154,6 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			doAttack();
 			break;
 		}
-
-		
-		
-		/*else {
-         ri = rc.senseNearbyRobots(20);
-         for(int i = ri.length; --i >= 0;) {
-            r = ri[i];
-            if(r.team != team && r.type.canBePickedUp()) {
-               //step towards then pick up
-               targetLocation = r.location;
-
-               if (DroneNav.target == null || !targetLocation.equals(DroneNav.target)) {
-                  DroneNav.beginNav(rc, this, targetLocation);
-               }
-               DroneNav.nav(rc, this);
-            }
-         }
-         ri = rc.senseNearbyRobots(2);
-         for (int i = ri.length; --i >= 0;) {
-            r = ri[i];
-            if(r.team != team && r.type.canBePickedUp()) {
-               if(rc.canPickUpUnit(r.getID())) {
-                  rc.pickUpUnit(r.getID());
-                  break;
-               }
-            }
-         }
-      }*/
-
 	}
 
 	public void scanForWater() throws GameActionException {
@@ -245,6 +216,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			if (Utility.chebyshev(location, targetLocation) <= 1) {
 				if (rc.canPickUpUnit(targetRobot.ID)) {
 					rc.pickUpUnit(targetRobot.ID);
+               scanForWater();
 					return;
 				}
 			} else {
