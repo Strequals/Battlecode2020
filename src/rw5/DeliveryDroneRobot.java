@@ -14,6 +14,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
    private MapLocation homeLocation;
    private MapLocation hqLocation;
    private MapLocation targetLocation;  //building or location to clear enemy robots from
+   private MapLocation nearestWater;
    private DroneState state;
    private int robotElevation;
    private boolean rush = false; //avoid netguns + hq?
@@ -39,12 +40,9 @@ public strictfp class DeliveryDroneRobot extends Robot{
    public void run() throws GameActionException {
    	// TODO Auto-generated method stub
       robotElevation = rc.senseElevation(location);
-   	// Process nearby robots
+   	// Process nearby robots (may have to move this into the if statements below)
       RobotInfo[] ri = nearbyRobots;
       RobotInfo r;
-      int nearbyLandscapers = 0;
-      int targetBuildingDistance = 1000000;
-      targetBuildingLocation = null;
       for (int i = ri.length; --i >= 0;) {
          r = ri[i];
          if (r.getTeam() == team) {
@@ -61,17 +59,14 @@ public strictfp class DeliveryDroneRobot extends Robot{
          	// Enemy Units
             int distance;
             switch (r.getType()) {
-               case DELIVERY_DRONE:
-                  isDroneThreat = true;
-                  break;
                case MINER:
                // TODO: Block or bury
                   break;
                case LANDSCAPER:
-                  isEnemyRushing = true;
+                  
                   break;
                case NET_GUN:
-               // TODO: Bury
+               // Avoid
                   distance = Utility.chebyshev(r.location, location);
                   if (distance < targetBuildingDistance) {
                      targetBuildingDistance = distance;
@@ -79,39 +74,14 @@ public strictfp class DeliveryDroneRobot extends Robot{
                   }
                   break;
                case REFINERY:
-               // TODO: Bury
-                  distance = Utility.chebyshev(r.location, location);
-                  if (distance < targetBuildingDistance) {
-                     targetBuildingDistance = distance;
-                     targetBuildingLocation = r.location;
-                  }
+               // TODO: target?
                   break;
                case DESIGN_SCHOOL:
-               // TODO: Bury
-                  distance = Utility.chebyshev(r.location, location);
-                  if (distance < targetBuildingDistance) {
-                     targetBuildingDistance = distance;
-                     targetBuildingLocation = r.location;
-                  }
-                  break;
-               case FULFILLMENT_CENTER:
-               // TODO: Bury
-                  distance = Utility.chebyshev(r.location, location);
-                  if (distance < targetBuildingDistance) {
-                     targetBuildingDistance = distance;
-                     targetBuildingLocation = r.location;
-                  }
-                  break;
-               case VAPORATOR:
-               // TODO: Bury
-                  distance = Utility.chebyshev(r.location, location);
-                  if (distance < targetBuildingDistance) {
-                     targetBuildingDistance = distance;
-                     targetBuildingLocation = r.location;
-                  }
+               // TODO: target?
                   break;
                case HQ:
                // We found it!
+               //also avoid
                   enemyHqLocation = r.location;
                default:
                //Probably some structure, bury it if possible but low priority
@@ -121,9 +91,39 @@ public strictfp class DeliveryDroneRobot extends Robot{
          }
       }
    	
+      if(currentlyHoldingUnit()) {
+         //pathfind towards target (water, soup, or base)
+      }
+      else {
+         ri = rc.senseNearbyRobots(1);
+         for (int i = ri.length; --i >= 0;) {
+            r = ri[i];
+            if(r.team != team) {
+               if(canPickUpUnit(r.getID())) {
+                  pickUpUnit(r.getID());
+                  break;
+               }
+            }
+         }
+         ri = rc.senseNearbyRobots(4);
+         for(int i = ri.length; --i >= 0;) {
+            r = ri[i];
+            if(r.team != team) {
+               //step towards then pick up
+               
+               if(canPickUpUnit(r.getID())) {
+                  pickUpUnit(r.getID());
+                  break;
+               }
+            }
+            
+         }
+      }
    
    }
-
+   
+   
+   
    @Override
    public void processMessage(int m, int x, int y) {
    	// TODO Auto-generated method stub
