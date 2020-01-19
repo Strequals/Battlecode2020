@@ -29,6 +29,7 @@ public strictfp class LandscaperRobot extends Robot {
 	
 	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
 	private static final int MAX_TERRAFORM_RANGE = 2; //Chebyshev distance to limit
+	private static final int TERRAFORM_RANGE_SQ = 8; //2x^2
 	
 	LandscaperRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -138,6 +139,9 @@ public strictfp class LandscaperRobot extends Robot {
 				case HQ:
 					// We found it!
 					enemyHqLocation = r.location;
+					if (round == roundCreated) {
+						state = LandscaperState.RUSHING;
+					}
 				default:
 					//Probably some structure, bury it if possible but low priority
 					//Communications.sendMessage(rc);
@@ -149,6 +153,7 @@ public strictfp class LandscaperRobot extends Robot {
 		Direction[] dirs = Utility.directionsC;
 		MapLocation ml;
 		Direction d;
+		
 		
 		pitLocation = null;
 		for (int i = 9; i-->0;) {
@@ -176,12 +181,8 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 		
-		if (state != LandscaperState.TURTLING) {
-			if (enemyHqLocation != null && round < TURTLE_END) {
-				state = LandscaperState.RUSHING;
-			} else {
-				state = LandscaperState.TERRAFORMING;
-			}
+		if (state == LandscaperState.RUSHING && round > TURTLE_END) {
+			state = LandscaperState.TERRAFORMING;
 		}
 		
 
@@ -416,7 +417,7 @@ public strictfp class LandscaperRobot extends Robot {
 		//Find tile to fill
 		MapLocation ml;
 		int rSq = senseRadiusSq;
-		int radius = (int)(Math.sqrt(rSq));
+		int radius = Math.min((int)(Math.sqrt(rSq)), TERRAFORM_RANGE_SQ);
 		ml = null;
 		int dx;
 		int dy;

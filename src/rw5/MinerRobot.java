@@ -21,7 +21,7 @@ public strictfp class MinerRobot extends Robot {
 	 * location of the enemy HQ.
 	 */
 	private MapLocation targetedEnemyHqLocation;
-	
+
 	public static final int DESIGN_SCHOOL_SEEN_TURNS = 50;
 
 	public MapLocation soupMine;
@@ -34,6 +34,7 @@ public strictfp class MinerRobot extends Robot {
 	public int soupCommunicateCooldown;
 	public int designSchoolBuildCooldown;
 	public int turnsSinceDesignSchoolSeen = 100;
+	private boolean enemyBuiltDrones = false;
 	private boolean isRush = false;
 
 	public ArrayList<MapLocation> refineries;
@@ -42,7 +43,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DISTANCE_SOUP_THRESHOLD = 25; //maximum distance from refinery to soup deposit upon creation
 
 	public static final int MAX_VAPORATOR_BUILD_ROUND = 1500;
-	
+
 	enum MinerState {
 		SEEKING, MINING, RETURNING, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
 	}
@@ -70,6 +71,10 @@ public strictfp class MinerRobot extends Robot {
 		int nearbyMiners = 1;
 		boolean isRefineryNearby = false;
 		boolean dsBuilt = false;
+		boolean fcBuilt = false;
+		boolean ngBuilt = false;
+		boolean enemySpotted = false;
+		boolean enemyDroneSpotted = false;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -84,6 +89,14 @@ public strictfp class MinerRobot extends Robot {
 				case DESIGN_SCHOOL:
 					if (rc.senseElevation(r.location) >= robotElevation-3) {
 						dsBuilt = true;
+					}
+					break;
+				case NET_GUN:
+					ngBuilt = true;
+					break;
+				case FULFILLMENT_CENTER:
+					if (rc.senseElevation(r.location) >= robotElevation-3) {
+						fcBuilt = true;
 					}
 					break;
 				case REFINERY:
@@ -102,19 +115,33 @@ public strictfp class MinerRobot extends Robot {
 			} else {
 				//Enemy Units
 				switch (r.getType()) {
+				case FULFILLMENT_CENTER:
+					enemyBuiltDrones = true;
+					break;
+				case DELIVERY_DRONE:
+					enemyBuiltDrones = true;
+					enemyDroneSpotted = true;
+					break;
+				case MINER:
+					enemySpotted = true;
+					break;
+				case LANDSCAPER:
+					enemySpotted = true;
+					break;
 				case HQ:
 					//Notify other units of enemy HQ location
+					break;
 				default:
 
 					break;
 				}
 			}
 		}
-		
+
 		//Calculate Random
 		random = (A*random+B)%256;
 
-		
+
 
 		MapLocation ml;
 		int rSq = senseRadiusSq;
@@ -124,7 +151,7 @@ public strictfp class MinerRobot extends Robot {
 		int dy;
 		int rad0 = -1;
 		int rad;
-		int bytecode1 = Clock.getBytecodesLeft();
+		//int bytecode1 = Clock.getBytecodesLeft();
 		int totalSoup = 0;
 		int s;
 		MapLocation nearestSoup = null;
@@ -145,21 +172,21 @@ public strictfp class MinerRobot extends Robot {
 				}
 			}
 		}
-		System.out.println("SEARCH bytecodes: " + (bytecode1 - Clock.getBytecodesLeft()));
+		//System.out.println("SEARCH bytecodes: " + (bytecode1 - Clock.getBytecodesLeft()));
 		if (soupCommunicateCooldown > 0) soupCommunicateCooldown--;
-		
+
 		if (nearestSoup !=null && totalSoup / nearbyMiners > 100 && nearbyMiners < 4) {
 			if (soup>1 && soupCommunicateCooldown == 0) {
 				Communications.queueMessage(rc, 1, 2, nearestSoup.x, nearestSoup.y);
 				soupCommunicateCooldown += 20; //don't communicate soup location for another 20 turns
 			}
 		}
-		
+
 		if (round >= TURTLE_ROUND && returnLoc == hqLocation && refineries.size() > 0) {
 			returnLoc = null;
 			navigatingReturn = false;
 		}
-		
+
 		MapLocation nearestRefinery = null;
 		//Calculate return location
 		if (refineries.size()>0) {
@@ -191,7 +218,7 @@ public strictfp class MinerRobot extends Robot {
 		} else if (round < TURTLE_ROUND) {
 			returnLoc = hqLocation;
 		}
-		
+
 		if (!navigatingReturn) {
 			if (nearestRefinery != null) {
 				returnLoc = nearestRefinery;
@@ -201,9 +228,9 @@ public strictfp class MinerRobot extends Robot {
 		}
 		int hqDist = 100;
 		if (hqLocation != null) hqDist = Utility.chebyshev(location, hqLocation);
-		
+
 		if (cooldownTurns >= 1) return;
-		
+
 		//Build Refinery
 		if (!isRefineryNearby && !isRush && soup > RobotType.REFINERY.cost && (hqDist >= DISTANCE_REFINERY_THRESHOLD || (round > TURTLE_ROUND && hqDist > 2))) {
 			if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
@@ -223,11 +250,11 @@ public strictfp class MinerRobot extends Robot {
 				}
 			}
 		}
-		
+
+		//Build Design School
 		if (designSchoolBuildCooldown > 0)designSchoolBuildCooldown--;
 		if (dsBuilt) turnsSinceDesignSchoolSeen = 0;
 		else turnsSinceDesignSchoolSeen++;
-		//Build Design School
 		if (round > TURTLE_ROUND && !isRush && (turnsSinceDesignSchoolSeen>DESIGN_SCHOOL_SEEN_TURNS || (soup > 1000 && !dsBuilt)) && designSchoolBuildCooldown == 0 && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 2*TURTLE_ROUND) && hqDist>=2) {
 			Direction[] dirs = Utility.directions;
 			Direction d;
@@ -244,7 +271,7 @@ public strictfp class MinerRobot extends Robot {
 				}
 			}
 		}
-		
+
 		//Build Vaporator
 		if (round < MAX_VAPORATOR_BUILD_ROUND && !isRush && soup > RobotType.VAPORATOR.cost && designSchoolBuildCooldown > 0 && hqDist >= 2) {
 			Direction[] dirs = Utility.directions;
@@ -261,10 +288,44 @@ public strictfp class MinerRobot extends Robot {
 				}
 			}
 		}
+
+		//Build Fulfillment Center
+		if (soup > RobotType.FULFILLMENT_CENTER.cost && (enemySpotted || soup > 700) && !fcBuilt && hqDist >= 2 && !isRush) {
+			Direction[] dirs = Utility.directions;
+			Direction d;
+			ml = null;
+			for (int i = 8; i-->0;) {
+				d = dirs[i];
+				ml = location.add(d);
+				if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml) && !isRush) {
+					if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
+						rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
+						return;
+					}
+				}
+			}
+		}
 		
+		//Build Netgun
+		if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt && hqDist >= 2) {
+			Direction[] dirs = Utility.directions;
+			Direction d;
+			ml = null;
+			for (int i = 8; i-->0;) {
+				d = dirs[i];
+				ml = location.add(d);
+				if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+					if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
+						rc.buildRobot(RobotType.NET_GUN, d);
+						return;
+					}
+				}
+			}
+		}
+
 		System.out.println("NEAREST REFINERY:"+nearestRefinery);
-		
-		
+
+
 		//if (soupMine != null)System.out.println("TARGETING: " + soupMine.x + ", " + soupMine.y);
 		//if (nearestSoup != null)System.out.println("NEARSOUP: " + nearestSoup.x + ", " + nearestSoup.y);
 		//if (Nav.target != null) System.out.println("NAVTARGET: " + Nav.target.x + ", " + Nav.target.y);
@@ -394,7 +455,7 @@ public strictfp class MinerRobot extends Robot {
 				Nav.nav(rc, this);
 				return;
 			}
-			
+
 			moveScout(rc);
 			break;
 		case SCOUTING_ENEMY_HQ:
@@ -430,7 +491,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 		return false;
 	}
-	
+
 	public void moveScout(RobotController rc) throws GameActionException {
 		if (lastDirection == null) {
 			if (hqLocation != null) {
@@ -465,7 +526,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 		tryMove(rc, lastDirection.rotateLeft().rotateLeft().rotateLeft().rotateLeft());
 	}
-	
+
 	public boolean tryMove(RobotController rc, Direction d) throws GameActionException {
 		if (rc.canMove(d) && !rc.senseFlooding(location.add(d))) {
 			rc.move(d);
@@ -486,26 +547,26 @@ public strictfp class MinerRobot extends Robot {
 		int maxYPosition;
 
 		switch (possiblePosition) {
-			case X_FLIP:
-				maxXPosition = mapWidth - 1;
-				enemyHqX = maxXPosition - hqLocation.x;
-				enemyHqY = hqLocation.y;
-				break;
-			case Y_FLIP:
-				maxYPosition = mapHeight - 1;
-				enemyHqX = hqLocation.x;
-				enemyHqY = maxYPosition - hqLocation.y;
-				break;
-			case ROTATION:
-				maxXPosition = mapWidth - 1;
-				maxYPosition = mapHeight - 1;
-				enemyHqX = maxXPosition - hqLocation.x;
-				enemyHqY = maxYPosition - hqLocation.y;
-				break;
-			default:
-				// There's not even anything left
-				// But this prevents an error in IDEA :/
-				throw new Error("how did this even happen");
+		case X_FLIP:
+			maxXPosition = mapWidth - 1;
+			enemyHqX = maxXPosition - hqLocation.x;
+			enemyHqY = hqLocation.y;
+			break;
+		case Y_FLIP:
+			maxYPosition = mapHeight - 1;
+			enemyHqX = hqLocation.x;
+			enemyHqY = maxYPosition - hqLocation.y;
+			break;
+		case ROTATION:
+			maxXPosition = mapWidth - 1;
+			maxYPosition = mapHeight - 1;
+			enemyHqX = maxXPosition - hqLocation.x;
+			enemyHqY = maxYPosition - hqLocation.y;
+			break;
+		default:
+			// There's not even anything left
+			// But this prevents an error in IDEA :/
+			throw new Error("how did this even happen");
 		}
 
 		targetedEnemyHqLocation = new MapLocation(enemyHqX, enemyHqY);
@@ -565,24 +626,27 @@ public strictfp class MinerRobot extends Robot {
 	}
 
 	private void droneNetEnemyHq() throws GameActionException {
-		Direction[] dirs = Utility.directions;
-		Direction d;
-		MapLocation ml;
+		if (enemyBuiltDrones) {
+			Direction[] dirs = Utility.directions;
+			Direction d;
+			MapLocation ml;
 
-		for (int i = 8; i-- > 0; ) {
-			d = dirs[i];
-			ml = location.add(d);
+			for (int i = 8; i-- > 0; ) {
+				d = dirs[i];
+				ml = location.add(d);
 
-			if (Utility.chebyshev(ml, targetedEnemyHqLocation) < 3 && rc.canBuildRobot(RobotType.NET_GUN, d)) {
-				rc.buildRobot(RobotType.NET_GUN, d);
-				minerState = MinerState.SEEKING;
-				return;
+				if (Utility.chebyshev(ml, targetedEnemyHqLocation) < 3 && rc.canBuildRobot(RobotType.NET_GUN, d)) {
+					rc.buildRobot(RobotType.NET_GUN, d);
+					minerState = MinerState.SEEKING;
+					return;
+				}
+
+				//System.out.println("Can't build here: ");
 			}
-
-			System.out.println("Can'b build here: ");
 		}
-
+		if (location.isWithinDistanceSquared(targetedEnemyHqLocation, 2)) {
 		Nav.nav(rc, this);
+		}
 	}
 
 	@Override
@@ -619,6 +683,6 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 	}
-	
-	
+
+
 }
