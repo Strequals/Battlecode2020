@@ -11,7 +11,6 @@ public strictfp class DeliveryDroneRobot extends Robot {
    }
    
    private MapLocation homeLocation;
-   private MapLocation hqLocation;
    private MapLocation targetLocation;  //building or location to clear enemy robots from
    private MapLocation nearestWater;
    private DroneState state;
@@ -87,34 +86,65 @@ public strictfp class DeliveryDroneRobot extends Robot {
             }
          }
       }
-   	if(enemyHqLocation != null && !sentEHQL) {
+      if(enemyHqLocation != null && !sentEHQL) {
          Communcations.queueMessage(rc, 3, 3, enemyHqLocation.x, enemyHqLocation.y);
       }
       
       if(nearestWater == null) {
          //scan for water
-         
+         nearestWater = scanForWater();
       }
+      
+      if (!rc.isReady()) 
+         return;
       
       if(rc.isCurrentlyHoldingUnit()) {
          //pathfind towards target (water, soup)
-         if(nearestWater.distanceSquaredTo(target) <= 2) {
+         if(nearestWater.distanceSquaredTo(location) <= 2) {
             if(rc.senseFlooding(nearestWater)) {
                rc.dropUnit(location.directionTo(nearestWater));
             }
             else {
-               nearestWater = null;
+               nearestWater = scanForWater();
             }
          }
          
-   		if (Nav.target == null) {
-   			Nav.beginNav(rc, this, nearestWater);
-   		}
-   		Nav.nav(rc, this);
+         if (Nav.target == null) {
+            nearestWater = scanForWater();
+            if(nearestWater != null) {
+               Nav.beginNav(rc, this, nearestWater);
+            }
+            else {
+               Nav.beginNav(rc, this, hqLocation);
+            }
+         }
+         Nav.nav(rc, this);
          
          //if any of 8 locations around are flooded, place robot into flood, update nearestWater
+         if(nearestWater.distanceSquaredTo(location) <= 2) {
+            if(rc.senseFlooding(nearestWater)) {
+               rc.dropUnit(location.directionTo(nearestWater));
+            }
+            else {
+               nearestWater = scanForWater();
+            }
+         }
+         
       }
       else {
+         ri = rc.senseNearbyRobots(20);
+         for(int i = ri.length; --i >= 0;) {
+            r = ri[i];
+            if(r.team != team && r.canBePickedUp()) {
+               //step towards then pick up
+               targetLocation = r.location;
+               
+               if (Nav.target == null || !targetLocation.equals(Nav.target)) {
+                  Nav.beginNav(rc, this, targetLocation);
+               }
+               Nav.nav(rc, this);
+            }
+         }
          ri = rc.senseNearbyRobots(2);
          for (int i = ri.length; --i >= 0;) {
             r = ri[i];
@@ -125,24 +155,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
                }
             }
          }
-         ri = rc.senseNearbyRobots(8);
-         for(int i = ri.length; --i >= 0;) {
-            r = ri[i];
-            if(r.team != team && r.canBePickedUp()) {
-               //step towards then pick up
-               
-               if(rc.canPickUpUnit(r.getID())) {
-                  rc.pickUpUnit(r.getID());
-                  break;
-               }
-            }
-            
-         }
       }
    
    }
    
-   
+   public MapLocation scanForWater() {
+      
+   }
    
    @Override
    public void processMessage(int m, int x, int y) {
