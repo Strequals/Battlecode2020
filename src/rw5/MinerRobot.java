@@ -234,7 +234,7 @@ public strictfp class MinerRobot extends Robot {
 			for (int i = 8; i-->0;) {
 				d = dirs[i];
 				ml = location.add(d);
-				if (Utility.chebyshev(ml, hqLocation) > 2) {
+				if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 					if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
 						rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
 						dsBuilt = true;
@@ -252,7 +252,7 @@ public strictfp class MinerRobot extends Robot {
 			for (int i = 8; i-->0;) {
 				d = dirs[i];
 				ml = location.add(d);
-				if (Utility.chebyshev(ml, hqLocation) > 2) {
+				if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 					if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
 						rc.buildRobot(RobotType.VAPORATOR, d);
 						return;
@@ -262,12 +262,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 		
 		System.out.println("NEAREST REFINERY:"+nearestRefinery);
-		if (nearestRefinery != null) {
-			rc.setIndicatorLine(location, nearestRefinery, 255, 0, 0);
-		}
-		if (soupMine != null) {
-			rc.setIndicatorLine(location, soupMine, 0, 0, 255);
-		}
+		
 		
 		if (soupMine != null)System.out.println("TARGETING: " + soupMine.x + ", " + soupMine.y);
 		if (Nav.target != null) System.out.println("NAVTARGET: " + Nav.target.x + ", " + Nav.target.y);

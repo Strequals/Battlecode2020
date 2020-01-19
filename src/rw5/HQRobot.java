@@ -229,11 +229,13 @@ public strictfp class HQRobot extends Robot {
         case 6:
         	MapLocation ml6 = new MapLocation(x, y);
         	if (!designSchoolLocations.contains(ml6)) designSchoolLocations.add(ml6);
+        	rc.setIndicatorLine(location, ml6, 0, 255, 255);
         	dsAvailable = true;
         	break;
         case 19:
         	MapLocation ml19 = new MapLocation(x, y);
         	if (!designSchoolLocations.contains(ml19)) designSchoolLocations.add(ml19);
+        	rc.setIndicatorLine(location, ml19, 0, 255, 255);
         	dsAvailable = true;
         	break;
         }

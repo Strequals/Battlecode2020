@@ -377,7 +377,6 @@ public strictfp class LandscaperRobot extends Robot {
 		//Destroy enemy building
 		if (targetBuildingLocation != null) {
 			System.out.println("targeting Building at " + targetBuildingLocation);
-			rc.setIndicatorLine(location, targetBuildingLocation, 255, 50, 50);
 			int csDist = Utility.chebyshev(location, targetBuildingLocation);
 			if (csDist <= 1) {
 				if (dirtCarrying == 0) {
@@ -460,7 +459,6 @@ public strictfp class LandscaperRobot extends Robot {
 		
 		if (nearestFillTile != null) {
 			System.out.println("Filling in...");
-			rc.setIndicatorLine(location, nearestFillTile, 50, 255, 100);
 			moveTerraform(nearestFillTile);
 			return;
 		}

@@ -125,18 +125,23 @@ public strictfp class DesignSchoolRobot extends Robot {
 				right = right.rotateRight();
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, left)) {
 					rc.buildRobot(RobotType.LANDSCAPER, left);
+					numHQRequested--;
+					
+					Communications.queueMessage(rc, 1, 19, location.x, location.y);
+					
 					return;
 				}
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, right)) {
 					rc.buildRobot(RobotType.LANDSCAPER, right);
+					numHQRequested--;
+					
+					Communications.queueMessage(rc, 1, 19, location.x, location.y);
+					
 					return;
 				}
 
 			}
-			numHQRequested--;
-			if (numHQRequested == 0) {
-				Communications.queueMessage(rc, 1, 19, location.x, location.y);
-			}
+			
 
 		}
 	}

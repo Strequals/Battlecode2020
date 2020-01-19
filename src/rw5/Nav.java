@@ -84,8 +84,6 @@ public class Nav {
 	}
 
 	public static void bug(Robot r, RobotController rc) throws GameActionException {
-		rc.setIndicatorLine(r.location, r.location.add(bugDirection), 50, 255, 255);
-		rc.setIndicatorLine(r.location, r.location.add(lookDirection), 255, 100, 255);
 		
 		if (detectEdge(r, rc)) {
 			startBug(rc);
