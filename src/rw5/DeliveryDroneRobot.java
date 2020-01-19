@@ -1,7 +1,6 @@
 package rw5;
 
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 public strictfp class DeliveryDroneRobot extends Robot{
 	
@@ -51,7 +50,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
                case HQ:
                   hqLocation = r.location;
                   break;
-               case FULLFILLMENT_CENTER:
+               case FULFILLMENT_CENTER:
                   if (homeLocation == null) homeLocation = r.location;
                   break;
             }
@@ -87,7 +86,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
          }
       }
    	
-      if(currentlyHoldingUnit()) {
+      if(rc.isCurrentlyHoldingUnit()) {
          //pathfind towards target (water, soup, or base)
       }
       else {
@@ -95,8 +94,8 @@ public strictfp class DeliveryDroneRobot extends Robot{
          for (int i = ri.length; --i >= 0;) {
             r = ri[i];
             if(r.team != team) {
-               if(canPickUpUnit(r.getID())) {
-                  pickUpUnit(r.getID());
+               if(rc.canPickUpUnit(r.getID())) {
+                  rc.pickUpUnit(r.getID());
                   break;
                }
             }
@@ -107,8 +106,8 @@ public strictfp class DeliveryDroneRobot extends Robot{
             if(r.team != team) {
                //step towards then pick up
                
-               if(canPickUpUnit(r.getID())) {
-                  pickUpUnit(r.getID());
+               if(rc.canPickUpUnit(r.getID())) {
+                  rc.pickUpUnit(r.getID());
                   break;
                }
             }
