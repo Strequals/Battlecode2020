@@ -2,7 +2,7 @@ package rw5;
 
 import battlecode.common.*;
 
-public strictfp class DeliveryDroneRobot extends Robot{
+public strictfp class DeliveryDroneRobot extends Robot {
 	
    private enum DroneState {
       ATTACKING,
@@ -11,12 +11,12 @@ public strictfp class DeliveryDroneRobot extends Robot{
    }
    
    private MapLocation homeLocation;
-   private MapLocation hqLocation;
    private MapLocation targetLocation;  //building or location to clear enemy robots from
    private MapLocation nearestWater;
    private DroneState state;
    private int robotElevation;
    private boolean rush = false; //avoid netguns + hq?
+   private boolean sentEHQL = false;
 
    public DeliveryDroneRobot(RobotController rc) throws GameActionException {
       super(rc);
@@ -42,6 +42,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
    	// Process nearby robots (may have to move this into the if statements below)
       RobotInfo[] ri = nearbyRobots;
       RobotInfo r;
+      
       for (int i = ri.length; --i >= 0;) {
          r = ri[i];
          if (r.getTeam() == team) {
@@ -85,39 +86,73 @@ public strictfp class DeliveryDroneRobot extends Robot{
             }
          }
       }
-   	
-      if(rc.isCurrentlyHoldingUnit()) {
-         //pathfind towards target (water, soup, or base)
+      if(enemyHqLocation != null && !sentEHQL) {
+         Communcations.queueMessage(rc, 3, 3, enemyHqLocation.x, enemyHqLocation.y);
       }
-      else {
-         ri = rc.senseNearbyRobots(1);
-         for (int i = ri.length; --i >= 0;) {
-            r = ri[i];
-            if(r.team != team) {
-               if(rc.canPickUpUnit(r.getID())) {
-                  rc.pickUpUnit(r.getID());
-                  break;
-               }
+      
+      if(nearestWater == null) {
+         //scan for water
+         nearestWater = scanForWater();
+      }
+      
+      if (!rc.isReady()) 
+         return;
+      
+      if(rc.isCurrentlyHoldingUnit()) {
+         //pathfind towards target (water, soup)
+                  //if any of 8 locations around are flooded, place robot into flood, update nearestWater
+         if(nearestWater.distanceSquaredTo(location) <= 2) {
+            if(rc.senseFlooding(nearestWater) && rc.canDropUnit(location.directionTo(nearestWater))) {
+               rc.dropUnit(location.directionTo(nearestWater));
+            }
+            else {
+               nearestWater = scanForWater();
             }
          }
-         ri = rc.senseNearbyRobots(4);
+         
+         if (Nav.target == null) {
+            nearestWater = scanForWater();
+            if(nearestWater != null) {
+               Nav.beginNav(rc, this, nearestWater);
+            }
+            else {
+               Nav.beginNav(rc, this, hqLocation);
+            }
+         }
+         Nav.nav(rc, this);
+         
+      }
+      else {
+         ri = rc.senseNearbyRobots(20);
          for(int i = ri.length; --i >= 0;) {
             r = ri[i];
-            if(r.team != team) {
+            if(r.team != team && r.canBePickedUp()) {
                //step towards then pick up
+               targetLocation = r.location;
                
+               if (Nav.target == null || !targetLocation.equals(Nav.target)) {
+                  Nav.beginNav(rc, this, targetLocation);
+               }
+               Nav.nav(rc, this);
+            }
+         }
+         ri = rc.senseNearbyRobots(2);
+         for (int i = ri.length; --i >= 0;) {
+            r = ri[i];
+            if(r.team != team && r.canBePickedUp()) {
                if(rc.canPickUpUnit(r.getID())) {
                   rc.pickUpUnit(r.getID());
                   break;
                }
             }
-            
          }
       }
    
    }
    
-   
+   public MapLocation scanForWater() {
+      
+   }
    
    @Override
    public void processMessage(int m, int x, int y) {
@@ -126,6 +161,7 @@ public strictfp class DeliveryDroneRobot extends Robot{
          case 1:
             hqLocation = new MapLocation(x,y);
             System.out.println("Received HQ location: " + x + ", " + y);
+            sentEHQL = true; //if already received enemy hq location, don't rebroadcast
             break;
       }
    }
