@@ -100,8 +100,9 @@ public strictfp class DeliveryDroneRobot extends Robot {
       
       if(rc.isCurrentlyHoldingUnit()) {
          //pathfind towards target (water, soup)
+                  //if any of 8 locations around are flooded, place robot into flood, update nearestWater
          if(nearestWater.distanceSquaredTo(location) <= 2) {
-            if(rc.senseFlooding(nearestWater)) {
+            if(rc.senseFlooding(nearestWater) && rc.canDropUnit(location.directionTo(nearestWater))) {
                rc.dropUnit(location.directionTo(nearestWater));
             }
             else {
@@ -119,16 +120,6 @@ public strictfp class DeliveryDroneRobot extends Robot {
             }
          }
          Nav.nav(rc, this);
-         
-         //if any of 8 locations around are flooded, place robot into flood, update nearestWater
-         if(nearestWater.distanceSquaredTo(location) <= 2) {
-            if(rc.senseFlooding(nearestWater)) {
-               rc.dropUnit(location.directionTo(nearestWater));
-            }
-            else {
-               nearestWater = scanForWater();
-            }
-         }
          
       }
       else {
