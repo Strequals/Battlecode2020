@@ -74,7 +74,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
-			System.out.println(r);
+			//System.out.println(r);
 			if (r.getTeam() == team) {
 				// Friendly Units
 				switch (r.getType()) {
@@ -124,7 +124,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 					//also avoid
 					enemyHqLocation = r.location;
 					if (!enemyNetguns.contains(r.location))enemyNetguns.add(r.location);
-					System.out.println(r.location);
+					//System.out.println(r.location);
 				default:
 					//Probably some structure, bury it if possible but low priority
 					//Communications.sendMessage(rc);

@@ -14,8 +14,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 	private MapLocation homeLocation;
 	private MapLocation targetLocation;  //building or location to clear enemy robots from
+   private MapLocation targetLocationf; //friendly robot location
 	private RobotInfo targetRobot;
+   private RobotInfo targetFriendly; //robot to move to pathtile
 	private MapLocation nearestWater;
+   private MapLocation nearestSafe; //nearest path tile
 	private DroneState state;
 	public boolean rush = false; //avoid netguns + hq?
 	private boolean sentEHQL = false;
@@ -82,10 +85,16 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				case HQ:
 					hqLocation = r.location;
 					break;
-				case MINER:
-					
 				case FULFILLMENT_CENTER:
 					if (homeLocation == null) homeLocation = r.location;
+					break;
+				case MINER:
+					distance = Utility.chebyshev(location, r.location);
+					if (distance < targetDistance) {
+						targetLocationf = r.location;
+						targetDistance = distance;
+						targetFriendly = r;
+					}
 					break;
 				case DELIVERY_DRONE:
 					friendlyDrones++;
@@ -167,9 +176,90 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		case ATTACKING:
 			doAttack();
 			break;
-		}
+      case TRANSPORTING:
+         doTransport();
+         break;
+      }
 	}
-
+   
+   public boolean scanForSafe() {
+		MapLocation ml;
+		int rSq = senseRadiusSq;
+		int radius = (int)(Math.sqrt(rSq));
+		ml = null;
+		int dx;
+		int dy;
+		int rad0 = 10000;
+		int rad;
+		int csDist;
+      boolean toRet = false;  //found an appropriate tile?
+		for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
+			for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
+				dx = x - location.x;
+				dy = y - location.y;
+				if (dx == 0 && dy == 0) continue;
+				rad = dx * dx + dy * dy;
+				if (rad > rSq) continue;
+				ml = new MapLocation(x, y);
+				csDist = Utility.chebyshev(location, ml);
+				if (csDist < rad0 && pathTile(ml)) {
+					rad0 = rad;
+					nearestSafe = ml;
+               toRet = true;
+				}
+			}
+		}
+      return toRet;
+   }
+   
+   public void doTransport() throws GameActionException {
+      if(rc.isCurrentlyHoldingUnit()) {
+         if(nearestSafe == null) {
+            if(scanForSafe()) {
+               DroneNav.beginNav(rc, this, nearestSafe);
+               DroneNav.nav(rc, this);
+               return;
+            }
+            else {
+      			if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
+      				DroneNav.beginNav(rc, this, hqLocation);
+      			}
+      			DroneNav.nav(rc, this);
+               return;
+            }
+         }
+         else {
+            if(Utility.chebyshev(location, nearestSafe) <= 1) {
+   				if(rc.canDropUnit(location.directionTo(nearestSafe))) {
+   					rc.dropUnit(location.directionTo(nearestSafe));
+   					return;
+   				}
+   			}
+            
+   			if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
+   				DroneNav.beginNav(rc, this, hqLocation);
+   			}
+   			DroneNav.nav(rc, this);
+            return;
+         }
+      }
+      else if(targetFriendly != null) {
+         if (Utility.chebyshev(location, targetLocation) <= 1) {
+				if (rc.canPickUpUnit(targetRobot.ID)) {
+					rc.pickUpUnit(targetRobot.ID);
+               scanForSafe();
+					return;
+				}
+			} else {
+				if (DroneNav.target == null || !DroneNav.target.equals(targetLocationf)) {
+					DroneNav.beginNav(rc, this, targetLocationf);
+				}
+				DroneNav.nav(rc, this);
+				return;
+			}
+      }
+   }
+   
 	public void scanForWater() throws GameActionException {
 		MapLocation ml;
 		int rSq = senseRadiusSq;
@@ -204,7 +294,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 			
 			if(nearestWater != null) {
-				if(Utility.chebyshev(location, nearestWater) <= 2) {
+				if(Utility.chebyshev(location, nearestWater) <= 1) {
 					if(rc.canDropUnit(location.directionTo(nearestWater))) {
 						rc.dropUnit(location.directionTo(nearestWater));
 						return;

@@ -73,6 +73,24 @@ public strictfp class LandscaperRobot extends Robot {
 				state = LandscaperState.TERRAFORMING;
 			}
 		}
+		
+		Direction[] dirs = Utility.directionsC;
+		MapLocation ml;
+		Direction d;
+
+
+		pitLocation = null;
+		for (int i = 9; i-->0;) {
+			d = dirs[i];
+			ml = location.add(d);
+			if (pitTile(ml)) {
+				if (rc.canDigDirt(d)) {
+					pitLocation = ml;
+					pitDirection = d;
+					break;
+				}
+			}
+		}
 
 		isEnemyRushing = false;
 
@@ -98,6 +116,26 @@ public strictfp class LandscaperRobot extends Robot {
 						nearbyLandscapers++;
 					}
 					break;
+				case MINER:
+					//Build the miner up to the matrix
+					if (state == LandscaperState.TERRAFORMING) {
+						if (r.location.isWithinDistanceSquared(location, 2) && pathTile(r.location)) {
+							int elev = rc.senseElevation(r.location);
+							if (elev < robotElevation) {
+								if (dirtCarrying == 0 && pitDirection != null) {
+									rc.digDirt(pitDirection);
+									return;
+								}
+								if (dirtCarrying > 0) {
+									Direction dMiner = location.directionTo(r.location);
+									if (rc.canDepositDirt(dMiner)) {
+										rc.depositDirt(dMiner);
+										return;
+									}
+								}
+							}
+						}
+					}
 				case DESIGN_SCHOOL:
 					if (homeDsLocation == null) homeDsLocation = r.location;
 					break;
@@ -175,23 +213,7 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 
-		Direction[] dirs = Utility.directionsC;
-		MapLocation ml;
-		Direction d;
-
-
-		pitLocation = null;
-		for (int i = 9; i-->0;) {
-			d = dirs[i];
-			ml = location.add(d);
-			if (pitTile(ml)) {
-				if (rc.canDigDirt(d)) {
-					pitLocation = ml;
-					pitDirection = d;
-					break;
-				}
-			}
-		}
+		
 
 		if (!rc.isReady()) return;
 
@@ -255,6 +277,7 @@ public strictfp class LandscaperRobot extends Robot {
 					Direction d = location.directionTo(targetBuildingLocation);
 					if (rc.canDepositDirt(d)) {
 						rc.depositDirt(d);
+						return;
 					}
 				}
 
@@ -337,6 +360,7 @@ public strictfp class LandscaperRobot extends Robot {
 			
 			if (rank > 2) moveTerraform(hqLocation);
 			else moveTurtle(hqLocation);
+			return;
 
 		}
 		

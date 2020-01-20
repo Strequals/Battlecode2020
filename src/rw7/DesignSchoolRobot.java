@@ -17,11 +17,12 @@ public strictfp class DesignSchoolRobot extends Robot {
 	private DesignSchoolState designSchoolState = DesignSchoolState.TERRAFORMING;
 	
 	static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
-	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 300;
+	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 550;
 	
 	static final int WEIGHT = 150; //need 150 extra soup per nearby landscaper to build
-	static final int VAPORATOR_WEIGHT = 150; //need 150 less soup per nearby vaporator to build
-
+	static final int VAPORATOR_WEIGHT = 100; //need 150 less soup per nearby vaporator to build
+	
+	
 	enum DesignSchoolState {
 		BUILDING_TURTLES, RUSHING, TERRAFORMING
 	}

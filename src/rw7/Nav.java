@@ -42,19 +42,18 @@ public class Nav {
 				return;
 			}
 			state = BugState.BUGGING;
-			startBug(rc);
+			startBug(rc, r);
 		case BUGGING:
 			System.out.println("BUG");
 			bug(r, rc);
 		}
 	}
 
-	public static boolean canMove(RobotController rc, Direction d) throws GameActionException {
-		MapLocation ml = rc.adjacentLocation(d);
-		return rc.canMove(d) && !rc.senseFlooding(ml);
+	public static boolean canMove(RobotController rc, Robot r, Direction d) throws GameActionException {
+		return r.canMove(d);
 	}
 
-	public static void startBug(RobotController rc) throws GameActionException {
+	public static void startBug(RobotController rc, Robot r) throws GameActionException {
 		startDistanceSq = position.distanceSquaredTo(target);
 		bugDirection = position.directionTo(target);
 		lookDirection = bugDirection;
@@ -64,14 +63,14 @@ public class Nav {
 
 		Direction left = bugDirection.rotateLeft();
 		for (int i = 0; i < 3; i++) {
-			if (canMove(rc, left)) break;
+			if (canMove(rc, r, left)) break;
 			left = left.rotateLeft();
 
 		}
 
 		Direction right = bugDirection.rotateRight();
 		for (int i = 0; i < 3; i++) {
-			if (canMove(rc, right)) break;
+			if (canMove(rc, r, right)) break;
 			right = right.rotateRight();
 		}
 
@@ -85,7 +84,7 @@ public class Nav {
 	public static void bug(Robot r, RobotController rc) throws GameActionException {
 		
 		if (detectEdge(r, rc)) {
-			startBug(rc);
+			startBug(rc, r);
 		}
 		turnsBugged++;
 		movesSinceObstacle++;
@@ -94,7 +93,7 @@ public class Nav {
 		wiggle: switch (side) {
 		case LEFT:
 			for (i = 8; i-->0;) {
-				if (canMove(rc, d)) break wiggle;
+				if (canMove(rc, r, d)) break wiggle;
 				d = d.rotateRight();
 				movesSinceObstacle = 0;
 			}
@@ -102,7 +101,7 @@ public class Nav {
 			break;
 		case RIGHT:
 			for (i = 8; i-->0;) {
-				if (canMove(rc, d)) break wiggle;
+				if (canMove(rc, r, d)) break wiggle;
 				d = d.rotateLeft();
 				movesSinceObstacle = 0;
 			}

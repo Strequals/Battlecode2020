@@ -37,6 +37,12 @@ public strictfp class MinerRobot extends Robot {
 	private boolean builderDS = false;
 	private boolean builderFC = false;
 	private boolean hqAvailable = true;
+	public MapLocation nearestTerraformer;
+	private int maxWaitTurns = 10;
+	
+	public static final int MOVE_TO_MATRIX_LEVEL = 100; //Higher value means miners less likely to move to matrix
+	
+	public MinerState prevState; //Stores state when switching to move_matrix state
 
 	public ArrayList<MapLocation> refineries;
 
@@ -47,7 +53,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int FC_DIST = 8;
 
 	enum MinerState {
-		SEEKING, MINING, RETURNING, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
+		SEEKING, MINING, RETURNING, MOVE_MATRIX, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
 	}
 
 	enum EnemyHqPossiblePosition {
@@ -77,6 +83,8 @@ public strictfp class MinerRobot extends Robot {
 		boolean ngBuilt = false;
 		boolean enemySpotted = false;
 		boolean enemyDroneSpotted = false;
+		nearestTerraformer = null;
+		int terraformerDistance = 1000;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -96,6 +104,14 @@ public strictfp class MinerRobot extends Robot {
 				case NET_GUN:
 					ngBuilt = true;
 					break;
+				case LANDSCAPER:
+					if (Utility.chebyshev(hqLocation, r.location) > 2) {
+						int dist = Utility.chebyshev(r.location, location);
+						if (dist<terraformerDistance) {
+							terraformerDistance = dist;
+							nearestTerraformer = r.location;
+						}
+					}
 				case FULFILLMENT_CENTER:
 					if (rc.senseElevation(r.location) >= robotElevation-3) {
 						fcBuilt = true;
@@ -165,6 +181,7 @@ public strictfp class MinerRobot extends Robot {
 				dy = y - location.y;
 				rad = dx * dx + dy * dy;
 				if (rad > rSq) continue;
+				if (isBuilder && rad <= 2 && (!builderDS || !builderFC)) continue;
 				ml = new MapLocation(x, y);
 				s = rc.senseSoup(ml);
 				if (s > 0) {// && !rc.senseFlooding(ml) Removed because some soup on edge is minable even when flooded
@@ -232,10 +249,23 @@ public strictfp class MinerRobot extends Robot {
 		}
 		int hqDist = 100;
 		if (hqLocation != null) hqDist = Utility.chebyshev(location, hqLocation);
+		
+		
+		//move towards matrix or hq if far
+		if (hqDist > 8 && ((robotElevation < round / MOVE_TO_MATRIX_LEVEL && round > TURTLE_ROUND && round < TURTLE_END) || (robotElevation < TURTLE_END / MOVE_TO_MATRIX_LEVEL && round > TURTLE_END))) {
+			prevState = minerState;
+			minerState = MinerState.MOVE_MATRIX;
+			
+		}
+		
+		System.out.println("state:"+minerState);
+		if (minerState == MinerState.MOVE_MATRIX && (robotElevation > round/MOVE_TO_MATRIX_LEVEL || robotElevation > TURTLE_END/MOVE_TO_MATRIX_LEVEL)) {
+			minerState = prevState;
+		}
 
 		if (cooldownTurns >= 1) return;
 
-		if (round > TURTLE_ROUND) {
+		if (round > TURTLE_ROUND && minerState != MinerState.MOVE_MATRIX) {
 			//Build Refinery
 			if (!isRefineryNearby && soup > RobotType.REFINERY.cost && (round > CLOSE_TURTLE_END || !hqAvailable)) {
 				if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
@@ -483,12 +513,24 @@ public strictfp class MinerRobot extends Robot {
 					Nav.beginNav(rc, this, soupMine);
 				} else {
 					moveScout(rc);
+					return;
 				}
 
 			}
 
 			if (isBuilder && round < TURTLE_ROUND && hqDist < 2) {
-				moveScout(rc);
+				if (soupMine != null && soupMine.distanceSquaredTo(hqLocation) >= 2) {
+				if (Nav.target == null || !Nav.target.equals(soupMine)) {
+					Nav.beginNav(rc, this, soupMine);
+				}
+				Nav.nav(rc, this);
+				return;
+				} else {
+					moveScout(rc);
+					return;
+				}
+				
+				
 			}
 
 			//Check if can begin mining
@@ -510,6 +552,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 
 			if (adjacentSoup == null) {
+				
 				Nav.nav(rc, this);
 			} else {
 				rc.mineSoup(location.directionTo(adjacentSoup));
@@ -588,6 +631,29 @@ public strictfp class MinerRobot extends Robot {
 
 			moveScout(rc);
 			break;
+		case MOVE_MATRIX:
+			
+			
+			if (nearestTerraformer != null) {
+				rc.setIndicatorLine(location, nearestTerraformer, 100, 255, 100);
+				if (location.distanceSquaredTo(nearestTerraformer) <= 2) {
+					//sit and wait
+					maxWaitTurns--;
+					if (maxWaitTurns > 0) return;
+				}
+				if (maxWaitTurns < 10) maxWaitTurns++;
+				if (Nav.target == null || !Nav.target.equals(nearestTerraformer)) {
+					Nav.beginNav(rc, this, nearestTerraformer);
+				}
+				Nav.nav(rc, this);
+			} else {
+				if (Nav.target == null || !Nav.target.equals(hqLocation)) {
+					Nav.beginNav(rc, this, hqLocation);
+				}
+				Nav.nav(rc, this);
+			}
+			
+			
 		}
 	}
 
@@ -803,6 +869,12 @@ public strictfp class MinerRobot extends Robot {
 			}
 		}
 
+	}
+	
+	@Override
+	public boolean canMove(Direction d) throws GameActionException {
+		MapLocation ml = rc.adjacentLocation(d);
+		return rc.canMove(d) && !rc.senseFlooding(ml) && (minerState != MinerState.MOVE_MATRIX || pathTile(ml));
 	}
 
 

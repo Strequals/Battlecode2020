@@ -114,5 +114,10 @@ public abstract strictfp class Robot {
 	public boolean initialBuildingTile(MapLocation ml) {
 		return !pitTile(ml) && Utility.chebyshev(ml, hqLocation) == 3;
 	}
+	
+	public boolean canMove(Direction d) throws GameActionException {
+		MapLocation ml = rc.adjacentLocation(d);
+		return rc.canMove(d) && !rc.senseFlooding(ml);
+	}
 
 }

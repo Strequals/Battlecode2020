@@ -22,8 +22,8 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 	
 	public static final int WEIGHT = 100;
 	public static final int BASE_WEIGHT = 600;
-	public static final int LS_WEIGHT = 35;
-	public static final int VAPORATOR_WEIGHT = 50;
+	public static final int LS_WEIGHT = 20;
+	public static final int VAPORATOR_WEIGHT = 30;
 	public static final int DIST_HQ = 64; // emergency drone range
 
 	public FulfillmentCenterRobot(RobotController rc) throws GameActionException {
