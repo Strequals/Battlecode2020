@@ -49,7 +49,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DISTANCE_REFINERY_THRESHOLD = 400; // minimum distance apart for refineries
 	public static final int DISTANCE_SOUP_THRESHOLD = 25; //maximum distance from refinery to soup deposit upon creation
 
-	public static final int MAX_VAPORATOR_BUILD_ROUND = 1500;
+	public static final int MAX_VAPORATOR_BUILD_ROUND = 1700;
 	public static final int FC_DIST = 8;
 
 	enum MinerState {
@@ -252,7 +252,7 @@ public strictfp class MinerRobot extends Robot {
 		
 		
 		//move towards matrix or hq if far
-		if (hqDist > 8 && ((robotElevation < round / MOVE_TO_MATRIX_LEVEL && round > TURTLE_ROUND && round < TURTLE_END) || (robotElevation < TURTLE_END / MOVE_TO_MATRIX_LEVEL && round > TURTLE_END))) {
+		if (minerState != MinerState.MOVE_MATRIX && hqDist > 8 && ((robotElevation < round / MOVE_TO_MATRIX_LEVEL && round > TURTLE_ROUND && round < TURTLE_END) || (robotElevation < TURTLE_END / MOVE_TO_MATRIX_LEVEL && round > TURTLE_END))) {
 			prevState = minerState;
 			minerState = MinerState.MOVE_MATRIX;
 			

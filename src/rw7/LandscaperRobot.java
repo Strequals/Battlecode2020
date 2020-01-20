@@ -15,12 +15,10 @@ public strictfp class LandscaperRobot extends Robot {
 	private MapLocation homeDsLocation;
 	private MapLocation targetCorner;
 	private LandscaperState state;
-	private boolean navigatingCorner;
 	private boolean reachedCorner;
 	private boolean preferNorth;
 	private boolean preferEast;
 	private boolean isExpectedLandscaperCount;
-	private boolean navigatingHq;
 	private MapLocation pitLocation;
 	private Direction pitDirection;
 	private MapLocation enemyHqLocation;
@@ -29,12 +27,14 @@ public strictfp class LandscaperRobot extends Robot {
 	private MapLocation targetBuildingLocation;
 	private RobotInfo targetRobot;
 	private int hqElevation;
+
 	
 	private int turnsNavvedHq;
 
 	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
 	private static final int MAX_TERRAFORM_RANGE = 2; //Chebyshev distance to limit
 	private static final int TERRAFORM_RANGE_SQ = 8; //2x^2
+	private static final int MAX_HEIGHT_THRESHOLD = 12; //don't try to build up to unreachable heights
 
 	LandscaperRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -54,10 +54,8 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 
 
-		navigatingCorner = false;
 		isExpectedLandscaperCount = false;
 		reachedCorner = false;
-		navigatingHq = false;
 		rushDigging = true;
 		turnsNavvedHq = 0;
 	}
@@ -73,7 +71,6 @@ public strictfp class LandscaperRobot extends Robot {
 				state = LandscaperState.TERRAFORMING;
 			}
 		}
-		
 		Direction[] dirs = Utility.directionsC;
 		MapLocation ml;
 		Direction d;
@@ -444,6 +441,7 @@ public strictfp class LandscaperRobot extends Robot {
 			if (rc.canSenseLocation(m)) {
 				elev = rc.senseElevation(m);
 				elevDiff = robotElevation - elev;
+				if (elevDiff < -MAX_HEIGHT_THRESHOLD) continue;
 				if (elevDiff < 0) elevDiff = -elevDiff;
 				if (elevDiff > GameConstants.MAX_DIRT_DIFFERENCE) {
 					tunnelOrBridge(m, d);
@@ -476,6 +474,7 @@ public strictfp class LandscaperRobot extends Robot {
 				if (botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) continue;
 				elev = rc.senseElevation(m);
 				elevDiff = robotElevation - elev;
+				if (elevDiff < -MAX_HEIGHT_THRESHOLD) continue;
 				if (elevDiff < 0) elevDiff = -elevDiff;
 				if (elevDiff > 0 && elevDiff <= TERRAFORM_THRESHOLD) {
 					tunnelOrBridge(m, d);
