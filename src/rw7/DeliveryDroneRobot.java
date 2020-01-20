@@ -21,6 +21,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private boolean sentEHQL = false;
 	private Direction lastDirection;
 	private int friendlyDrones;
+	private MapLocation minerAssistLocation;
 	
 	public int random; // A random number from 0 to 255
 	public static final int A = 623;
@@ -81,6 +82,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				case HQ:
 					hqLocation = r.location;
 					break;
+				case MINER:
+					
 				case FULFILLMENT_CENTER:
 					if (homeLocation == null) homeLocation = r.location;
 					break;
@@ -141,10 +144,10 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			Communications.queueMessage(rc, 3, 3, enemyHqLocation.x, enemyHqLocation.y);
 		}
 
-		if(nearestWater == null || !rc.isReady()) {
+		//if(nearestWater == null || !rc.isReady()) {
 			//scan for water
 			scanForWater();
-		}
+		//}
 		
 		if (round < TURTLE_END) {
 			state = DroneState.DEFENDING;
@@ -194,15 +197,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		}
 	}
 	
-	public void doAttack() throws GameActionException {
-		if (enemyHqLocation != null) {
-			if (Utility.chebyshev(location, enemyHqLocation) < 5) {
-				if (round % 100 == 49 && friendlyDrones > 5) {
-					if (soup > 2) Communications.queueMessage(rc, 2, 4, enemyHqLocation.x, enemyHqLocation.y);
-				}
-			}
-		}
-		
+	public void doDropEnemy() throws GameActionException {
 		if(rc.isCurrentlyHoldingUnit()) {
 			//pathfind towards target (water, soup)
 			//if any of 8 locations around are flooded, place robot into flood, update nearestWater
@@ -226,7 +221,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			}
 
 		} else if (targetRobot != null) {
-			if (Utility.chebyshev(location, targetLocation) <= 1) {
+			if (Utility.chebyshev(location, targetLocation) == 1) {
 				if (rc.canPickUpUnit(targetRobot.ID)) {
 					rc.pickUpUnit(targetRobot.ID);
                scanForWater();
@@ -240,6 +235,22 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				return;
 			}
 		}
+	}
+	
+	public void doAssistUnit() {
+		
+	}
+	
+	public void doAttack() throws GameActionException {
+		if (enemyHqLocation != null) {
+			if (Utility.chebyshev(location, enemyHqLocation) < 5) {
+				if (round % 100 == 49 && friendlyDrones >= 3) {
+					if (soup > 2) Communications.queueMessage(rc, 2, 4, enemyHqLocation.x, enemyHqLocation.y);
+				}
+			}
+		}
+		
+		doDropEnemy();
 		
 		
 		if (enemyHqLocation != null) {
@@ -263,13 +274,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	
 	public void doDefense() throws GameActionException {
 		
-		if(rc.isCurrentlyHoldingUnit()) {
+		/*if(rc.isCurrentlyHoldingUnit()) {
 			//pathfind towards target (water, soup)
 			//if any of 8 locations around are flooded, place robot into flood, update nearestWater
 
 			
 			if(nearestWater != null) {
-				if(Utility.chebyshev(location, nearestWater) <= 2) {
+				if(Utility.chebyshev(location, nearestWater) == 1) {
 					if(rc.canDropUnit(location.directionTo(nearestWater))) {
 						rc.dropUnit(location.directionTo(nearestWater));
 						return;
@@ -286,7 +297,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			}
 
 		} else if (targetRobot != null) {
-			if (Utility.chebyshev(location, targetLocation) <= 1) {
+			if (Utility.chebyshev(location, targetLocation) == 1) {
 				if (rc.canPickUpUnit(targetRobot.ID)) {
 					rc.pickUpUnit(targetRobot.ID);
                scanForWater();
@@ -299,7 +310,9 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				DroneNav.nav(rc, this);
 				return;
 			}
-		}
+		}*/
+		
+		doDropEnemy();
 		
 		
 			if (Utility.chebyshev(location, hqLocation) < 5) {

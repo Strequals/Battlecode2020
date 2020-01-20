@@ -596,7 +596,7 @@ public strictfp class LandscaperRobot extends Robot {
 					priority -= 100; //Prioritize filling in lower tiles rather than digging higher ones
 				}
 				if (dElev > TERRAFORM_THRESHOLD) continue;
-				if (dElev >= GameConstants.MAX_DIRT_DIFFERENCE) {
+				if (dElev >= 2) {
 					if (priority < bestPriority) {
 						bestPriority = priority;
 						nearestFillTile = ml;

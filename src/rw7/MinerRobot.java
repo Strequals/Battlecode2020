@@ -36,6 +36,7 @@ public strictfp class MinerRobot extends Robot {
 	private boolean isBuilder = false;
 	private boolean builderDS = false;
 	private boolean builderFC = false;
+	private boolean hqAvailable = true;
 
 	public ArrayList<MapLocation> refineries;
 
@@ -43,6 +44,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DISTANCE_SOUP_THRESHOLD = 25; //maximum distance from refinery to soup deposit upon creation
 
 	public static final int MAX_VAPORATOR_BUILD_ROUND = 1500;
+	public static final int FC_DIST = 8;
 
 	enum MinerState {
 		SEEKING, MINING, RETURNING, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
@@ -217,14 +219,14 @@ public strictfp class MinerRobot extends Robot {
 					dist = rld;
 				}
 			}
-		} else if (round < TURTLE_ROUND) {
+		} else if (round < TURTLE_ROUND && hqAvailable) {
 			returnLoc = hqLocation;
 		}
 
 		if (!navigatingReturn) {
 			if (nearestRefinery != null) {
 				returnLoc = nearestRefinery;
-			} else if (round < TURTLE_ROUND) {
+			} else if (round < TURTLE_ROUND && hqAvailable) {
 				returnLoc = hqLocation;
 			}
 		}
@@ -232,10 +234,10 @@ public strictfp class MinerRobot extends Robot {
 		if (hqLocation != null) hqDist = Utility.chebyshev(location, hqLocation);
 
 		if (cooldownTurns >= 1) return;
-		
+
 		if (round > TURTLE_ROUND) {
 			//Build Refinery
-			if (!isRefineryNearby && soup > RobotType.REFINERY.cost) {
+			if (!isRefineryNearby && soup > RobotType.REFINERY.cost && (round > CLOSE_TURTLE_END || !hqAvailable)) {
 				if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
 					Direction[] dirs = Utility.directions;
 					Direction d;
@@ -293,7 +295,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 
 			//Build Fulfillment Center
-			if (soup > RobotType.FULFILLMENT_CENTER.cost && !fcBuilt && (enemySpotted || soup > 800) && hqDist >= 2) {
+			if (soup > RobotType.FULFILLMENT_CENTER.cost && !fcBuilt && ((enemySpotted && hqDist < FC_DIST) || soup > 800) && hqDist >= 2) {
 				Direction[] dirs = Utility.directions;
 				Direction d;
 				ml = null;
@@ -308,7 +310,7 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 			}
-			
+
 			//Build Netgun
 			if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt && hqDist >= 2) {
 				Direction[] dirs = Utility.directions;
@@ -325,10 +327,11 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 			}
-		} else if (isBuilder && hqDist > 1 && hqDist < 5) {
+		} 
+		if (isBuilder && hqDist > 1 && hqDist < 5) {
 			//Build Design School
-			
-			
+
+
 			if (!builderDS && soup > RobotType.DESIGN_SCHOOL.cost) {
 				Direction[] dirs = Utility.directions;
 				Direction d;
@@ -364,7 +367,7 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 			}
-			
+
 			//Build Netgun
 			if (builderDS && builderFC && soup > RobotType.NET_GUN.cost && !ngBuilt && enemyDroneSpotted) {
 				Direction[] dirs = Utility.directions;
@@ -381,7 +384,7 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 			}
-			
+
 			//Build Vaporator
 			if (round < MAX_VAPORATOR_BUILD_ROUND && soup > RobotType.VAPORATOR.cost && hqDist >= 2) {
 				Direction[] dirs = Utility.directions;
@@ -400,7 +403,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 		}
 
-		
+
 
 		//System.out.println("NEAREST REFINERY:"+nearestRefinery);
 
@@ -483,7 +486,7 @@ public strictfp class MinerRobot extends Robot {
 				}
 
 			}
-			
+
 			if (isBuilder && round < TURTLE_ROUND && hqDist < 2) {
 				moveScout(rc);
 			}
@@ -522,6 +525,49 @@ public strictfp class MinerRobot extends Robot {
 		case RETURNING:
 			//System.out.println("RETURNING");
 			if (returnLoc != null ) {
+				if (returnLoc.equals(hqLocation)) {
+					Direction[] dirs = Utility.directions;
+					MapLocation hqAdjacent;
+					boolean allFilled = true;
+					RobotInfo botInf;
+					int elev;
+					for (int i = 8; i-->0;) {
+						hqAdjacent = hqLocation.add(dirs[i]);
+
+
+						if (!rc.onTheMap(hqAdjacent)) continue;
+
+
+						if (!rc.canSenseLocation(hqAdjacent)) {
+							allFilled = false;
+							break;
+						}
+
+						if (hqAdjacent.x == 0 && (hqLocation.y == hqAdjacent.y || (hqLocation.y == 1 && hqLocation.y > hqAdjacent.y) || (mapHeight - hqLocation.y == 2 && hqLocation.y < hqAdjacent.y))) {
+							continue;
+						}
+						if (hqAdjacent.y == 0 && (hqLocation.x == hqAdjacent.x || (hqLocation.x == 1 && hqLocation.x > hqAdjacent.x) || (mapHeight - hqLocation.x == 2 && hqLocation.x < hqAdjacent.x))) {
+							continue;
+						}
+
+						botInf = rc.senseRobotAtLocation(hqAdjacent);
+						if (botInf == null) {
+							allFilled = false;
+							break;
+						}
+						
+						elev = rc.senseElevation(hqAdjacent);
+						if (elev - robotElevation <= GameConstants.MAX_DIRT_DIFFERENCE) {
+							allFilled = false;
+							break;
+						}
+						
+						
+
+					}
+					if (!allFilled) hqAvailable = false;
+				}
+
 				if (!navigatingReturn) {
 					Nav.beginNav(rc, this, returnLoc);
 					navigatingReturn = true;

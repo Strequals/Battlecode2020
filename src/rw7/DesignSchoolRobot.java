@@ -150,6 +150,11 @@ public strictfp class DesignSchoolRobot extends Robot {
 			if ((numTurtles == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost + RobotType.DELIVERY_DRONE.cost) || (!isAlliedDrone && numTurtles <= 6 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
 				return;
 			}
+			//Prefer building vaporators to finishing the wall
+			if (nearbyAlliedVaporators == 0 && round < 400 && numTurtles < 6 && soup < RobotType.VAPORATOR.cost + 100 && !rushDetected) {
+				return;
+			}
+			
 			Direction hqDirection = location.directionTo(hqLocation);
 			if (rc.canBuildRobot(RobotType.LANDSCAPER, hqDirection)) {
 				rc.buildRobot(RobotType.LANDSCAPER, hqDirection);
