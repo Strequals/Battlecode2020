@@ -23,15 +23,19 @@ public strictfp class LandscaperRobot extends Robot {
 	private boolean navigatingHq;
 	private MapLocation pitLocation;
 	private Direction pitDirection;
- 	private MapLocation enemyHqLocation;
+	private MapLocation enemyHqLocation;
 	private boolean isDroneThreat;
 	private boolean rushDigging;
 	private MapLocation targetBuildingLocation;
+	private RobotInfo targetRobot;
+	private int hqElevation;
 	
+	private int turnsNavvedHq;
+
 	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
 	private static final int MAX_TERRAFORM_RANGE = 2; //Chebyshev distance to limit
 	private static final int TERRAFORM_RANGE_SQ = 8; //2x^2
-	
+
 	LandscaperRobot(RobotController rc) throws GameActionException {
 		super(rc);
 
@@ -49,18 +53,29 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 
-		state = LandscaperState.TERRAFORMING;
+
 		navigatingCorner = false;
 		isExpectedLandscaperCount = false;
 		reachedCorner = false;
 		navigatingHq = false;
 		rushDigging = true;
+		turnsNavvedHq = 0;
 	}
 
 	@Override
 	public void run() throws GameActionException {
+
+
+		if (round == roundCreated) {
+			if (initialBuildingTile(homeDsLocation)) {
+				state = LandscaperState.TURTLING;
+			} else {
+				state = LandscaperState.TERRAFORMING;
+			}
+		}
+
 		isEnemyRushing = false;
-		
+
 		isDroneThreat = false;
 		// Process nearby robots
 		RobotInfo[] ri = nearbyRobots;
@@ -68,6 +83,7 @@ public strictfp class LandscaperRobot extends Robot {
 		int nearbyLandscapers = 0;
 		int targetBuildingDistance = 1000000;
 		targetBuildingLocation = null;
+		targetRobot = null;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -75,6 +91,7 @@ public strictfp class LandscaperRobot extends Robot {
 				switch (r.getType()) {
 				case HQ:
 					hqLocation = r.location;
+					hqElevation = rc.senseElevation(hqLocation);
 					break;
 				case LANDSCAPER:
 					if (r.location.isWithinDistanceSquared(location, 2)) {
@@ -91,7 +108,7 @@ public strictfp class LandscaperRobot extends Robot {
 				switch (r.getType()) {
 				case DELIVERY_DRONE:
 					isDroneThreat = true;
-					
+
 					break;
 				case MINER:
 					// TODO: Block or bury
@@ -105,6 +122,7 @@ public strictfp class LandscaperRobot extends Robot {
 					if (distance < targetBuildingDistance) {
 						targetBuildingDistance = distance;
 						targetBuildingLocation = r.location;
+						targetRobot = r;
 					}
 					break;
 				case REFINERY:
@@ -113,6 +131,7 @@ public strictfp class LandscaperRobot extends Robot {
 					if (distance < targetBuildingDistance) {
 						targetBuildingDistance = distance;
 						targetBuildingLocation = r.location;
+						targetRobot = r;
 					}
 					break;
 				case DESIGN_SCHOOL:
@@ -121,6 +140,7 @@ public strictfp class LandscaperRobot extends Robot {
 					if (distance < targetBuildingDistance) {
 						targetBuildingDistance = distance;
 						targetBuildingLocation = r.location;
+						targetRobot = r;
 					}
 					break;
 				case FULFILLMENT_CENTER:
@@ -129,6 +149,7 @@ public strictfp class LandscaperRobot extends Robot {
 					if (distance < targetBuildingDistance) {
 						targetBuildingDistance = distance;
 						targetBuildingLocation = r.location;
+						targetRobot = r;
 					}
 					break;
 				case VAPORATOR:
@@ -137,6 +158,7 @@ public strictfp class LandscaperRobot extends Robot {
 					if (distance < targetBuildingDistance) {
 						targetBuildingDistance = distance;
 						targetBuildingLocation = r.location;
+						targetRobot = r;
 					}
 					break;
 				case HQ:
@@ -152,12 +174,12 @@ public strictfp class LandscaperRobot extends Robot {
 				}
 			}
 		}
-		
+
 		Direction[] dirs = Utility.directionsC;
 		MapLocation ml;
 		Direction d;
-		
-		
+
+
 		pitLocation = null;
 		for (int i = 9; i-->0;) {
 			d = dirs[i];
@@ -173,9 +195,6 @@ public strictfp class LandscaperRobot extends Robot {
 
 		if (!rc.isReady()) return;
 
-		System.out.println(preferNorth);
-		System.out.println(preferEast);
-
 		if (location.isAdjacentTo(hqLocation)) {
 			RobotInfo hqInfo = rc.senseRobotAtLocation(hqLocation);
 			if (hqInfo.dirtCarrying > 0) {
@@ -183,14 +202,14 @@ public strictfp class LandscaperRobot extends Robot {
 				return;
 			}
 		}
-		
+
 		if (state == LandscaperState.RUSHING && round > TURTLE_END) {
 			state = LandscaperState.TERRAFORMING;
 		}
-		
+
 
 		switch (state) {
-		
+
 		case TURTLING:
 			doTurtling(nearbyLandscapers, false);
 			break;
@@ -200,7 +219,7 @@ public strictfp class LandscaperRobot extends Robot {
 		case TERRAFORMING:
 			doTerraforming();
 		}
-		
+
 	}
 
 	/**
@@ -213,89 +232,207 @@ public strictfp class LandscaperRobot extends Robot {
 	}
 
 	private void doTurtling(int nearbyLandscapers, boolean movedThisTurn) throws GameActionException {
-		if (location.distanceSquaredTo(hqLocation)>2) {
-			//TODO: check if can tunnel/bridge
-			
-			if (!navigatingHq) {
-				Nav.beginNav(rc, this, hqLocation);
-				navigatingHq = true;
+		int rank = Utility.chebyshev(location, hqLocation);
+
+		if (targetBuildingLocation != null) {
+			if (location.distanceSquaredTo(targetBuildingLocation)>2) {
+				if (rank > 1) {
+					if (Nav.target == null || !Nav.target.equals(targetBuildingLocation)) {
+						Nav.beginNav(rc, this, targetBuildingLocation);
+					}
+					Nav.nav(rc, this);
+					return;
+				}
+
+			} else {
+				if (targetRobot.type.dirtLimit - targetRobot.dirtCarrying > dirtCarrying) {
+					if (pitDirection != null) {
+						rc.digDirt(pitDirection);
+						return;
+					}
+				}
+				if (dirtCarrying > 0) {
+					Direction d = location.directionTo(targetBuildingLocation);
+					if (rc.canDepositDirt(d)) {
+						rc.depositDirt(d);
+					}
+				}
+
 			}
-			Nav.nav(rc, this);
-			return;
 		}
-		
-		//TODO: check if can move or bridge to lower wall location
+
+
 
 		Direction[] dirs = Utility.directions;
+		MapLocation hqAdjacent;
+		boolean allFilled = true;
+		RobotInfo ri;
+		int elev;
+		int lowElev = 10000;
+		MapLocation lowLoc = null;
+		boolean adjacentLow = false;
+		MapLocation flooded = null;
+		for (int i = 8; i-->0;) {
+			hqAdjacent = hqLocation.add(dirs[i]);
+
+
+			if (!rc.onTheMap(hqAdjacent)) continue;
+
+
+			if (!rc.canSenseLocation(hqAdjacent)) {
+				allFilled = false;
+				continue;
+			}
+
+			if (hqAdjacent.x == 0 && (hqLocation.y == hqAdjacent.y || (hqLocation.y == 1 && hqLocation.y > hqAdjacent.y) || (mapHeight - hqLocation.y == 2 && hqLocation.y < hqAdjacent.y))) {
+				continue;
+			}
+			if (hqAdjacent.y == 0 && (hqLocation.x == hqAdjacent.x || (hqLocation.x == 1 && hqLocation.x > hqAdjacent.x) || (mapHeight - hqLocation.x == 2 && hqLocation.x < hqAdjacent.x))) {
+				continue;
+			}
+			if (rc.senseFlooding(hqAdjacent)) {
+				flooded = hqAdjacent;
+			}
+
+			if (rank == 1) {
+				elev = rc.senseElevation(hqAdjacent);
+				if (elev < lowElev) {
+					lowElev = elev;
+					lowLoc = hqAdjacent;
+					if (elev < hqElevation+1) {
+						if (location.isAdjacentTo(hqAdjacent)) {
+							adjacentLow = true;
+						}
+					}
+				}
+			}
+
+			if (allFilled) {
+
+
+				ri = rc.senseRobotAtLocation(hqAdjacent);
+				if (ri == null || ri.team != team || ri.type != RobotType.LANDSCAPER) {
+					allFilled = false;
+				}
+			}
+
+		}
+
+		if (location.distanceSquaredTo(hqLocation)>2) {
+			
+			if (turnsNavvedHq < 50) {
+			if (!allFilled) {
+				//TODO: check if can tunnel/bridge
+				if (Nav.target == null || !Nav.target.equals(hqLocation)) {
+					Nav.beginNav(rc, this, hqLocation);
+				}
+				Nav.nav(rc, this);
+				turnsNavvedHq++;
+				return;
+			} else {
+				state = LandscaperState.TERRAFORMING;
+				return;
+			}
+			}
+			
+			if (rank > 2) moveTerraform(hqLocation);
+			else moveTurtle(hqLocation);
+
+		}
+		
+		if (flooded != null) {
+			Direction d = location.directionTo(flooded);
+			if (dirtCarrying == 0) {
+				if (pitDirection != null) {
+					rc.digDirt(pitDirection);
+					return;
+				}
+			} else if (rc.canDepositDirt(d)) {
+				rc.depositDirt(d);
+				return;
+			}
+		}
+		
+		if (round > TURTLE_END && !allFilled && (lowLoc == null || !lowLoc.isAdjacentTo(location))) {
+		//System.out.println("All filled: " + allFilled);
+		//check if can move or bridge to lower wall location
+		if (lowLoc != null && robotElevation - lowElev > GameConstants.MAX_DIRT_DIFFERENCE) {
+			System.out.println("TURTLEMOVING to "+lowLoc);
+			moveTurtle(lowLoc);
+			return;
+		}
+		}
 
 		if (dirtCarrying == 0) {
 			if (pitDirection != null) rc.digDirt(pitDirection);
 		} else {
-			if (round < TURTLE_END) {
+			if (!allFilled && round < TURTLE_END && !adjacentLow) {// && (round < TURTLE_ROUND || !location.isAdjacentTo(lowLoc))
+				//empty spots so leave them for our landscaperes
+				//if the lowest is too low, add to it so landscapers can move onto it
+				System.out.println("CENTER FILLING");
 				if (rc.canDepositDirt(Direction.CENTER)) {
 					rc.depositDirt(Direction.CENTER);
 				}
 			} else {
+				System.out.println("LOW FILLING");
+				dirs = Utility.directionsC;
 				MapLocation ml;
 				Direction d = null;
 				Direction lowDir = null;
-				int lowElev = 1000000;
-				int elev;
+				int lowE = 1000000;
+				int e;
 				for (int i = 8; i-->0;) {
 					d = dirs[i];
 					ml = location.add(d);
 					if (!(Utility.chebyshev(ml, hqLocation) == 1)) {
 						continue;
 					}
-							if (rc.canSenseLocation(ml)) {
-								elev = rc.senseElevation(ml);
-								if (elev < lowElev) {
-									lowDir = d;
-									lowElev = elev;
-								}
-							}
-				}
-				
-				if (lowDir != null) {
-					rc.depositDirt(lowDir);
-				}
-			}
-			
-		}
-		
-		
-	}
-	
-	private void moveTurtle(MapLocation ml) throws GameActionException {
-		//If there is a nearby path location that is not traversable, make it traversable
-				Direction[] dirs = Utility.directions;
-				Direction d;
-				MapLocation m;
-				int elev;
-				int elevDiff;
-				for (int i = 8; i-->0; ) {
-					d = dirs[i];
-					m = location.add(d);
-					if (pitTile(m) || Utility.chebyshev(m, hqLocation) != 1) continue;
-					if (rc.canSenseLocation(m)) {
-						elev = rc.senseElevation(m);
-						elevDiff = robotElevation - elev;
-						if (elevDiff < 0) elevDiff = -elevDiff;
-						if (elevDiff > GameConstants.MAX_DIRT_DIFFERENCE) {
-							tunnelOrBridge(m, d);
-							return;
+					if (rc.canSenseLocation(ml)) {
+						e = rc.senseElevation(ml);
+						if (e < lowE) {
+							lowDir = d;
+							lowE = e;
 						}
 					}
 				}
 
-				//Move towards location
-				if (Nav.target == null || !ml.equals(Nav.target)) {
-					Nav.beginNav(rc, this, ml);
+				if (lowDir != null) {
+					rc.depositDirt(lowDir);
 				}
-				Nav.nav(rc, this);
-				if (round > TURTLE_END) {
-					state = LandscaperState.TERRAFORMING;
+			}
+
+		}
+
+
+	}
+
+	private void moveTurtle(MapLocation ml) throws GameActionException {
+		//If there is a nearby path location that is not traversable, make it traversable
+		Direction[] dirs = Utility.directions;
+		Direction d;
+		MapLocation m;
+		int elev;
+		int elevDiff;
+		for (int i = 8; i-->0; ) {
+			d = dirs[i];
+			m = location.add(d);
+			if (Utility.chebyshev(m, hqLocation) != 1) continue;
+			if (rc.canSenseLocation(m)) {
+				elev = rc.senseElevation(m);
+				elevDiff = robotElevation - elev;
+				if (elevDiff < 0) elevDiff = -elevDiff;
+				if (elevDiff > GameConstants.MAX_DIRT_DIFFERENCE) {
+					tunnelOrBridge(m, d);
+					return;
 				}
+			}
+		}
+
+		//Move towards location
+		if (Nav.target == null || !ml.equals(Nav.target)) {
+			Nav.beginNav(rc, this, ml);
+		}
+		Nav.nav(rc, this);
 	}
 
 	private void moveTerraform(MapLocation ml) throws GameActionException {
@@ -322,14 +459,14 @@ public strictfp class LandscaperRobot extends Robot {
 				}
 			}
 		}
-		
+
 		//Move towards location
 		if (Nav.target == null || !ml.equals(Nav.target)) {
 			Nav.beginNav(rc, this, ml);
 		}
 		Nav.nav(rc, this);
 	}
-	
+
 	private void tunnelOrBridge(MapLocation ml, Direction d) throws GameActionException {
 		int elTarget = rc.senseElevation(ml);
 		int elDistance = elTarget - robotElevation;
@@ -379,12 +516,12 @@ public strictfp class LandscaperRobot extends Robot {
 			rc.move(d);
 		}
 	}
-	
+
 	public void doTerraforming() throws GameActionException {
-		
+
 		//Destroy enemy building
 		if (targetBuildingLocation != null) {
-			System.out.println("targeting Building at " + targetBuildingLocation);
+			//System.out.println("targeting Building at " + targetBuildingLocation);
 			int csDist = Utility.chebyshev(location, targetBuildingLocation);
 			if (csDist <= 1) {
 				if (dirtCarrying == 0) {
@@ -402,10 +539,10 @@ public strictfp class LandscaperRobot extends Robot {
 				return;
 			}
 		}
-		
+
 		//Move off of pit
 		if (pitTile(location)) {
-			System.out.println("Moving off pit");
+			//System.out.println("Moving off pit");
 			Direction[] dirs = Utility.directions;
 			Direction d;
 			for (int i = 8; i-->0;) {
@@ -440,7 +577,7 @@ public strictfp class LandscaperRobot extends Robot {
 				rad = dx * dx + dy * dy;
 				if (rad > rSq) continue;
 				ml = new MapLocation(x, y);
-				
+
 				csDist = Utility.chebyshev(ml, location);
 				if (csDist > MAX_TERRAFORM_RANGE) continue;
 				if (pitTile(ml)) continue;
@@ -458,8 +595,8 @@ public strictfp class LandscaperRobot extends Robot {
 					dElev = -dElev;
 					priority -= 100; //Prioritize filling in lower tiles rather than digging higher ones
 				}
-				if (dElev > TERRAFORM_THRESHOLD) rad += 10000;
-				if (dElev > GameConstants.MAX_DIRT_DIFFERENCE) {
+				if (dElev > TERRAFORM_THRESHOLD) continue;
+				if (dElev >= GameConstants.MAX_DIRT_DIFFERENCE) {
 					if (priority < bestPriority) {
 						bestPriority = priority;
 						nearestFillTile = ml;
@@ -468,15 +605,15 @@ public strictfp class LandscaperRobot extends Robot {
 				}
 			}
 		}
-		
+
 		if (nearestFillTile != null) {
-			System.out.println("Filling in...");
+			//System.out.println("Filling in...");
 			moveTerraform(nearestFillTile);
 			return;
 		}
 
 		//Start increasing height of terraform
-		System.out.println("Increase terraform height");
+		//System.out.println("Increase terraform height");
 		if (dirtCarrying == 0) {
 			rc.digDirt(pitDirection);
 		} else {
@@ -494,7 +631,7 @@ public strictfp class LandscaperRobot extends Robot {
 					if (rc.canSenseLocation(m)) {
 						botInfo = rc.senseRobotAtLocation(m);
 						if (botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) continue;
-						
+
 						rc.depositDirt(d);
 						return;
 					}
@@ -502,7 +639,7 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 	}
-	
+
 	public void doRushing() throws GameActionException {
 		if (location.distanceSquaredTo(enemyHqLocation) > 2) {
 			if (Nav.target == null || !Nav.target.equals(enemyHqLocation)) {
@@ -511,7 +648,7 @@ public strictfp class LandscaperRobot extends Robot {
 			Nav.nav(rc, this);
 			return;
 		}
-		
+
 		//dig and place in alternating cycles
 		if (((dirtCarrying < RobotType.LANDSCAPER.dirtLimit && rushDigging) || dirtCarrying == 0) && !isDroneThreat) {
 			rushDigging = true;
@@ -520,7 +657,7 @@ public strictfp class LandscaperRobot extends Robot {
 			rushDigging = false;
 			rc.depositDirt(location.directionTo(enemyHqLocation));
 		}
-		
+
 	}
 
 	@Override
@@ -528,15 +665,10 @@ public strictfp class LandscaperRobot extends Robot {
 		switch (m) {
 		case 1:
 			hqLocation = new MapLocation(x,y);
-			System.out.println("Received HQ location: " + x + ", " + y);
+			//System.out.println("Received HQ location: " + x + ", " + y);
 			break;
 		case 3:
 			enemyHqLocation = new MapLocation(x,y);
-			break;
-		case 19:
-			if (x == homeDsLocation.x && y == homeDsLocation.y) {
-				state = LandscaperState.TURTLING;
-			}
 			break;
 		}
 

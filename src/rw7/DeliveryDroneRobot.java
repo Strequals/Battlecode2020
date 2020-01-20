@@ -42,7 +42,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			}
 		}
 		enemyNetguns = new ArrayList<MapLocation>();
-		state = DroneState.ATTACKING;
+		
 	}
 
 	@Override
@@ -74,7 +74,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
-			System.out.println(r);
+			//System.out.println(r);
 			if (r.getTeam() == team) {
 				// Friendly Units
 				switch (r.getType()) {
@@ -124,7 +124,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 					//also avoid
 					enemyHqLocation = r.location;
 					if (!enemyNetguns.contains(r.location))enemyNetguns.add(r.location);
-					System.out.println(r.location);
+					//System.out.println(r.location);
 				default:
 					//Probably some structure, bury it if possible but low priority
 					//Communications.sendMessage(rc);
@@ -145,11 +145,22 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			//scan for water
 			scanForWater();
 		}
+		
+		if (round < TURTLE_END) {
+			state = DroneState.DEFENDING;
+		} else {
+			state = DroneState.ATTACKING;
+		}
 
 		if (!rc.isReady()) 
 			return;
 		
+		
+		
 		switch (state) {
+		case DEFENDING:
+			doDefense();
+			break;
 		case ATTACKING:
 			doAttack();
 			break;
@@ -195,21 +206,23 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		if(rc.isCurrentlyHoldingUnit()) {
 			//pathfind towards target (water, soup)
 			//if any of 8 locations around are flooded, place robot into flood, update nearestWater
-			if(Utility.chebyshev(location, nearestWater) <= 2) {
-				if(rc.canDropUnit(location.directionTo(nearestWater))) {
-					rc.dropUnit(location.directionTo(nearestWater));
-					return;
-				}
-
-			}
 
 			
 			if(nearestWater != null) {
+				if(Utility.chebyshev(location, nearestWater) <= 2) {
+					if(rc.canDropUnit(location.directionTo(nearestWater))) {
+						rc.dropUnit(location.directionTo(nearestWater));
+						return;
+					}
+
+				}
 				if (DroneNav.target == null || !DroneNav.target.equals(nearestWater)) {
 					DroneNav.beginNav(rc, this, nearestWater);
 				}
 				DroneNav.nav(rc, this);
 				return;
+			} else {
+				moveScout(rc);
 			}
 
 		} else if (targetRobot != null) {
@@ -244,8 +257,62 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		}
 		
 		
-		System.out.println("SCOUTING");
+		//System.out.println("SCOUTING");
 		moveScout(rc);
+	}
+	
+	public void doDefense() throws GameActionException {
+		
+		if(rc.isCurrentlyHoldingUnit()) {
+			//pathfind towards target (water, soup)
+			//if any of 8 locations around are flooded, place robot into flood, update nearestWater
+
+			
+			if(nearestWater != null) {
+				if(Utility.chebyshev(location, nearestWater) <= 2) {
+					if(rc.canDropUnit(location.directionTo(nearestWater))) {
+						rc.dropUnit(location.directionTo(nearestWater));
+						return;
+					}
+
+				}
+				if (DroneNav.target == null || !DroneNav.target.equals(nearestWater)) {
+					DroneNav.beginNav(rc, this, nearestWater);
+				}
+				DroneNav.nav(rc, this);
+				return;
+			} else {
+				moveScout(rc);
+			}
+
+		} else if (targetRobot != null) {
+			if (Utility.chebyshev(location, targetLocation) <= 1) {
+				if (rc.canPickUpUnit(targetRobot.ID)) {
+					rc.pickUpUnit(targetRobot.ID);
+               scanForWater();
+					return;
+				}
+			} else {
+				if (DroneNav.target == null || !DroneNav.target.equals(targetLocation)) {
+					DroneNav.beginNav(rc, this, targetLocation);
+				}
+				DroneNav.nav(rc, this);
+				return;
+			}
+		}
+		
+		
+			if (Utility.chebyshev(location, hqLocation) < 5) {
+				moveScout(rc);
+			} else {
+				if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
+					DroneNav.beginNav(rc, this, hqLocation);
+				}
+				DroneNav.nav(rc, this);
+				return;
+			}
+			
+			
 	}
 	
 	public void moveScout(RobotController rc) throws GameActionException {

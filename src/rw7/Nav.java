@@ -45,7 +45,6 @@ public class Nav {
 			startBug(rc);
 		case BUGGING:
 			System.out.println("BUG");
-			int c1 = Clock.getBytecodesLeft();
 			bug(r, rc);
 		}
 	}
@@ -134,8 +133,8 @@ public class Nav {
 	}
 
 	public static boolean canEndBug() {
-		System.out.println("MSO:"+movesSinceObstacle);
-		System.out.println("rotations:"+rotations);
+		//System.out.println("MSO:"+movesSinceObstacle);
+		//System.out.println("rotations:"+rotations);
 		if (movesSinceObstacle >= 4 || turnsBugged > 100) return true;
 		return (rotations < 0 || rotations >= 8) && position.isWithinDistanceSquared(target, startDistanceSq);
 	}

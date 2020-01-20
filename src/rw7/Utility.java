@@ -6,9 +6,9 @@ public strictfp class Utility {
 	public static final Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 	public static final Direction[] directionsC = {Direction.CENTER, Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 
-	static final int SCOUT_ROUND = 30;
-	static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
-	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = RobotType.VAPORATOR.cost + 50;
+	//static final int SCOUT_ROUND = 30;
+	//static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
+	//static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = RobotType.VAPORATOR.cost + 50;
 
 	public static Symmetry getSymmetry(RobotController rc) {
 		

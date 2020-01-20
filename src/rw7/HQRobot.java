@@ -7,9 +7,9 @@ import battlecode.common.*;
 public strictfp class HQRobot extends Robot {
 
 	public HQState hqState;
-	public int numMiners = 0;
+	public int numMiners;
 	public boolean completedWall = false;
-	public int numLandscapers = 0;
+	public int numLandscapers;
 	
 	public int wallBoundLower;
 	public int wallBoundUpper;
@@ -25,8 +25,13 @@ public strictfp class HQRobot extends Robot {
 	public static final int INITIAL_MINERS = 3;
 	public int MAX_MINERS;
 	
+	
+	public static final int MINER_WEIGHT = 0;
+	
 	public boolean isDesignSchool;
 	public boolean isFulfillmentCenter;
+	
+	public boolean isEnemyRushing;
 	
 	public boolean minerRequested = false;
 	
@@ -38,7 +43,8 @@ public strictfp class HQRobot extends Robot {
 		super(rc);
 		// TODO Auto-generated constructor stub
 		MAX_MINERS = INITIAL_MINERS;
-		
+		numMiners = 0;
+		numLandscapers = 0;
 		designSchoolLocations = new ArrayList<MapLocation>();
 	}
 
@@ -51,8 +57,9 @@ public strictfp class HQRobot extends Robot {
     		wallBoundLeft = Math.max(location.x - 1, 0);
     		wallBoundUpper = Math.min(location.y + 1, mapHeight-1);
     		wallBoundRight = Math.min(location.x + 1, mapWidth-1);
+    		hqLocation = location;
         }
-
+        isEnemyRushing = false;
         //Process nearby robots
         RobotInfo[] ri = nearbyRobots;
         RobotInfo r;
@@ -94,14 +101,19 @@ public strictfp class HQRobot extends Robot {
                     case MINER:
                         //Call the drones
                         //Communications.sendMessage(rc);
+                    	isEnemyRushing = true;
                         break;
                     case LANDSCAPER:
                         //Call the drones
                         //Communications.sendMessage(rc);
+                    	isEnemyRushing = true;
                         break;
                     case DELIVERY_DRONE:
                         //pew pew pew
-                        rc.shootUnit(r.getID());
+                    	if (rc.canShootUnit(r.ID)) {
+                    		rc.shootUnit(r.ID);
+                    	}
+                        
                         return;
                     case NET_GUN:
                         //Direct units to bury the net gun
@@ -128,13 +140,12 @@ public strictfp class HQRobot extends Robot {
         	if (soup > 2) Communications.queueMessage(rc, 2, 3, enemyHqLocation.x, enemyHqLocation.y);
         }
 
-        if ((numMiners < INITIAL_MINERS) || soup > RobotType.DESIGN_SCHOOL.cost + 8 * RobotType.VAPORATOR.cost + RobotType.VAPORATOR.cost) {
+        if (((numMiners < INITIAL_MINERS) || (numMiners < MAX_MINERS && soup > 45 * numMiners)) || soup > RobotType.DESIGN_SCHOOL.cost + 8 * RobotType.VAPORATOR.cost + RobotType.VAPORATOR.cost) {
             //Try building miner
             Direction[] dirs = Utility.directions;
             for (int i = dirs.length; --i >= 0;) {
                 if (rc.canBuildRobot(RobotType.MINER, dirs[i])) {
                     rc.buildRobot(RobotType.MINER, dirs[i]);
-                    minerRequested = false;
                     numMiners++;
                 }
             }
@@ -164,7 +175,7 @@ public strictfp class HQRobot extends Robot {
 			}
 		}*/
         
-        completedWall = numLandscapers >= 8;
+        /*completedWall = numLandscapers >= 8;
 		
 		
 		if (!completedWall && round < TURTLE_END && dsAvailable && landscaperRequestCooldown == 0) {
@@ -193,7 +204,7 @@ public strictfp class HQRobot extends Robot {
 			landscaperRequestCooldown += 10;
 		}
 		
-		if (landscaperRequestCooldown > 0) landscaperRequestCooldown--;
+		if (landscaperRequestCooldown > 0) landscaperRequestCooldown--;*/
     }
 
     /**
@@ -251,12 +262,6 @@ public strictfp class HQRobot extends Robot {
         	MapLocation ml6 = new MapLocation(x, y);
         	if (!designSchoolLocations.contains(ml6)) designSchoolLocations.add(ml6);
         	rc.setIndicatorLine(location, ml6, 0, 255, 255);
-        	dsAvailable = true;
-        	break;
-        case 19:
-        	MapLocation ml19 = new MapLocation(x, y);
-        	if (!designSchoolLocations.contains(ml19)) designSchoolLocations.add(ml19);
-        	rc.setIndicatorLine(location, ml19, 0, 255, 255);
         	dsAvailable = true;
         	break;
         }

@@ -99,6 +99,8 @@ public strictfp class MinerRobot extends Robot {
 						fcBuilt = true;
 					}
 					break;
+				case DELIVERY_DRONE:
+					break;
 				case REFINERY:
 					isRefineryNearby = true;
 					if (!refineries.contains(r.location)) refineries.add(r.location);
@@ -274,7 +276,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 
 			//Build Vaporator
-			if (round < MAX_VAPORATOR_BUILD_ROUND && soup > RobotType.VAPORATOR.cost && (designSchoolBuildCooldown > 0 || round > 150) && hqDist >= 2) {
+			if (round < MAX_VAPORATOR_BUILD_ROUND && soup > RobotType.VAPORATOR.cost && hqDist >= 2) {
 				Direction[] dirs = Utility.directions;
 				Direction d;
 				ml = null;
@@ -291,7 +293,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 
 			//Build Fulfillment Center
-			if (soup > RobotType.FULFILLMENT_CENTER.cost && (enemySpotted || soup > 700) && !fcBuilt && hqDist >= 2) {
+			if (soup > RobotType.FULFILLMENT_CENTER.cost && !fcBuilt && (enemySpotted || soup > 800) && hqDist >= 2) {
 				Direction[] dirs = Utility.directions;
 				Direction d;
 				ml = null;
@@ -379,11 +381,28 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 			}
+			
+			//Build Vaporator
+			if (round < MAX_VAPORATOR_BUILD_ROUND && soup > RobotType.VAPORATOR.cost && hqDist >= 2) {
+				Direction[] dirs = Utility.directions;
+				Direction d;
+				ml = null;
+				for (int i = 8; i-->0;) {
+					d = dirs[i];
+					ml = location.add(d);
+					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+						if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
+							rc.buildRobot(RobotType.VAPORATOR, d);
+							return;
+						}
+					}
+				}
+			}
 		}
 
 		
 
-		System.out.println("NEAREST REFINERY:"+nearestRefinery);
+		//System.out.println("NEAREST REFINERY:"+nearestRefinery);
 
 
 		//if (soupMine != null)System.out.println("TARGETING: " + soupMine.x + ", " + soupMine.y);
@@ -400,11 +419,11 @@ public strictfp class MinerRobot extends Robot {
 			EnemyHqPossiblePosition[] positions = EnemyHqPossiblePosition.values();
 			setScoutEnemyHq(positions[random % positions.length]);*/
 			isBuilder = true;
-			System.out.println("I'm the builder!");
+			//System.out.println("I'm the builder!");
 		}
 		switch (minerState) {
 		case MINING:
-			System.out.println("MINING");
+			//System.out.println("MINING");
 			MapLocation soupLoc = null;
 			int soupLeft = 0;
 			ml = null;
@@ -438,7 +457,7 @@ public strictfp class MinerRobot extends Robot {
 				return;
 			}
 			if (soupLoc != null) {
-				System.out.println("CARRYING " + soupCarrying +" / " + type.soupLimit + " SOUPS");
+				//System.out.println("CARRYING " + soupCarrying +" / " + type.soupLimit + " SOUPS");
 				rc.mineSoup(location.directionTo(soupLoc));
 				if (soupCarrying + Math.min(soupLeft, GameConstants.SOUP_MINING_RATE) >= type.soupLimit) {
 					minerState = MinerState.RETURNING;
@@ -448,7 +467,7 @@ public strictfp class MinerRobot extends Robot {
 			//this code is executed if mining fails
 			minerState = MinerState.SEEKING;
 		case SEEKING:
-			System.out.println("SEEKING");
+			//System.out.println("SEEKING");
 
 			if (soupMine != null && rc.canSenseLocation(soupMine) && rc.senseSoup(soupMine) == 0) {
 				soupMine = null;
@@ -463,6 +482,10 @@ public strictfp class MinerRobot extends Robot {
 					moveScout(rc);
 				}
 
+			}
+			
+			if (isBuilder && round < TURTLE_ROUND && hqDist < 2) {
+				moveScout(rc);
 			}
 
 			//Check if can begin mining
@@ -497,7 +520,7 @@ public strictfp class MinerRobot extends Robot {
 
 			break;
 		case RETURNING:
-			System.out.println("RETURNING");
+			//System.out.println("RETURNING");
 			if (returnLoc != null ) {
 				if (!navigatingReturn) {
 					Nav.beginNav(rc, this, returnLoc);
@@ -706,7 +729,7 @@ public strictfp class MinerRobot extends Robot {
 		switch (m) {
 		case 1:
 			hqLocation = new MapLocation(x,y);
-			System.out.println("Recieved HQ location: " + x + ", " + y);
+			//System.out.println("Recieved HQ location: " + x + ", " + y);
 			break;
 		case 2:
 			if (soupMine == null) {
@@ -715,11 +738,11 @@ public strictfp class MinerRobot extends Robot {
 					Nav.beginNav(rc, this, soupMine);
 				}
 			}
-			System.out.println("Recieved soup location: " + x + ", " + y);
+			//System.out.println("Recieved soup location: " + x + ", " + y);
 			break;
 		case 5:
 			MapLocation ml5 = new MapLocation(x,y);
-			System.out.println("Recieved Refinery location: " + x + ", " + y);
+			//System.out.println("Recieved Refinery location: " + x + ", " + y);
 			if (!refineries.contains(ml5)) refineries.add(ml5);
 			break;
 		case 6:

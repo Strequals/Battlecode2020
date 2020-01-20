@@ -232,7 +232,7 @@ public strictfp class MinerRobot extends Robot {
 		if (cooldownTurns >= 1) return;
 
 		//Build Refinery
-		if (!isRefineryNearby && !isRush && soup > RobotType.REFINERY.cost && (hqDist >= DISTANCE_REFINERY_THRESHOLD || (round > TURTLE_ROUND && hqDist > 2))) {
+		if (!isRefineryNearby && !isRush && soup > RobotType.REFINERY.cost && (hqDist >= DISTANCE_REFINERY_THRESHOLD || (round > TURTLE_END && hqDist > 2))) {
 			if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
 				Direction[] dirs = Utility.directions;
 				Direction d;
@@ -273,7 +273,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 		//Build Vaporator
-		if (round < MAX_VAPORATOR_BUILD_ROUND && !isRush && soup > RobotType.VAPORATOR.cost && (designSchoolBuildCooldown > 0 || round > 150) && hqDist >= 2) {
+		if (round < MAX_VAPORATOR_BUILD_ROUND && !isRush && soup > RobotType.VAPORATOR.cost && round > TURTLE_ROUND && hqDist >= 2) {
 			Direction[] dirs = Utility.directions;
 			Direction d;
 			ml = null;

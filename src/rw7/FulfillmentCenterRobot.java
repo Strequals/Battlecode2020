@@ -1,25 +1,53 @@
 package rw7;
 
+import java.util.ArrayList;
+
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
 
 public strictfp class FulfillmentCenterRobot extends Robot {
+	
+	public boolean makeOne;
+	public ArrayList<MapLocation> enemyNetGuns;
+	
+	public int friendlyDrones;
+	public int nearbyLandscapers;
+	public int nearbyVaporators;
+	
+	public static final int WEIGHT = 100;
+	public static final int BASE_WEIGHT = 450;
+	public static final int LS_WEIGHT = 35;
+	public static final int VAPORATOR_WEIGHT = 50;
+	public static final int DIST_HQ = 64; // emergency drone range
 
 	public FulfillmentCenterRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		// TODO Auto-generated constructor stub
+		makeOne = false;
+		enemyNetGuns = new ArrayList<MapLocation>();
 	}
 
 	@Override
 	public void run() throws GameActionException {
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
-		int friendlyDrones = 0;
 		int enemies = 0;
+		enemyNetGuns.clear();
+		friendlyDrones = 0;
+		nearbyLandscapers = 0;
+		nearbyVaporators = 0;
+		if (round == roundCreated) {
+			if (initialBuildingTile(location)) {
+				makeOne = true;
+			}
+		}
+		
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -27,6 +55,13 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 				switch (r.getType()) {
 				case DELIVERY_DRONE:
 					friendlyDrones++;
+					break;
+				case LANDSCAPER:
+					nearbyLandscapers++;
+					break;
+				case VAPORATOR:
+					nearbyVaporators++;
+					break;
 				default:
 					break;
 
@@ -56,6 +91,7 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 				case NET_GUN:
 					//Direct units to bury the net gun
 					//Communications.sendMessage(rc);
+					enemyNetGuns.add(r.location);
 					break;
 				case REFINERY:
 					//Direct units to bury the refinery
@@ -71,10 +107,11 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 		
 		if (!rc.isReady()) return;
 		
-		if (soup > RobotType.DELIVERY_DRONE.cost && enemies>friendlyDrones) {
+		if (soup > RobotType.DELIVERY_DRONE.cost && ((enemies>friendlyDrones && location.distanceSquaredTo(hqLocation) < DIST_HQ) || makeOne || (round < TURTLE_END && soup > RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT - nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT))) {
 			Direction hqDirection = location.directionTo(hqLocation);
-			if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, hqDirection)) {
+			if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, hqDirection) && isSafe(location.add(hqDirection))) {
 				rc.buildRobot(RobotType.DELIVERY_DRONE, hqDirection);
+				makeOne = false;
 				return;
 			}
 			Direction left = hqDirection;
@@ -82,23 +119,27 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 			for (int i = 4; i-->0;) {
 				left = left.rotateLeft();
 				right = right.rotateRight();
-				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, left)) {
+				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, left) && isSafe(location.add(left))) {
 					rc.buildRobot(RobotType.DELIVERY_DRONE, left);
+					makeOne = false;
 					return;
 				}
-				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, right)) {
+				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, right) && isSafe(location.add(right))) {
 					rc.buildRobot(RobotType.DELIVERY_DRONE, right);
+					makeOne = false;
 					return;
 				}
 
 			}
 		}
-
-		if (soup > 700) {
+		
+		//After turtle end
+		if (soup > RobotType.DELIVERY_DRONE.cost && soup > RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT- nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT) {
 			if (enemyHqLocation != null) {
 				Direction enemyHqDirection = location.directionTo(enemyHqLocation);
-				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, enemyHqDirection)) {
+				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, enemyHqDirection) && isSafe(location.add(enemyHqDirection))) {
 					rc.buildRobot(RobotType.DELIVERY_DRONE, enemyHqDirection);
+					makeOne = false;
 					return;
 				}
 				Direction left = enemyHqDirection;
@@ -106,12 +147,14 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 				for (int i = 4; i-->0;) {
 					left = left.rotateLeft();
 					right = right.rotateRight();
-					if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, left)) {
+					if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, left) && isSafe(location.add(left))) {
 						rc.buildRobot(RobotType.DELIVERY_DRONE, left);
+						makeOne = false;
 						return;
 					}
-					if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, right)) {
+					if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, right) && isSafe(location.add(right))) {
 						rc.buildRobot(RobotType.DELIVERY_DRONE, right);
+						makeOne = false;
 						return;
 					}
 
@@ -121,7 +164,8 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 				Direction d;
 				for (int i = 8; i-->0;) {
 					d = directions[i];
-					if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, d)) {
+					if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, d) && isSafe(location.add(d))) {
+						makeOne = false;
 						rc.buildRobot(RobotType.DELIVERY_DRONE, d);
 					}
 				}
@@ -132,10 +176,28 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 		}
 
 	}
+	
+	public boolean isSafe(MapLocation ml) {
+		ArrayList<MapLocation> ngs = enemyNetGuns;
+		MapLocation netGunLoc;
+		for (int i = ngs.size(); i-->0;) {
+			netGunLoc = ngs.get(i);
+			if (netGunLoc.isWithinDistanceSquared(ml, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	@Override
 	public void processMessage(int m, int x, int y) {
-		// TODO Auto-generated method stub
+		switch (m) {
+		case 1:
+			hqLocation = new MapLocation(x,y);
+			System.out.println("Recieved HQ location: " + x + ", " + y);
+			break;
+		
+		}
 
 	}
 

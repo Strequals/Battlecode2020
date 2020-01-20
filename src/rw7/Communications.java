@@ -20,15 +20,7 @@ public class Communications {
 	 *8:Refinery removed
 	 *9:
 	 *10:
-	 *11:Request 1 Landscaper for HQ defense
-	 *12:Request 2 Landscapers for HQ defense
-	 *13:Request 3 Landscapers for HQ defense
-	 *14:Request 4 Landscapers for HQ defense
-	 *15:Request 5 Landscapers for HQ defense
-	 *16:Request 6 Landscapers for HQ defense
-	 *17:Request 7 Landscapers for HQ defense
-	 *18:Request 8 Landscapers for HQ defense
-	 *19:Finished requested HQ landscapers */
+	 *11: */
 	
 	enum Message {
 		HQ_LOC
@@ -85,7 +77,6 @@ public class Communications {
 			trans = t[i];
 			m = trans.getMessage();
 			c = trans.getCost();
-			System.out.println(m[0]);
 			if (m[0] != verySecretNumber) continue;
 			for (int j = m.length; j-- > 1;) {
 				message = m[j];

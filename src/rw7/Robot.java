@@ -4,13 +4,14 @@ import battlecode.common.*;
 
 public abstract strictfp class Robot {
 	public final RobotController rc;
-	public static MapLocation hqLocation;
+	public MapLocation hqLocation;
 	public final Team team;
 	public final int id;
 	public final int mapWidth;
 	public final int mapHeight;
 	public final RobotType type;
-	public final int TURTLE_ROUND = 150;
+	public final int TURTLE_ROUND = 150; //1000 guaranteed soup / 8 speed
+	public final int CLOSE_TURTLE_END = 500;
 	public final int TURTLE_END = 700;
 
 	public RobotInfo[] nearbyRobots;
@@ -55,12 +56,12 @@ public abstract strictfp class Robot {
 					//The robot has just been created, find the HQ location
 					Communications.processFirstBlock(rc, this);
 					roundCreated = rc.getRoundNum();
-					System.out.println("hqLoc:"+hqLocation);
+					//System.out.println("hqLoc:"+hqLocation);
 					if (hqLocation != null) {
 						hqX3 = hqLocation.x%3;
 						hqY3 = hqLocation.y%3;
 					}
-					System.out.println("hqX2 "+hqX3+", hqY2 "+hqY3);
+					//System.out.println("hqX2 "+hqX3+", hqY2 "+hqY3);
 				}if (round > 1) {
 					Communications.processLastBlock(rc, this);
 				}
@@ -89,7 +90,7 @@ public abstract strictfp class Robot {
 				
 				
 				Communications.sendMessages(rc);
-				System.out.println("BC left: " + Clock.getBytecodesLeft());
+				//System.out.println("BC left: " + Clock.getBytecodesLeft());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -98,19 +99,19 @@ public abstract strictfp class Robot {
 		}
 	}
 	
-	public static boolean pathTile(MapLocation ml) {
+	public boolean pathTile(MapLocation ml) {
 		return (ml.x%3 != hqX3) || (ml.y%3 != hqY3) && (ml.distanceSquaredTo(hqLocation) != 4);
 	}
 	
-	public static boolean pitTile(MapLocation ml) {
+	public boolean pitTile(MapLocation ml) {
 		return ((ml.x%3 == hqX3) && (ml.y%3 == hqY3)) || (ml.distanceSquaredTo(hqLocation) == 4);
 	}
 	
-	public static boolean buildingTile(MapLocation ml) {
+	public boolean buildingTile(MapLocation ml) {
 		return ((ml.x%3 != hqX3) && (ml.y%3 != hqY3)) && (ml.distanceSquaredTo(hqLocation) != 4);
 	}
 	
-	public static boolean initialBuildingTile(MapLocation ml) {
+	public boolean initialBuildingTile(MapLocation ml) {
 		return !pitTile(ml) && Utility.chebyshev(ml, hqLocation) == 3;
 	}
 
