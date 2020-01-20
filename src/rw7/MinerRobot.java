@@ -40,7 +40,8 @@ public strictfp class MinerRobot extends Robot {
 	public MapLocation nearestTerraformer;
 	private int maxWaitTurns = 10;
 	
-	public static final int MOVE_TO_MATRIX_LEVEL = 100; //Higher value means miners less likely to move to matrix
+	public static final int MOVE_TO_MATRIX_LEVEL = 200; //Higher value means miners less likely to move to matrix
+	public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
 	
 	public MinerState prevState; //Stores state when switching to move_matrix state
 
@@ -112,6 +113,7 @@ public strictfp class MinerRobot extends Robot {
 							nearestTerraformer = r.location;
 						}
 					}
+					break;
 				case FULFILLMENT_CENTER:
 					if (rc.senseElevation(r.location) >= robotElevation-3) {
 						fcBuilt = true;
@@ -181,7 +183,6 @@ public strictfp class MinerRobot extends Robot {
 				dy = y - location.y;
 				rad = dx * dx + dy * dy;
 				if (rad > rSq) continue;
-				if (isBuilder && rad <= 2 && (!builderDS || !builderFC)) continue;
 				ml = new MapLocation(x, y);
 				s = rc.senseSoup(ml);
 				if (s > 0) {// && !rc.senseFlooding(ml) Removed because some soup on edge is minable even when flooded
@@ -251,6 +252,18 @@ public strictfp class MinerRobot extends Robot {
 		if (hqLocation != null) hqDist = Utility.chebyshev(location, hqLocation);
 		
 		
+		if (isBuilder) {
+			//move towards matrix or hq if far
+			if (minerState != MinerState.MOVE_MATRIX && hqDist > 8 && ((robotElevation < round / MOVE_TO_MATRIX_BUILDER && round > TURTLE_ROUND && round < TURTLE_END) || (robotElevation < TURTLE_END / MOVE_TO_MATRIX_BUILDER && round > TURTLE_END))) {
+				prevState = minerState;
+				minerState = MinerState.MOVE_MATRIX;
+				
+			}
+			
+			if (minerState == MinerState.MOVE_MATRIX && (robotElevation > round/MOVE_TO_MATRIX_LEVEL || robotElevation > TURTLE_END/MOVE_TO_MATRIX_LEVEL)) {
+				minerState = prevState;
+			}
+		} else {
 		//move towards matrix or hq if far
 		if (minerState != MinerState.MOVE_MATRIX && hqDist > 8 && ((robotElevation < round / MOVE_TO_MATRIX_LEVEL && round > TURTLE_ROUND && round < TURTLE_END) || (robotElevation < TURTLE_END / MOVE_TO_MATRIX_LEVEL && round > TURTLE_END))) {
 			prevState = minerState;
@@ -258,9 +271,9 @@ public strictfp class MinerRobot extends Robot {
 			
 		}
 		
-		System.out.println("state:"+minerState);
 		if (minerState == MinerState.MOVE_MATRIX && (robotElevation > round/MOVE_TO_MATRIX_LEVEL || robotElevation > TURTLE_END/MOVE_TO_MATRIX_LEVEL)) {
 			minerState = prevState;
+		}
 		}
 
 		if (cooldownTurns >= 1) return;
@@ -505,6 +518,22 @@ public strictfp class MinerRobot extends Robot {
 			if (soupMine != null && rc.canSenseLocation(soupMine) && rc.senseSoup(soupMine) == 0) {
 				soupMine = null;
 			}
+			
+			if (isBuilder && round < TURTLE_ROUND && hqDist < 2 && round > 20) {
+				/*if (soupMine != null && soupMine.distanceSquaredTo(hqLocation) >= 2) {
+				if (Nav.target == null || !Nav.target.equals(soupMine)) {
+					Nav.beginNav(rc, this, soupMine);
+				}
+				Nav.nav(rc, this);
+				System.out.println("BUILDER MOVING AWAY " + soupMine);
+				return;
+				} else {*/
+					moveScout(rc);
+					return;
+				//}
+				
+				
+			}
 
 			//search for a soup deposit, check optimal soup deposit within radius
 			if (soupMine == null) {
@@ -518,20 +547,7 @@ public strictfp class MinerRobot extends Robot {
 
 			}
 
-			if (isBuilder && round < TURTLE_ROUND && hqDist < 2) {
-				if (soupMine != null && soupMine.distanceSquaredTo(hqLocation) >= 2) {
-				if (Nav.target == null || !Nav.target.equals(soupMine)) {
-					Nav.beginNav(rc, this, soupMine);
-				}
-				Nav.nav(rc, this);
-				return;
-				} else {
-					moveScout(rc);
-					return;
-				}
-				
-				
-			}
+			
 
 			//Check if can begin mining
 			MapLocation adjacentSoup = null;
@@ -845,8 +861,9 @@ public strictfp class MinerRobot extends Robot {
 			break;
 		case 2:
 			if (soupMine == null) {
-				soupMine = new MapLocation(x, y);
-				if (minerState != MinerState.SCOUTING_ENEMY_HQ) {
+				
+				if (!isBuilder) {
+					soupMine = new MapLocation(x, y);
 					Nav.beginNav(rc, this, soupMine);
 				}
 			}
