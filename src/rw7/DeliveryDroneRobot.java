@@ -8,6 +8,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 	private enum DroneState {
 		ATTACKING,
+      ASSAULTING,
 		DEFENDING,
 		TRANSPORTING
 	}
@@ -26,7 +27,9 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private int friendlyDrones;
 	private MapLocation minerAssistLocation;
 	private MapLocation emptyWallLocation;
-	
+	private boolean scouting = true;
+   
+   
 	public int random; // A random number from 0 to 255
 	public static final int A = 623;
 	public static final int B = 49;
@@ -90,15 +93,25 @@ public strictfp class DeliveryDroneRobot extends Robot {
 					if (homeLocation == null) homeLocation = r.location;
 					break;
 				case MINER:
-					distance = Utility.chebyshev(location, r.location);
-					if (distance < targetDistance) {
-						targetLocationf = r.location;
-						targetDistance = distance;
-						targetFriendly = r;
-					}
+               if(state == DroneState.TRANSPORTING) {
+   					distance = Utility.chebyshev(location, r.location);
+   					if (distance < targetDistance && !pathTile(r.location)) {
+   						targetLocationf = r.location;
+   						targetDistance = distance;
+   						targetFriendly = r;
+   					}
+               }
 					break;
 				case LANDSCAPER:
-					
+               if(state == DroneState.ASSAULTING) {
+   					distance = Utility.chebyshev(location, r.location);
+   					if (distance < targetDistance && Utility.chebyshev(r.location, hqLocation) > 2) {
+   						targetLocationf = r.location;
+   						targetDistance = distance;
+   						targetFriendly = r;
+   					}
+               }
+					break;
 				case DELIVERY_DRONE:
 					friendlyDrones++;
 					break;
@@ -183,7 +196,69 @@ public strictfp class DeliveryDroneRobot extends Robot {
          doTransport();
          break;
       }
+      case ASSAULTING:
+         doAssault();
+         break;
 	}
+   
+   public void doAssault() {
+      int ehqdist = location.distanceSquaredTo(enemyHqLocation);
+      if(rc.isCurrentlyHoldingUnit()) {
+         if(ehqdist < 36) {
+   			if (DroneNav.target == null || !DroneNav.target.equals(enemyhqLocation)) {
+   				DroneNav.beginNav(rc, this, hqLocation);
+   			}
+   			DroneNav.nav(rc, this);
+            return;
+         }
+         else if(nearestSafe == null) {
+            if(scanForSafe()) {
+               DroneNav.beginNav(rc, this, nearestSafe);
+               DroneNav.nav(rc, this);
+               return;
+            }
+            else {
+      			if (DroneNav.target == null || !DroneNav.target.equals(enemyhqLocation)) {
+      				DroneNav.beginNav(rc, this, hqLocation);
+      			}
+      			DroneNav.nav(rc, this);
+               return;
+            }
+         }
+         else {
+            if(Utility.chebyshev(location, nearestSafe) <= 1) {
+   				if(rc.canDropUnit(location.directionTo(nearestSafe))) {
+   					rc.dropUnit(location.directionTo(nearestSafe));
+   					return;
+   				}
+   			}
+            
+   			if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
+   				DroneNav.beginNav(rc, this, hqLocation);
+   			}
+   			DroneNav.nav(rc, this);
+            return;
+         }
+      }
+      else if(targetFriendly != null) {
+         if (Utility.chebyshev(location, targetLocation) <= 1) {
+				if (rc.canPickUpUnit(targetRobot.ID)) {
+					rc.pickUpUnit(targetRobot.ID);
+               scanForSafe();
+					return;
+				}
+			} else {
+				if (DroneNav.target == null || !DroneNav.target.equals(targetLocationf)) {
+					DroneNav.beginNav(rc, this, targetLocationf);
+				}
+				DroneNav.nav(rc, this);
+				return;
+			}
+      }
+      else {
+         state = DroneState.ATTACKING;
+      }
+   }
    
    public boolean scanForSafe() {
 		MapLocation ml;
@@ -261,6 +336,9 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				return;
 			}
       }
+      
+      //else wander
+      moveScout(rc);
    }
    
 	public void scanForWater() throws GameActionException {
@@ -503,7 +581,14 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			if (Utility.chebyshev(enemyHqLocation, location) < 6) {
 				rush = true;
 			}
+         break;
 		}
+      case 12:
+         state = DroneState.TRANSPORTING;
+         break;
+      case 13:
+         state = DroneState.ASSAULTING;
+         break;
 	}
 
 }

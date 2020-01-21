@@ -20,7 +20,9 @@ public class Communications {
 	 *8:Refinery removed
 	 *9:
 	 *10:
-	 *11:HQ under attack */
+	 *11:HQ under attack 
+    *12:Enter Transport mode(save miners)
+    *13:Enter Assault mode(transport landscapers)*/
 	
 	enum Message {
 		HQ_LOC
