@@ -27,6 +27,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private MapLocation minerAssistLocation;
 	private MapLocation emptyWallLocation;
 	
+	
 	public int random; // A random number from 0 to 255
 	public static final int A = 623;
 	public static final int B = 49;

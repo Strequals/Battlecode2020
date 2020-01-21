@@ -21,7 +21,7 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 	public int nearbyVaporators;
 	
 	public static final int WEIGHT = 100;
-	public static final int BASE_WEIGHT = 600;
+	public static final int BASE_WEIGHT = 700;
 	public static final int LS_WEIGHT = 20;
 	public static final int VAPORATOR_WEIGHT = 10;
 	public static final int DIST_HQ = 64; // emergency drone range

@@ -395,7 +395,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 		} 
 		if (isBuilder) {
-			if (rushDetected) {
+			if (rushDetected || round > CLOSE_TURTLE_END) {
 				if (hqDist > 1 && hqDist < 5) {
 					//Build Design School
 
@@ -508,6 +508,7 @@ public strictfp class MinerRobot extends Robot {
 			isBuilder = true;
 			//System.out.println("I'm the builder!");
 		}
+		System.out.println(minerState);
 		switch (minerState) {
 		case MINING:
 			//System.out.println("MINING");
@@ -575,7 +576,7 @@ public strictfp class MinerRobot extends Robot {
 
 
 			}
-
+			
 			//search for a soup deposit, check optimal soup deposit within radius
 			if (soupMine == null) {
 				if (nearestSoup != null) {
@@ -587,7 +588,7 @@ public strictfp class MinerRobot extends Robot {
 				}
 
 			}
-
+			//rc.setIndicatorLine(location, soupMine, 100, 0, 255);
 
 
 			//Check if can begin mining
@@ -607,9 +608,9 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 			}
-
+			
 			if (adjacentSoup == null) {
-
+				
 				Nav.nav(rc, this);
 			} else {
 				rc.mineSoup(location.directionTo(adjacentSoup));

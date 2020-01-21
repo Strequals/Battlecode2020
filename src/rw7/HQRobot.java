@@ -149,7 +149,7 @@ public strictfp class HQRobot extends Robot {
         	if (soup > 2) Communications.queueMessage(rc, 2, 3, enemyHqLocation.x, enemyHqLocation.y);
         }
 
-        if (((numMiners < INITIAL_MINERS) || (numMiners < MAX_MINERS && soup > 45 * numMiners)) || soup > RobotType.DESIGN_SCHOOL.cost + 8 * RobotType.VAPORATOR.cost + RobotType.VAPORATOR.cost) {
+        if ((numMiners < MAX_MINERS && soup > 45 * numMiners) || soup > RobotType.DESIGN_SCHOOL.cost + 8 * RobotType.VAPORATOR.cost + RobotType.VAPORATOR.cost) {
             //Try building miner
             Direction[] dirs = Utility.directions;
             for (int i = dirs.length; --i >= 0;) {

@@ -21,7 +21,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 	
 	static final int WEIGHT = 150; //need 150 extra soup per nearby landscaper to build
 	static final int VAPORATOR_WEIGHT = 100; //need 150 less soup per nearby vaporator to build
-	
+	static final int BASE_TURTLE_WEIGHT = 450;
+	static final int TURTLE_WEIGHT = 15;
 	
 	enum DesignSchoolState {
 		BUILDING_TURTLES, RUSHING, TERRAFORMING
@@ -98,7 +99,10 @@ public strictfp class DesignSchoolRobot extends Robot {
 				case LANDSCAPER:
 					//Call the drones
 					//Communications.sendMessage(rc);
-					rushDetected = true;
+					if (!rushDetected) {
+						rushDetected = true;
+						Communications.queueMessage(rc, 2, 11, r.location.x, r.location.y);
+					}
 					break;
 				case DELIVERY_DRONE:
 					//pew pew pew
@@ -144,11 +148,11 @@ public strictfp class DesignSchoolRobot extends Robot {
 	}
 
 	private void buildTurtles() throws GameActionException {
-		if (numTurtles > 0) {
+		if (numTurtles > 0 && (rushDetected || soup > BASE_TURTLE_WEIGHT + (8-numTurtles) * TURTLE_WEIGHT)) {
 			
 			//if there is no refinery, do not finish the wall
 			//if the fulfillment center has not been built and two or more landscapers exist, do not build more
-			if ((numTurtles == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost + RobotType.DELIVERY_DRONE.cost) || (!isAlliedDrone && numTurtles <= 6 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
+			if ((numTurtles == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost + RobotType.DELIVERY_DRONE.cost) || (!isAlliedDrone && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
 				return;
 			}
 			//Prefer building vaporators to finishing the wall
@@ -241,7 +245,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 		case 5:
 			isRefinery = true;
 			break;
-		
+		case 11:
+			rushDetected = true;
 		}
 
 	}

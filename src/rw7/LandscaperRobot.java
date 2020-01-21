@@ -28,7 +28,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private RobotInfo targetRobot;
 	private int hqElevation;
 	private MapLocation nearestFillTile;
-	
+
 	private int turnsNavvedHq;
 	private int nearbyLandscapers = 0;
 
@@ -96,7 +96,7 @@ public strictfp class LandscaperRobot extends Robot {
 		// Process nearby robots
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
-		
+
 		int targetBuildingDistance = 1000000;
 		targetBuildingLocation = null;
 		targetRobot = null;
@@ -211,7 +211,7 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 
-		
+
 
 		if (!rc.isReady()) return;
 
@@ -340,28 +340,28 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 
 		if (location.distanceSquaredTo(hqLocation)>2) {
-			
+
 			if (turnsNavvedHq < 50) {
-			if (!allFilled) {
-				//TODO: check if can tunnel/bridge
-				if (Nav.target == null || !Nav.target.equals(hqLocation)) {
-					Nav.beginNav(rc, this, hqLocation);
+				if (!allFilled) {
+					//TODO: check if can tunnel/bridge
+					if (Nav.target == null || !Nav.target.equals(hqLocation)) {
+						Nav.beginNav(rc, this, hqLocation);
+					}
+					Nav.nav(rc, this);
+					turnsNavvedHq++;
+					return;
+				} else {
+					state = LandscaperState.TERRAFORMING;
+					return;
 				}
-				Nav.nav(rc, this);
-				turnsNavvedHq++;
-				return;
-			} else {
-				state = LandscaperState.TERRAFORMING;
-				return;
 			}
-			}
-			
+
 			if (rank > 2) moveTerraform(hqLocation);
 			else moveTurtle(hqLocation);
 			return;
 
 		}
-		
+
 		if (flooded != null) {
 			Direction d = location.directionTo(flooded);
 			if (dirtCarrying == 0) {
@@ -374,15 +374,15 @@ public strictfp class LandscaperRobot extends Robot {
 				return;
 			}
 		}
-		
+
 		if (round > TURTLE_END && !allFilled && (lowLoc == null || !lowLoc.isAdjacentTo(location))) {
-		//System.out.println("All filled: " + allFilled);
-		//check if can move or bridge to lower wall location
-		if (lowLoc != null && robotElevation - lowElev > GameConstants.MAX_DIRT_DIFFERENCE) {
-			System.out.println("TURTLEMOVING to "+lowLoc);
-			moveTurtle(lowLoc);
-			return;
-		}
+			//System.out.println("All filled: " + allFilled);
+			//check if can move or bridge to lower wall location
+			if (lowLoc != null && robotElevation - lowElev > GameConstants.MAX_DIRT_DIFFERENCE) {
+				System.out.println("TURTLEMOVING to "+lowLoc);
+				moveTurtle(lowLoc);
+				return;
+			}
 		}
 
 		if (dirtCarrying == 0) {
@@ -542,8 +542,8 @@ public strictfp class LandscaperRobot extends Robot {
 	}
 
 	public void doTerraforming() throws GameActionException {
-		
-		
+
+
 
 		//Destroy enemy building
 		if (targetBuildingLocation != null) {
@@ -565,7 +565,7 @@ public strictfp class LandscaperRobot extends Robot {
 				return;
 			}
 		}
-		
+
 		//start turtling if on rank 1
 		if (Utility.chebyshev(location, hqLocation) == 1) {
 			state = LandscaperState.TURTLING;
@@ -586,71 +586,77 @@ public strictfp class LandscaperRobot extends Robot {
 				}
 			}
 		}
-		
+
 		if (nearestFillTile != null) {
 			//check if still needs filling
-			int elev = rc.senseElevation(nearestFillTile);
-			if (robotElevation - elev == 0) {
+			if (!rc.canSenseLocation(nearestFillTile)) {
 				nearestFillTile = null;
-			}
-			
-			RobotInfo ri = rc.senseRobotAtLocation(nearestFillTile);
-			if (ri != null && ri.team == team && ri.type.isBuilding()) {
-				nearestFillTile = null;
-			}
-		}
-		
-		if (nearestFillTile == null) {
-		//Find tile to fill
-		MapLocation ml;
-		int rSq = senseRadiusSq;
-		int radius = Math.min((int)(Math.sqrt(rSq)), TERRAFORM_RANGE_SQ);
-		ml = null;
-		int dx;
-		int dy;
-		int rad;
-		int elev;
-		int dElev;
-		int bestPriority = 100000;
-		int priority;
-		int rank;
-		int csDist;
-		RobotInfo ri;
-		for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
-			for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
-				dx = x - location.x;
-				dy = y - location.y;
-				rad = dx * dx + dy * dy;
-				if (rad > rSq) continue;
-				ml = new MapLocation(x, y);
+			} else {
 
-				csDist = Utility.chebyshev(ml, location);
-				if (csDist > MAX_TERRAFORM_RANGE) continue;
-				if (pitTile(ml)) continue;
-				elev = rc.senseElevation(ml);
-				ri = rc.senseRobotAtLocation(ml);
-				if (ri != null && (ri.type.isBuilding() || (ri.team == team && ri.type == RobotType.LANDSCAPER))) continue;
-				dElev = robotElevation - elev;
-				rank = Utility.chebyshev(ml, hqLocation);
-				if (rank == 1) continue;
-				priority = Utility.chebyshev(location, ml) + rank;
-				if (enemyHqLocation != null) {
-					priority += Utility.chebyshev(ml, enemyHqLocation);
-				}
-				if (dElev < 0) {
-					dElev = -dElev;
-					priority -= 100; //Prioritize filling in lower tiles rather than digging higher ones
-				}
-				if (dElev > TERRAFORM_THRESHOLD) continue;
-				if (dElev >= 2) {
-					if (priority < bestPriority) {
-						bestPriority = priority;
-						nearestFillTile = ml;
+				int elev = rc.senseElevation(nearestFillTile);
+				if (robotElevation - elev == 0) {
+					nearestFillTile = null;
+				} else {
+
+					RobotInfo ri = rc.senseRobotAtLocation(nearestFillTile);
+					if (ri != null && ri.team == team && ri.type.isBuilding()) {
+						nearestFillTile = null;
 					}
-
 				}
 			}
 		}
+
+		if (nearestFillTile == null) {
+			//Find tile to fill
+			MapLocation ml;
+			int rSq = senseRadiusSq;
+			int radius = Math.min((int)(Math.sqrt(rSq)), TERRAFORM_RANGE_SQ);
+			ml = null;
+			int dx;
+			int dy;
+			int rad;
+			int elev;
+			int dElev;
+			int bestPriority = 100000;
+			int priority;
+			int rank;
+			int csDist;
+			RobotInfo ri;
+			for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
+				for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
+					dx = x - location.x;
+					dy = y - location.y;
+					rad = dx * dx + dy * dy;
+					if (rad > rSq) continue;
+					ml = new MapLocation(x, y);
+
+					csDist = Utility.chebyshev(ml, location);
+					if (csDist > MAX_TERRAFORM_RANGE) continue;
+					if (pitTile(ml)) continue;
+					elev = rc.senseElevation(ml);
+					ri = rc.senseRobotAtLocation(ml);
+					if (ri != null && (ri.type.isBuilding() || (ri.team == team && ri.type == RobotType.LANDSCAPER))) continue;
+					dElev = robotElevation - elev;
+					rank = Utility.chebyshev(ml, hqLocation);
+					if (rank == 1) continue;
+					priority = Utility.chebyshev(location, ml) + rank;
+					if (enemyHqLocation != null) {
+						priority += Utility.chebyshev(ml, enemyHqLocation);
+					}
+					if (dElev < 0) {
+						dElev = -dElev;
+						priority -= 100; //Prioritize filling in lower tiles rather than digging higher ones
+					}
+					if (dElev > TERRAFORM_THRESHOLD) continue;
+					if (dElev >= 2) {
+						if (priority < bestPriority) {
+							bestPriority = priority;
+							nearestFillTile = ml;
+						}
+
+					}
+				}
+			}
 		}
 
 		if (nearestFillTile != null) {
