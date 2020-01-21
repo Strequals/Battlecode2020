@@ -195,10 +195,10 @@ public strictfp class DeliveryDroneRobot extends Robot {
       case TRANSPORTING:
          doTransport();
          break;
-      }
       case ASSAULTING:
          doAssault();
          break;
+      }
 	}
    
    public void doAssault() {
@@ -582,13 +582,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				rush = true;
 			}
          break;
-		}
       case 12:
          state = DroneState.TRANSPORTING;
          break;
       case 13:
          state = DroneState.ASSAULTING;
          break;
+      }
 	}
 
 }
