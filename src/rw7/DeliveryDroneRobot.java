@@ -25,6 +25,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private Direction lastDirection;
 	private int friendlyDrones;
 	private MapLocation minerAssistLocation;
+	private MapLocation emptyWallLocation;
 	
 	public int random; // A random number from 0 to 255
 	public static final int A = 623;
@@ -96,6 +97,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 						targetFriendly = r;
 					}
 					break;
+				case LANDSCAPER:
+					
 				case DELIVERY_DRONE:
 					friendlyDrones++;
 					break;
@@ -327,7 +330,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		}
 	}
 	
-	public void doAssistUnit() {
+	public void doAssistLandscaper() {
 		
 	}
 	

@@ -20,6 +20,7 @@ public strictfp class HQRobot extends Robot {
 	
 	public ArrayList<MapLocation> designSchoolLocations;
 	public MapLocation closestDesignSchool;
+	boolean rushDetected = false;
 	
 	public static final int ROUND_3x3 = 400; //If 3x3 wall not completed by round 400, do not try 5x5
 	public static final int INITIAL_MINERS = 3;
@@ -102,11 +103,19 @@ public strictfp class HQRobot extends Robot {
                         //Call the drones
                         //Communications.sendMessage(rc);
                     	isEnemyRushing = true;
+                        if (!rushDetected) {
+                    		rushDetected = true;
+                    		Communications.queueMessage(rc, 2, 11, r.location.x, r.location.y);
+                    	}
                         break;
                     case LANDSCAPER:
                         //Call the drones
                         //Communications.sendMessage(rc);
                     	isEnemyRushing = true;
+                    	if (!rushDetected) {
+                    		rushDetected = true;
+                    		Communications.queueMessage(rc, 2, 11, r.location.x, r.location.y);
+                    	}
                         break;
                     case DELIVERY_DRONE:
                         //pew pew pew
@@ -263,6 +272,9 @@ public strictfp class HQRobot extends Robot {
         	if (!designSchoolLocations.contains(ml6)) designSchoolLocations.add(ml6);
         	rc.setIndicatorLine(location, ml6, 0, 255, 255);
         	dsAvailable = true;
+        	break;
+        case 11:
+        	rushDetected = true;
         	break;
         }
 

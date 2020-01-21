@@ -20,7 +20,7 @@ public class Communications {
 	 *8:Refinery removed
 	 *9:
 	 *10:
-	 *11: */
+	 *11:HQ under attack */
 	
 	enum Message {
 		HQ_LOC

@@ -27,9 +27,10 @@ public strictfp class LandscaperRobot extends Robot {
 	private MapLocation targetBuildingLocation;
 	private RobotInfo targetRobot;
 	private int hqElevation;
-
+	private MapLocation nearestFillTile;
 	
 	private int turnsNavvedHq;
+	private int nearbyLandscapers = 0;
 
 	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
 	private static final int MAX_TERRAFORM_RANGE = 2; //Chebyshev distance to limit
@@ -95,7 +96,7 @@ public strictfp class LandscaperRobot extends Robot {
 		// Process nearby robots
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
-		int nearbyLandscapers = 0;
+		
 		int targetBuildingDistance = 1000000;
 		targetBuildingLocation = null;
 		targetRobot = null;
@@ -230,7 +231,7 @@ public strictfp class LandscaperRobot extends Robot {
 		switch (state) {
 
 		case TURTLING:
-			doTurtling(nearbyLandscapers, false);
+			doTurtling();
 			break;
 		case RUSHING:
 			doRushing();
@@ -250,7 +251,7 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 	}
 
-	private void doTurtling(int nearbyLandscapers, boolean movedThisTurn) throws GameActionException {
+	private void doTurtling() throws GameActionException {
 		int rank = Utility.chebyshev(location, hqLocation);
 
 		if (targetBuildingLocation != null) {
@@ -541,6 +542,8 @@ public strictfp class LandscaperRobot extends Robot {
 	}
 
 	public void doTerraforming() throws GameActionException {
+		
+		
 
 		//Destroy enemy building
 		if (targetBuildingLocation != null) {
@@ -562,6 +565,13 @@ public strictfp class LandscaperRobot extends Robot {
 				return;
 			}
 		}
+		
+		//start turtling if on rank 1
+		if (Utility.chebyshev(location, hqLocation) == 1) {
+			state = LandscaperState.TURTLING;
+			doTurtling();
+			return;
+		}
 
 		//Move off of pit
 		if (pitTile(location)) {
@@ -576,7 +586,21 @@ public strictfp class LandscaperRobot extends Robot {
 				}
 			}
 		}
-
+		
+		if (nearestFillTile != null) {
+			//check if still needs filling
+			int elev = rc.senseElevation(nearestFillTile);
+			if (robotElevation - elev == 0) {
+				nearestFillTile = null;
+			}
+			
+			RobotInfo ri = rc.senseRobotAtLocation(nearestFillTile);
+			if (ri != null && ri.team == team && ri.type.isBuilding()) {
+				nearestFillTile = null;
+			}
+		}
+		
+		if (nearestFillTile == null) {
 		//Find tile to fill
 		MapLocation ml;
 		int rSq = senseRadiusSq;
@@ -592,7 +616,6 @@ public strictfp class LandscaperRobot extends Robot {
 		int rank;
 		int csDist;
 		RobotInfo ri;
-		MapLocation nearestFillTile = null;
 		for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
 			for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
 				dx = x - location.x;
@@ -627,6 +650,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 				}
 			}
+		}
 		}
 
 		if (nearestFillTile != null) {
