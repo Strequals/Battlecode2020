@@ -39,14 +39,14 @@ public class DroneNav {
 
 		switch (state) {
 		case MOTION_TO_GOAL:
-			System.out.println("MTG");
+			//System.out.println("MTG");
 			if (tryDirect(rc, r)) {
 				return;
 			}
 			state = BugState.BUGGING;
 			startBug(rc, r);
 		case BUGGING:
-			System.out.println("BUG");
+			//System.out.println("BUG");
 			int c1 = Clock.getBytecodesLeft();
 			bug(r, rc);
 		}
@@ -136,8 +136,8 @@ public class DroneNav {
 	}
 
 	public static boolean canEndBug() {
-		System.out.println("MSO:"+movesSinceObstacle);
-		System.out.println("rotations:"+rotations);
+		//System.out.println("MSO:"+movesSinceObstacle);
+		//System.out.println("rotations:"+rotations);
 		if (movesSinceObstacle >= 4) return true;
 		return (rotations < 0 || rotations >= 8) && position.isWithinDistanceSquared(target, startDistanceSq-1);
 	}

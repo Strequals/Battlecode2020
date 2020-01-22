@@ -40,6 +40,8 @@ public strictfp class MinerRobot extends Robot {
 	private boolean hqAvailable = true;
 	private int numVaporators;
 	
+	private MapLocation frontLocation;
+	
 	public MapLocation nearestTerraformer;
 	private int maxWaitTurns = 10;
 	private boolean rushDetected = false;
@@ -55,7 +57,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DISTANCE_REFINERY_THRESHOLD = 400; // minimum distance apart for refineries
 	public static final int DISTANCE_SOUP_THRESHOLD = 25; //maximum distance from refinery to soup deposit upon creation
 
-	public static final int MAX_VAPORATOR_BUILD_ROUND = 1700;
+	public static final int MAX_VAPORATOR_BUILD_ROUND = 1600;
 	public static final int FC_DIST = 8;
 
 	enum MinerState {
@@ -395,11 +397,11 @@ public strictfp class MinerRobot extends Robot {
 			}
 		} 
 		if (isBuilder) {
-			if (rushDetected || round > CLOSE_TURTLE_END) {
+			if (builderFC && !builderDS && (rushDetected || (round > CLOSE_TURTLE_END)) && soup > RobotType.DESIGN_SCHOOL.cost) {
 				if (hqDist > 1 && hqDist < 5) {
 					//Build Design School
 
-					if (builderFC && !builderDS && rushDetected && soup > RobotType.DESIGN_SCHOOL.cost) {
+					//if (rushDetected) {
 						Direction[] dirs = Utility.directions;
 						Direction d;
 						ml = null;
@@ -415,7 +417,7 @@ public strictfp class MinerRobot extends Robot {
 								}
 							}
 						}
-					}
+					//}
 				} else {
 					if (hqDist == 1) {
 						fuzzy(rc, hqLocation.directionTo(location));
@@ -582,6 +584,17 @@ public strictfp class MinerRobot extends Robot {
 					soupMine = nearestSoup;
 					Nav.beginNav(rc, this, soupMine);
 				} else {
+					if (round > TURTLE_END && frontLocation != null) {
+						if (Utility.chebyshev(location, frontLocation) <= 2) {
+							frontLocation = null;
+						} else {
+							if (Nav.target == null || !Nav.target.equals(frontLocation)) {
+								Nav.beginNav(rc, this, frontLocation);
+							}
+							Nav.nav(rc, this);
+							return;
+						}
+					}
 					moveScout(rc);
 					return;
 				}
@@ -608,8 +621,9 @@ public strictfp class MinerRobot extends Robot {
 				}
 			}
 			
+			
+			
 			if (adjacentSoup == null) {
-				
 				Nav.nav(rc, this);
 			} else {
 				rc.mineSoup(location.directionTo(adjacentSoup));
@@ -929,8 +943,14 @@ public strictfp class MinerRobot extends Robot {
 		case 11:
 			rushDetected = true;
 			break;
+		case 15:
+			MapLocation ml15 = new MapLocation(x,y);
+			if (frontLocation == null || Utility.chebyshev(location, ml15) < Utility.chebyshev(location, frontLocation)) {
+				frontLocation = ml15;
+			}
+			break;
 		}
-
+		
 	}
 
 	@Override
