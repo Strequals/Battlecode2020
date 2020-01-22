@@ -10,7 +10,7 @@ public strictfp class LandscaperRobot extends Robot {
 		TERRAFORMING
 	}
 
-	private boolean isEnemyRushing;
+   private boolean isEnemyRushing;
 	// TODO: This probably shouldn't matter. Eliminate it.
 	private MapLocation homeDsLocation;
 	private MapLocation targetCorner;
@@ -789,5 +789,6 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 
 	}
+
 
 }

@@ -6,39 +6,41 @@ import battlecode.common.*;
 
 public strictfp class MinerRobot extends Robot {
 
-	public MinerState minerState;
+   public MinerState minerState;
 
 	/**
 	 * This is the possible position of the enemy HQ that the miner is currently scouting. Its value is undefined if the
 	 * `minerState` is not `SCOUTING_ENEMY_HQ`. Otherwise, it must not be null.
 	 */
-	private EnemyHqPossiblePosition enemyHqScouting;
+   private EnemyHqPossiblePosition enemyHqScouting;
 	/**
 	 * While `minerState` is `SCOUTING_ENEMY_HQ`, this must be location of the possible HQ that the miner is currently
 	 * scouting. While `minerState` is `RUSHING_ENEMY_HQ` and `DRONE_NETTING_ENEMY_HQ`, this must be the actual, known
 	 * location of the enemy HQ.
 	 */
-	private MapLocation targetedEnemyHqLocation;
+   private MapLocation targetedEnemyHqLocation;
 
-	public static final int DESIGN_SCHOOL_SEEN_TURNS = 50;
+   public static final int DESIGN_SCHOOL_SEEN_TURNS = 50;
 
-	public MapLocation soupMine;
-	public boolean navigatingReturn;
-	public MapLocation returnLoc;
-	public int random; // A random number from 0 to 255
-	public static final int A = 623;
-	public static final int B = 49;
-	public Direction lastDirection;
-	public int soupCommunicateCooldown;
-	public int designSchoolBuildCooldown;
-	public int turnsSinceDesignSchoolSeen = 100;
-	private boolean enemyBuiltDrones = false;
-	private boolean isBuilder = false;
-	private boolean builderDS = false;
-	private boolean builderFC = false;
-	private boolean builderVP = false;
-	private boolean hqAvailable = true;
-	private int numVaporators;
+   public MapLocation soupMine;
+   public boolean navigatingReturn;
+   public MapLocation returnLoc;
+   public int random; // A random number from 0 to 255
+   public static final int A = 623;
+   public static final int B = 49;
+   public Direction lastDirection;
+   public int soupCommunicateCooldown;
+   public int designSchoolBuildCooldown;
+   public int turnsSinceDesignSchoolSeen = 100;
+   private boolean enemyBuiltDrones = false;
+   private boolean isBuilder = false;
+   private boolean builderDS = false;
+   private boolean builderFC = false;
+   private boolean builderVP = false;
+   private boolean hqAvailable = true;
+   private int numVaporators;
+   private MapLocation nearestNetgun;
+   private int netgunDistance = 10000;
 	
 	private MapLocation frontLocation;
 	
@@ -46,10 +48,10 @@ public strictfp class MinerRobot extends Robot {
 	private int maxWaitTurns = 10;
 	private boolean rushDetected = false;
 
-	public static final int MOVE_TO_MATRIX_LEVEL = 200; //Higher value means miners less likely to move to matrix
-	public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
-	public static final int VAPORATOR_WEIGHT = 20; // need VAPORATOR_WEIGHT more soup to build a vaporator with every vaporator in sight
-	
+   public static final int MOVE_TO_MATRIX_LEVEL = 200; //Higher value means miners less likely to move to matrix
+   public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
+   public static final int VAPORATOR_WEIGHT = 20; // need VAPORATOR_WEIGHT more soup to build a vaporator with every vaporator in sight
+
 	public MinerState prevState; //Stores state when switching to move_matrix state
 
 	public ArrayList<MapLocation> refineries;
@@ -795,6 +797,7 @@ public strictfp class MinerRobot extends Robot {
 		return false;
 	}
 
+
 	/*private void setScoutEnemyHq(EnemyHqPossiblePosition possiblePosition) {
 		System.out.println("Set enemy HQ to scout");
 		enemyHqScouting = possiblePosition;
@@ -959,6 +962,7 @@ public strictfp class MinerRobot extends Robot {
 		MapLocation ml = rc.adjacentLocation(d);
 		return rc.canMove(d) && !rc.senseFlooding(ml) && (minerState != MinerState.MOVE_MATRIX || pathTile(ml));
 	}
+
 
 
 }
