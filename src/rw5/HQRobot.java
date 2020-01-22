@@ -86,8 +86,11 @@ public strictfp class HQRobot extends Robot {
                         break;
                     case DELIVERY_DRONE:
                         //pew pew pew
-                        rc.shootUnit(r.getID());
-                        return;
+                        if (rc.canShootUnit(r.getID())) {
+                        	rc.shootUnit(r.getID());
+                        	return;
+                        }
+                        
                     case NET_GUN:
                         //Direct units to bury the net gun
                         //Communications.sendMessage(rc);

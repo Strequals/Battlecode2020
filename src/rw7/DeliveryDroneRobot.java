@@ -157,6 +157,12 @@ public strictfp class DeliveryDroneRobot extends Robot {
 					break;
 				case NET_GUN:
 					// Avoid
+					if (!rush && r.location.isWithinDistanceSquared(location, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) {
+						if (rc.isReady()) {
+							DroneNav.fuzzy(rc, this, r.location.directionTo(location));
+							return;
+						}
+					}
 					if (!enemyNetguns.contains(r.location))enemyNetguns.add(r.location);
 					break;
 				case REFINERY:
@@ -208,6 +214,15 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			return;
 
 		//System.out.println(state);
+		if (state == DroneState.ATTACKING || state == DroneState.ASSAULTING) {
+			if (enemyHqLocation != null) {
+				if (Utility.chebyshev(location, enemyHqLocation) < 5) {
+					if (round % 100 == 49 && friendlyDrones >= 3) {
+						if (soup > 2) Communications.queueMessage(rc, 2, 4, enemyHqLocation.x, enemyHqLocation.y);
+					}
+				}
+			}
+		}
 
 		switch (state) {
 		case DEFENDING:
@@ -234,6 +249,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	}
 
 	public void doAssault() throws GameActionException {
+		
+		doInitiateRush();
 		//int ehqdist = location.distanceSquaredTo(enemyHqLocation);
 		if (enemyHqLocation == null) {
 			state = DroneState.ATTACKING;
@@ -304,6 +321,25 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			//state = DroneState.ATTACKING;
 		}
 	}
+	
+	public void doInitiateRush() throws GameActionException {
+		if (enemyHqLocation != null) {
+			if (Utility.chebyshev(location, enemyHqLocation) < 5) {
+				if (round % 100 == 50 && friendlyDrones > 5) {
+					rush = true;
+				}
+			}
+			
+			
+			if (DroneNav.target == null || !DroneNav.target.equals(enemyHqLocation)) {
+				DroneNav.beginNav(rc, this, enemyHqLocation);
+			}
+			DroneNav.nav(rc, this);
+			return;
+			
+		}
+		
+	}
 
 	public boolean scanForSafe() throws GameActionException {
 		//scan for a safe spot next to enemy hq
@@ -326,7 +362,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				if (rad > rSq) continue;
 				ml = new MapLocation(x, y);
 				csDist = Utility.chebyshev(location, ml);
-				if (csDist < rad0 && Utility.chebyshev(ml, enemyHqLocation) == 1) {
+				if (csDist < rad0 && enemyHqLocation != null && Utility.chebyshev(ml, enemyHqLocation) == 1) {
 					RobotInfo ri = rc.senseRobotAtLocation(ml);
 					if (ri != null) continue;
 					rad0 = rad;
@@ -466,30 +502,14 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	}
 
 	public void doAttack() throws GameActionException {
-		if (enemyHqLocation != null) {
-			if (Utility.chebyshev(location, enemyHqLocation) < 5) {
-				if (round % 100 == 49 && friendlyDrones >= 3) {
-					if (soup > 2) Communications.queueMessage(rc, 2, 4, enemyHqLocation.x, enemyHqLocation.y);
-				}
-			}
-		}
+		
 
 		doDropEnemy();
 
 
-		if (enemyHqLocation != null) {
-			if (Utility.chebyshev(location, enemyHqLocation) < 5) {
-				if (round % 100 == 50 && friendlyDrones > 5) {
-					rush = true;
-				}
-			}
-
-			if (DroneNav.target == null || !DroneNav.target.equals(enemyHqLocation)) {
-				DroneNav.beginNav(rc, this, enemyHqLocation);
-			}
-			DroneNav.nav(rc, this);
-			return;
-		}
+		doInitiateRush();
+		
+		
 
 
 		//System.out.println("SCOUTING");

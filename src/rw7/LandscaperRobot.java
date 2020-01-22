@@ -6,7 +6,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 	private enum LandscaperState {
 		TURTLING,
-		RUSHING,
+		ASSAULTING_HQ,
 		TERRAFORMING
 	}
 
@@ -209,9 +209,16 @@ public strictfp class LandscaperRobot extends Robot {
 				case HQ:
 					// We found it!
 					enemyHqLocation = r.location;
-					if (round == roundCreated) {
-						state = LandscaperState.RUSHING;
+					if (round == roundCreated || Utility.chebyshev(location, r.location) <= 1) {
+						state = LandscaperState.ASSAULTING_HQ;
 					}
+					distance = Utility.chebyshev(r.location, location);
+					if (distance < targetBuildingDistance) {
+						targetBuildingDistance = distance;
+						targetBuildingLocation = r.location;
+						targetRobot = r;
+					}
+					break;
 				default:
 					//Probably some structure, bury it if possible but low priority
 					//Communications.sendMessage(rc);
@@ -225,9 +232,9 @@ public strictfp class LandscaperRobot extends Robot {
 		if (!rc.isReady()) return;
 
 
-		if (state == LandscaperState.RUSHING && round > TURTLE_END) {
+		/*if (state == LandscaperState.ASSAULTING_HQ && round > TURTLE_END) {
 			state = LandscaperState.TERRAFORMING;
-		}
+		}*/
 
 
 		switch (state) {
@@ -235,8 +242,8 @@ public strictfp class LandscaperRobot extends Robot {
 		case TURTLING:
 			doTurtling();
 			break;
-		case RUSHING:
-			doRushing();
+		case ASSAULTING_HQ:
+			doAssault();
 			break;
 		case TERRAFORMING:
 			doTerraforming();
@@ -739,7 +746,7 @@ public strictfp class LandscaperRobot extends Robot {
 		return k + Utility.chebyshev(ml, enemyHqLocation);
 	}
 
-	public void doRushing() throws GameActionException {
+	public void doAssault() throws GameActionException {
 		if (location.distanceSquaredTo(enemyHqLocation) > 2) {
 			if (Nav.target == null || !Nav.target.equals(enemyHqLocation)) {
 				Nav.beginNav(rc, this, enemyHqLocation);

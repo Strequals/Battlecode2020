@@ -161,6 +161,9 @@ public class DroneNav {
 	}
 
 	public static boolean fuzzy(RobotController rc, DeliveryDroneRobot r, Direction d) throws GameActionException {
+		
+		position = r.location;
+		if (target != null) {
 		int dsq = position.distanceSquaredTo(target);
 		if (canMove(rc, r, d)) {
 			rc.move(d);
@@ -187,6 +190,23 @@ public class DroneNav {
 			rc.move(dr);
 			return true;
 		}
+
+
+		return false;
+		}
+		if (canMove(rc, r, d)) {
+			rc.move(d);
+			return true;
+		}
+		Direction dr = d.rotateRight();
+		Direction dl = d.rotateLeft();
+			if (canMove(rc, r, dr)) {
+				rc.move(dr);
+				return true;
+			} else if (canMove(rc, r, dl)) {
+				rc.move(dl);
+				return true;
+			}
 
 
 		return false;

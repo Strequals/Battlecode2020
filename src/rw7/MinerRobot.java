@@ -397,8 +397,9 @@ public strictfp class MinerRobot extends Robot {
 			}
 		} 
 		if (isBuilder) {
-			if (builderFC && !builderDS && (rushDetected || (round > CLOSE_TURTLE_END)) && soup > RobotType.DESIGN_SCHOOL.cost) {
-				if (hqDist > 1 && hqDist < 5) {
+			if (!builderDS && (rushDetected || (round > CLOSE_TURTLE_END)) && soup > RobotType.DESIGN_SCHOOL.cost) {
+				
+				if (builderFC && hqDist > 1 && hqDist < 5) {
 					//Build Design School
 
 					//if (rushDetected) {
@@ -419,7 +420,7 @@ public strictfp class MinerRobot extends Robot {
 						}
 					//}
 				} else {
-					if (hqDist == 1) {
+					if (hqDist <=2) {
 						fuzzy(rc, hqLocation.directionTo(location));
 						return;
 					} else {

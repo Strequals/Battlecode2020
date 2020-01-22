@@ -152,7 +152,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 			
 			//if there is no refinery, do not finish the wall
 			//if the fulfillment center has not been built and two or more landscapers exist, do not build more
-			if ((numTurtles == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost + RobotType.DELIVERY_DRONE.cost) || (!isAlliedDrone && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
+			if ((numTurtles == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost) || (!isAlliedDrone && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
 				return;
 			}
 			//Prefer building vaporators to finishing the wall
