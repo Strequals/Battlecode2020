@@ -215,13 +215,6 @@ public strictfp class LandscaperRobot extends Robot {
 
 		if (!rc.isReady()) return;
 
-		if (location.isAdjacentTo(hqLocation)) {
-			RobotInfo hqInfo = rc.senseRobotAtLocation(hqLocation);
-			if (hqInfo.dirtCarrying > 0) {
-				rc.digDirt(location.directionTo(hqLocation));
-				return;
-			}
-		}
 
 		if (state == LandscaperState.RUSHING && round > TURTLE_END) {
 			state = LandscaperState.TERRAFORMING;
@@ -279,6 +272,14 @@ public strictfp class LandscaperRobot extends Robot {
 					}
 				}
 
+			}
+		}
+		
+		if (location.isAdjacentTo(hqLocation)) {
+			RobotInfo hqInfo = rc.senseRobotAtLocation(hqLocation);
+			if (hqInfo.dirtCarrying > 0) {
+				rc.digDirt(location.directionTo(hqLocation));
+				return;
 			}
 		}
 
@@ -562,6 +563,14 @@ public strictfp class LandscaperRobot extends Robot {
 
 			} else {
 				moveTerraform(targetBuildingLocation);
+				return;
+			}
+		}
+		
+		if (location.isAdjacentTo(hqLocation)) {
+			RobotInfo hqInfo = rc.senseRobotAtLocation(hqLocation);
+			if (hqInfo.dirtCarrying > 0) {
+				rc.digDirt(location.directionTo(hqLocation));
 				return;
 			}
 		}

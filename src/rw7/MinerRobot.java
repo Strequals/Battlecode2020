@@ -399,7 +399,7 @@ public strictfp class MinerRobot extends Robot {
 				if (hqDist > 1 && hqDist < 5) {
 					//Build Design School
 
-					if (!builderDS && rushDetected && soup > RobotType.DESIGN_SCHOOL.cost) {
+					if (builderFC && !builderDS && rushDetected && soup > RobotType.DESIGN_SCHOOL.cost) {
 						Direction[] dirs = Utility.directions;
 						Direction d;
 						ml = null;
@@ -416,25 +416,6 @@ public strictfp class MinerRobot extends Robot {
 							}
 						}
 					}
-
-					//Build Fulfillment Center
-					if (builderDS && !builderFC && soup > RobotType.FULFILLMENT_CENTER.cost && rushDetected) {
-						Direction[] dirs = Utility.directions;
-						Direction d;
-						ml = null;
-						for (int i = 8; i-->0;) {
-							d = dirs[i];
-							ml = location.add(d);
-							if (initialBuildingTile(ml)) {
-								if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
-									rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
-									builderFC = true;
-									return;
-								}
-							}
-						}
-					}
-
 				} else {
 					if (hqDist == 1) {
 						fuzzy(rc, hqLocation.directionTo(location));
@@ -448,6 +429,24 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 			} else {
+				
+				//Build Fulfillment Center
+				if (!builderFC && soup > RobotType.FULFILLMENT_CENTER.cost) {
+					Direction[] dirs = Utility.directions;
+					Direction d;
+					ml = null;
+					for (int i = 8; i-->0;) {
+						d = dirs[i];
+						ml = location.add(d);
+						if (initialBuildingTile(ml)) {
+							if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
+								rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
+								builderFC = true;
+								return;
+							}
+						}
+					}
+				}
 
 
 			//Build Vaporator

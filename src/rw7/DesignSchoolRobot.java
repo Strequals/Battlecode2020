@@ -148,7 +148,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 	}
 
 	private void buildTurtles() throws GameActionException {
-		if (numTurtles > 0 && (rushDetected || soup > BASE_TURTLE_WEIGHT + (8-numTurtles) * TURTLE_WEIGHT)) {
+		if (numTurtles > 0 && (round > CLOSE_TURTLE_END && rushDetected || soup > BASE_TURTLE_WEIGHT + (8-numTurtles) * TURTLE_WEIGHT)) {
 			
 			//if there is no refinery, do not finish the wall
 			//if the fulfillment center has not been built and two or more landscapers exist, do not build more
@@ -156,7 +156,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 				return;
 			}
 			//Prefer building vaporators to finishing the wall
-			if (nearbyAlliedVaporators == 0 && round < 400 && numTurtles < 6 && soup < RobotType.VAPORATOR.cost + 100 && !rushDetected) {
+			if (nearbyAlliedVaporators == 0 && round < CLOSE_TURTLE_END && numTurtles < 6 && soup < RobotType.VAPORATOR.cost + 100 && !rushDetected) {
 				return;
 			}
 			

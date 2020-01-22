@@ -27,6 +27,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private MapLocation minerAssistLocation;
 	private MapLocation emptyWallLocation;
 	
+	private MapLocation rushLocation;
+	private int turnsSinceRush;
+	
+	private static final int RUSH_SAFE_TURNS = 25;
+	
 	
 	public int random; // A random number from 0 to 255
 	public static final int A = 623;
@@ -62,6 +67,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		friendlyDrones = 0;
 		int targetDistance = 10000;
 		int distance;
+		
 		
 		//Calculate Random
 		random = (A*random+B)%256;
@@ -162,7 +168,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			scanForWater();
 		//}
 		
-		if (round < TURTLE_END) {
+		if (round < TURTLE_ROUND) {
 			state = DroneState.DEFENDING;
 		} else {
 			state = DroneState.ATTACKING;
@@ -184,6 +190,14 @@ public strictfp class DeliveryDroneRobot extends Robot {
          doTransport();
          break;
       }
+		if (rushLocation != null) {
+			turnsSinceRush++;
+			if (turnsSinceRush > RUSH_SAFE_TURNS) {
+				rushLocation = null;
+				turnsSinceRush = 0;
+			}
+		}
+		
 	}
    
    public boolean scanForSafe() {
@@ -328,6 +342,12 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				DroneNav.nav(rc, this);
 				return;
 			}
+		} else if (targetLocation != null) {
+			if (DroneNav.target == null || !DroneNav.target.equals(targetLocation)) {
+				DroneNav.beginNav(rc, this, targetLocation);
+			}
+			DroneNav.nav(rc, this);
+			return;
 		}
 	}
 	
@@ -405,6 +425,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				return;
 			}
 		}*/
+		
+		if (rushLocation != null && targetLocation == null) targetLocation = rushLocation;
 		
 		doDropEnemy();
 		
@@ -504,7 +526,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			if (Utility.chebyshev(enemyHqLocation, location) < 6) {
 				rush = true;
 			}
+		case 11:
+			rushLocation = new MapLocation(x,y);
+			turnsSinceRush = 0;
+			break;
+			
 		}
+		
 	}
 
 }
