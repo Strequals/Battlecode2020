@@ -212,12 +212,12 @@ public strictfp class LandscaperRobot extends Robot {
 					if (round == roundCreated || Utility.chebyshev(location, r.location) <= 1) {
 						state = LandscaperState.ASSAULTING_HQ;
 					}
-					distance = Utility.chebyshev(r.location, location);
+					/*distance = Utility.chebyshev(r.location, location);
 					if (distance < targetBuildingDistance) {
 						targetBuildingDistance = distance;
 						targetBuildingLocation = r.location;
 						targetRobot = r;
-					}
+					}*/
 					break;
 				default:
 					//Probably some structure, bury it if possible but low priority

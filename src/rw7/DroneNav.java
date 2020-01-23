@@ -53,7 +53,7 @@ public class DroneNav {
 	}
 
 	public static boolean canMove(RobotController rc, DeliveryDroneRobot r, Direction d) throws GameActionException {
-		
+
 		return r.canMove(rc, d);
 	}
 
@@ -86,7 +86,7 @@ public class DroneNav {
 	}
 
 	public static void bug(DeliveryDroneRobot r, RobotController rc) throws GameActionException {
-		
+
 		if (detectEdge(r, rc)) {
 			startBug(rc, r);
 		}
@@ -111,12 +111,12 @@ public class DroneNav {
 			}
 			d = null;
 		}
-		
+
 		int rots = 7 - i;
-		
+
 		if (d != null) {
 			rc.move(d);
-			
+
 			switch (side) {
 			case LEFT:
 				rotations += rots - ((bugDirection.ordinal()-lookDirection.ordinal() + 8) % 8);
@@ -126,11 +126,11 @@ public class DroneNav {
 				rotations += rots - ((lookDirection.ordinal()-bugDirection.ordinal() + 8) % 8);
 				lookDirection = d.rotateRight().rotateRight();
 			}
-		
+
 			bugDirection = d;
 		}
-		
-		
+
+
 
 
 	}
@@ -161,38 +161,39 @@ public class DroneNav {
 	}
 
 	public static boolean fuzzy(RobotController rc, DeliveryDroneRobot r, Direction d) throws GameActionException {
-		
 		position = r.location;
+		
 		if (target != null) {
-		int dsq = position.distanceSquaredTo(target);
-		if (canMove(rc, r, d)) {
-			rc.move(d);
-			return true;
-		}
-		Direction dr = d.rotateRight();
-		MapLocation mlr = rc.adjacentLocation(dr);
-		int dsqr = mlr.distanceSquaredTo(target);
-		Direction dl = d.rotateLeft();
-		MapLocation mll = rc.adjacentLocation(dl);
-		int dsql = mll.distanceSquaredTo(target);
-		if (dsqr <= dsql) {
-			if (canMove(rc, r, dr) && mlr.isWithinDistanceSquared(target, dsq)) {
-				rc.move(dr);
+			
+			int dsq = position.distanceSquaredTo(target);
+			if (canMove(rc, r, d)) {
+				rc.move(d);
 				return true;
+			}
+			Direction dr = d.rotateRight();
+			MapLocation mlr = rc.adjacentLocation(dr);
+			int dsqr = mlr.distanceSquaredTo(target);
+			Direction dl = d.rotateLeft();
+			MapLocation mll = rc.adjacentLocation(dl);
+			int dsql = mll.distanceSquaredTo(target);
+			if (dsqr <= dsql) {
+				if (canMove(rc, r, dr) && mlr.isWithinDistanceSquared(target, dsq)) {
+					rc.move(dr);
+					return true;
+				} else if (canMove(rc, r, dl) && mll.isWithinDistanceSquared(target, dsq)) {
+					rc.move(dl);
+					return true;
+				}
 			} else if (canMove(rc, r, dl) && mll.isWithinDistanceSquared(target, dsq)) {
 				rc.move(dl);
 				return true;
+			} else if (canMove(rc, r, dr) && mlr.isWithinDistanceSquared(target, dsq)) {
+				rc.move(dr);
+				return true;
 			}
-		} else if (canMove(rc, r, dl) && mll.isWithinDistanceSquared(target, dsq)) {
-			rc.move(dl);
-			return true;
-		} else if (canMove(rc, r, dr) && mlr.isWithinDistanceSquared(target, dsq)) {
-			rc.move(dr);
-			return true;
-		}
 
 
-		return false;
+			return false;
 		}
 		if (canMove(rc, r, d)) {
 			rc.move(d);
@@ -200,13 +201,13 @@ public class DroneNav {
 		}
 		Direction dr = d.rotateRight();
 		Direction dl = d.rotateLeft();
-			if (canMove(rc, r, dr)) {
-				rc.move(dr);
-				return true;
-			} else if (canMove(rc, r, dl)) {
-				rc.move(dl);
-				return true;
-			}
+		if (canMove(rc, r, dr)) {
+			rc.move(dr);
+			return true;
+		} else if (canMove(rc, r, dl)) {
+			rc.move(dl);
+			return true;
+		}
 
 
 		return false;

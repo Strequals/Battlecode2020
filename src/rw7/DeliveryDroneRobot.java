@@ -43,7 +43,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	public static final int RUSH_RANGE = 12; //Chebyshev range to regard an enemy as a rusher
 
 	public ArrayList<MapLocation> enemyNetguns;
-	private static final int ASSAULT_ROUND = 1700;
+	private static final int ASSAULT_ROUND = 1600;
 
 	public DeliveryDroneRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -268,14 +268,17 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 			scanForSafe();
 			if(nearestSafe == null) {
-
-				//else {
+				
+				if (enemyHqLocation != null) {
 					if (DroneNav.target == null || !DroneNav.target.equals(enemyHqLocation)) {
 						DroneNav.beginNav(rc, this, enemyHqLocation);
 					}
 					DroneNav.nav(rc, this);
 					return;
-				//}
+				} else {
+					moveScout(rc);
+					return;
+				}
 			}
 			else {
 				if(Utility.chebyshev(location, nearestSafe) <= 1) {
