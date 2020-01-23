@@ -95,6 +95,7 @@ public strictfp class MinerRobot extends Robot {
 		boolean enemyDroneSpotted = false;
 		nearestTerraformer = null;
 		int terraformerDistance = 1000;
+      int droneDist = 100;
 		numVaporators = 0;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
@@ -114,6 +115,11 @@ public strictfp class MinerRobot extends Robot {
 					break;
 				case NET_GUN:
 					ngBuilt = true;
+               int distance = location.distanceSquaredTo(r.location);
+               if (distance <= netgunDistance) {
+                  nearestNetgun = r.location;
+                  netgunDistance = distance;       //won't update if the nearest netgun isnt in visual range, but not a problem
+               }
 					break;
 				case LANDSCAPER:
 					if (Utility.chebyshev(hqLocation, r.location) > 2) {
@@ -134,8 +140,10 @@ public strictfp class MinerRobot extends Robot {
 				case REFINERY:
 					isRefineryNearby = true;
 					if (!refineries.contains(r.location)) refineries.add(r.location);
+               break;
 				case VAPORATOR:
 					numVaporators++;
+               break;
 				default:
 					break;
 
@@ -155,6 +163,10 @@ public strictfp class MinerRobot extends Robot {
 				case DELIVERY_DRONE:
 					enemyBuiltDrones = true;
 					enemyDroneSpotted = true;
+               int distance = Utility.chebyshev(r.location, location);
+               if(distance < droneDist) {
+                  droneDist = distance;
+               }
 					break;
 				case MINER:
 					enemySpotted = true;
@@ -189,7 +201,14 @@ public strictfp class MinerRobot extends Robot {
 		//Calculate Random
 		random = (A*random+B)%256;
 
-
+      if(/*droneDetected && */netgunDistance > 5 && droneDist <=3) {  //not needed, since if no drones, default drone distance is 100
+         escape();
+         return;
+      }
+      else if(droneDist <= 1) {
+         escape();
+         return;
+      }
 
 		MapLocation ml;
 		int rSq = senseRadiusSq;
@@ -730,6 +749,21 @@ public strictfp class MinerRobot extends Robot {
 
 		}
 	}
+
+   private void escape() {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
+      if(nearestNetgun != null) {
+         if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
+            Nav.beginNav(rc, this, nearestNetgun);
+         }
+         Nav.nav(rc, this);
+      }
+      else {
+         if(Nav.target == null || !Nav.target.equals(hqLocation)) {
+            Nav.beginNav(rc, this, hqLocation);
+         }
+         Nav.nav(rc, this);
+      }
+   }
 
 	public void mine(RobotController rc) {
 
