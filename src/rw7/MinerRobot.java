@@ -750,7 +750,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 	}
 
-   private void escape() {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
+   private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
       if(nearestNetgun != null) {
          if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
             Nav.beginNav(rc, this, nearestNetgun);

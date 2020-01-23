@@ -10,7 +10,7 @@ public strictfp class LandscaperRobot extends Robot {
 		TERRAFORMING
 	}
 
-   private boolean isEnemyRushing;
+	private boolean isEnemyRushing;
 	// TODO: This probably shouldn't matter. Eliminate it.
 	private MapLocation homeDsLocation;
 	private MapLocation targetCorner;
@@ -29,8 +29,8 @@ public strictfp class LandscaperRobot extends Robot {
 	private int hqElevation;
 	private MapLocation nearestFillTile;
 	private MapLocation backupFill;
-   private MapLocation nearestNetgun;
-   private int netgunDistance = 10000;
+	private MapLocation nearestNetgun;
+	private int netgunDistance = 10000;
 
 
 	private int turnsNavvedHq;
@@ -43,7 +43,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private static final int MAX_HEIGHT_THRESHOLD = 12; //don't try to build up to unreachable heights
 	private static final int BACKUP_THRESHOLD = 8;
 	private static final int MAX_NEARBY_TERRAFORMERS = 5;//Don't communicate location if there are 5 or more terraformers nearby
-	
+
 	LandscaperRobot(RobotController rc) throws GameActionException {
 		super(rc);
 
@@ -71,7 +71,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
-      int droneDist = 100;
+		int droneDist = 100;
 
 		if (round == roundCreated) {
 			if (initialBuildingTile(homeDsLocation)) {
@@ -123,32 +123,32 @@ public strictfp class LandscaperRobot extends Robot {
 						nearbyTerraformers++;
 					}
 					break;
-            case NET_GUN:
-               int distance = location.distanceSquaredTo(r.location);
-               if (distance <= netgunDistance) {
-                  nearestNetgun = r.location;
-                  netgunDistance = distance;       //won't update if the nearest netgun isnt in visual range, but not a problem
-               }
-                  break;
+				case NET_GUN:
+					int distance = location.distanceSquaredTo(r.location);
+					if (distance <= netgunDistance) {
+						nearestNetgun = r.location;
+						netgunDistance = distance;       //won't update if the nearest netgun isnt in visual range, but not a problem
+					}
+					break;
 				case MINER:
 					//Build the miner up to the matrix
 					if (state == LandscaperState.TERRAFORMING) {
 						if (r.location.isWithinDistanceSquared(location, 2) && pathTile(r.location)) {
 							int elev = rc.senseElevation(r.location);
 							if (elev < TERRAFORM_THRESHOLD) {
-							if (elev < robotElevation) {
-								if (dirtCarrying == 0 && pitDirection != null) {
-									rc.digDirt(pitDirection);
-									return;
-								}
-								if (dirtCarrying > 0) {
-									Direction dMiner = location.directionTo(r.location);
-									if (rc.canDepositDirt(dMiner)) {
-										rc.depositDirt(dMiner);
+								if (elev < robotElevation) {
+									if (dirtCarrying == 0 && pitDirection != null) {
+										rc.digDirt(pitDirection);
 										return;
 									}
+									if (dirtCarrying > 0) {
+										Direction dMiner = location.directionTo(r.location);
+										if (rc.canDepositDirt(dMiner)) {
+											rc.depositDirt(dMiner);
+											return;
+										}
+									}
 								}
-							}
 							}
 						}
 					}
@@ -163,10 +163,10 @@ public strictfp class LandscaperRobot extends Robot {
 				switch (r.getType()) {
 				case DELIVERY_DRONE:
 					isDroneThreat = true;
-               int distance = Utility.chebyshev(r.location, location);
-               if(distance < droneDist) {
-                  droneDist = distance;
-               }
+					distance = Utility.chebyshev(r.location, location);
+					if(distance < droneDist) {
+						droneDist = distance;
+					}
 					break;
 				case MINER:
 					// TODO: Block or bury
@@ -259,16 +259,16 @@ public strictfp class LandscaperRobot extends Robot {
 			doAssault();
 			break;
 		case TERRAFORMING:
-         if(/*droneDetected && */netgunDistance > 5 && droneDist <=3) {  //not needed, since if no drones, default drone distance is 100
-            escape();
-            break;
-         }
-         else if(droneDist <= 1) {
-            escape();
-            break;
-         }
+			if(/*droneDetected && */netgunDistance > 5 && droneDist <=3) {  //not needed, since if no drones, default drone distance is 100
+				escape();
+				break;
+			}
+			else if(droneDist <= 1) {
+				escape();
+				break;
+			}
 			doTerraforming();
-         break;
+			break;
 		}
 
 	}
@@ -312,7 +312,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 			}
 		}
-		
+
 		if (location.isAdjacentTo(hqLocation)) {
 			RobotInfo hqInfo = rc.senseRobotAtLocation(hqLocation);
 			if (hqInfo.dirtCarrying > 0) {
@@ -604,7 +604,7 @@ public strictfp class LandscaperRobot extends Robot {
 				return;
 			}
 		}
-		
+
 		if (location.isAdjacentTo(hqLocation)) {
 			RobotInfo hqInfo = rc.senseRobotAtLocation(hqLocation);
 			if (hqInfo.dirtCarrying > 0) {
@@ -652,7 +652,7 @@ public strictfp class LandscaperRobot extends Robot {
 				}
 			}
 		}
-		
+
 		if (backupFill != null && Utility.chebyshev(location, backupFill) <= 2) {
 			backupFill = null;
 		}
@@ -743,7 +743,7 @@ public strictfp class LandscaperRobot extends Robot {
 				for (int i = 8; i-->0; ) {
 					d = dirs[i];
 					m = location.add(d);
-					
+
 					if (pitTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
 					if (rc.canSenseLocation(m)) {
 						botInfo = rc.senseRobotAtLocation(m);
@@ -755,28 +755,28 @@ public strictfp class LandscaperRobot extends Robot {
 				}
 			}
 		}
-		
+
 		//Move towards terraform edge
 		if (backupFill != null) {
 			moveTerraform(backupFill);
 		}
 	}
-	
-   private void escape() {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
-      if(nearestNetgun != null) {
-         if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
-            Nav.beginNav(rc, this, nearestNetgun);
-         }
-         Nav.nav(rc, this);
-      }
-      else {
-         if(Nav.target == null || !Nav.target.equals(hqLocation)) {
-            Nav.beginNav(rc, this, hqLocation);
-         }
-         Nav.nav(rc, this);
-      }
-   }
-   
+
+	private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
+		if(nearestNetgun != null) {
+			if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
+				Nav.beginNav(rc, this, nearestNetgun);
+			}
+			Nav.nav(rc, this);
+		}
+		else {
+			if(Nav.target == null || !Nav.target.equals(hqLocation)) {
+				Nav.beginNav(rc, this, hqLocation);
+			}
+			Nav.nav(rc, this);
+		}
+	}
+
 	public int heuristic(MapLocation ml) {
 		int k = Utility.chebyshev(ml, location)+Utility.chebyshev(ml, hqLocation);
 		if (enemyHqLocation == null) return k;

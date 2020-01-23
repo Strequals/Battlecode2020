@@ -145,8 +145,8 @@ public strictfp class HQRobot extends Robot {
             Communications.queueMessage(rc, 20, 1, location.x, location.y);
         }
         
-        if (enemyHqLocation != null && round % 100 == 0) {
-        	if (soup > 2) Communications.queueMessage(rc, 2, 3, enemyHqLocation.x, enemyHqLocation.y);
+        if (enemyHqLocation != null && round % 20 == 0) {
+        	if (soup >= 1) Communications.queueMessage(rc, 1, 3, enemyHqLocation.x, enemyHqLocation.y);
         }
 
         if ((numMiners < MAX_MINERS && soup > 45 * numMiners) || soup > RobotType.DESIGN_SCHOOL.cost + 8 * RobotType.VAPORATOR.cost + RobotType.VAPORATOR.cost) {
@@ -265,6 +265,9 @@ public strictfp class HQRobot extends Robot {
         	minerRequested = true;
         	break;
         case 3:
+        	enemyHqLocation = new MapLocation(x,y);
+        	break;
+        case 4:
         	enemyHqLocation = new MapLocation(x,y);
         	break;
         case 6:
