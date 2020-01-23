@@ -48,6 +48,16 @@ public abstract strictfp class Robot {
 	public void loop() {
 		while (true) {
 			try {
+				//Update Game State
+				nearbyRobots = rc.senseNearbyRobots();
+				location = rc.getLocation();
+				senseRadiusSq = rc.getCurrentSensorRadiusSquared();
+				dirtCarrying = rc.getDirtCarrying();
+				soupCarrying = rc.getSoupCarrying();
+				cooldownTurns = rc.getCooldownTurns();
+				robotElevation = rc.senseElevation(location);
+				soup = rc.getTeamSoup();
+				
 				//put code common to all units here, such as communication processing
 				
 				
@@ -66,17 +76,8 @@ public abstract strictfp class Robot {
 					Communications.processLastBlock(rc, this);
 				}
 				
-				//Update Game State
-				nearbyRobots = rc.senseNearbyRobots();
+				//Update round
 				round = rc.getRoundNum();
-				location = rc.getLocation();
-				senseRadiusSq = rc.getCurrentSensorRadiusSquared();
-				dirtCarrying = rc.getDirtCarrying();
-				soupCarrying = rc.getSoupCarrying();
-				cooldownTurns = rc.getCooldownTurns();
-				robotElevation = rc.senseElevation(location);
-				soup = rc.getTeamSoup();
-				
 				
 				
 				//Communications
@@ -87,7 +88,6 @@ public abstract strictfp class Robot {
 				
 				
 				run();
-				
 				
 				Communications.sendMessages(rc);
 				//System.out.println("BC left: " + Clock.getBytecodesLeft());

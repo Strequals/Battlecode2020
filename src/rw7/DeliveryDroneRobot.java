@@ -46,7 +46,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	public static final int B = 49;
 	public static final int RUSH_RANGE = 12; //Chebyshev range to regard an enemy as a rusher
 	public static final int CRUNCH_RANGE = 10; //If within this distance when crunch signal detected, crunch
-
+	public static final int FINAL_CRUNCH_ROUND = 1700;
+	
 	public ArrayList<MapLocation> enemyNetguns;
 	private static final int ASSAULT_ROUND = 1300;
 
@@ -77,6 +78,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		RobotInfo r;
 		targetRobot = null;
 		targetLocation = null;
+		targetFriendly = null;
+		targetLocationf = null;
 		friendlyDrones = 0;
 		int targetDistance = 10000;
 		int distance;
@@ -120,7 +123,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
                }*/
 					break;
 				case LANDSCAPER:
-					if(state == DroneState.ASSAULTING) {
+					if(state == DroneState.ASSAULTING && (enemyHqLocation == null || !r.location.isAdjacentTo(enemyHqLocation))) {
+						if (rc.canPickUpUnit(r.ID)) {
+							rc.pickUpUnit(r.ID);
+							carryingAssaulter = true;
+							return;
+						}
+						
 						distance = Utility.chebyshev(location, r.location);
 						if (distance < targetDistance && Utility.chebyshev(r.location, hqLocation) > 2) {
 							if (enemyHqLocation == null || Utility.chebyshev(r.location, enemyHqLocation) > 1)
@@ -139,6 +148,12 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				switch (r.getType()) {
 				case MINER:
 					// TODO: Block or bury
+					if (rc.canPickUpUnit(r.ID)) {
+						rc.pickUpUnit(r.ID);
+						carryingEnemy = true;
+						return;
+					}
+					
 					distance = location.distanceSquaredTo(r.location);
 					if (distance < targetDistance) {
 						targetLocation = r.location;
@@ -150,6 +165,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
 					}
 					break;
 				case LANDSCAPER:
+					
+					if (rc.canPickUpUnit(r.ID)) {
+						rc.pickUpUnit(r.ID);
+						carryingEnemy = true;
+						return;
+					}
+					
 					distance = location.distanceSquaredTo(r.location);
 					if (distance < targetDistance) {
 						targetLocation = r.location;
@@ -238,6 +260,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			carryingAssaulter = false;
 			carryingEnemy = false;
 		}
+		
+		System.out.println("enemy:"+carryingEnemy);
 
 		//if(nearestWater == null || !rc.isReady()) {
 		//scan for water
@@ -275,7 +299,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			}
 		}
 
-
+		System.out.println(state);
 		switch (state) {
 		case DEFENDING:
 			doDefense();
@@ -297,6 +321,9 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				turnsSinceRush = 0;
 			}
 		}
+		//if (DroneNav.target != null) rc.setIndicatorDot(DroneNav.target, 255, 0, 255);
+		if (nearestWater != null) rc.setIndicatorDot(nearestWater, 0, 255, 255);
+		if (targetLocation != null) rc.setIndicatorDot(targetLocation, 255, 0, 0);
 
 	}
 
@@ -340,7 +367,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 						return;
 					}
 				} else {
-					if (Nav.target == null || !Nav.target.equals(nearestSafe)) {
+					if (DroneNav.target == null || !DroneNav.target.equals(nearestSafe)) {
 						DroneNav.beginNav(rc, this, nearestSafe);
 					}
 					DroneNav.nav(rc, this);
@@ -392,18 +419,18 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	public void doInitiateRush() throws GameActionException {
 		if (enemyHqLocation != null) {
 			if (Utility.chebyshev(location, enemyHqLocation) < 5) {
-				if (friendlyDrones >= 24) {
+				if (friendlyDrones >= 20 || round > FINAL_CRUNCH_ROUND) {
 					Communications.queueMessage(rc, 2, 4, enemyHqLocation.x, enemyHqLocation.y);
 					rush = true;
 				}
 			}
 
 
-			if (DroneNav.target == null || !DroneNav.target.equals(enemyHqLocation)) {
+			/*if (DroneNav.target == null || !DroneNav.target.equals(enemyHqLocation)) {
 				DroneNav.beginNav(rc, this, enemyHqLocation);
-			}
-			DroneNav.nav(rc, this);
-			return;
+			}*/
+			//DroneNav.nav(rc, this);
+			//return;
 
 		}
 
@@ -433,13 +460,32 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				if (csDist < rad0 && enemyHqLocation != null && Utility.chebyshev(ml, enemyHqLocation) == 1) {
 					RobotInfo ri = rc.senseRobotAtLocation(ml);
 					if (ri != null) continue;
-					rad0 = rad;
+					rad0 = csDist;
 					nearestSafe = ml;
 					toRet = true;
 				}
 			}
 		}
 		return toRet;
+	}
+	
+	public boolean tryDrown() throws GameActionException {
+		Direction[] directions = Utility.directions;
+		Direction d;
+		MapLocation ml;
+		for (int i = 8; i-->0;) {
+			d = directions[i];
+			ml = location.add(d);
+			if (rc.canSenseLocation(ml)) {
+				if (rc.senseFlooding(ml)) {
+					if (rc.canDropUnit(d)) {
+						rc.dropUnit(d);
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	public void doTransport() throws GameActionException {
@@ -516,7 +562,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				if (csDist < rad0 && rc.senseFlooding(ml)) {
 					ri = rc.senseRobotAtLocation(ml);
 					if (ri == null) {
-					rad0 = rad;
+					rad0 = csDist;
 					nearestWater = ml;
 					}
 				}
@@ -525,23 +571,27 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	}
 
 	public boolean doDropEnemy() throws GameActionException {
+		System.out.println("dde");
 		if(carryingEnemy) {
+			System.out.println("ce");
 			//pathfind towards target (water, soup)
 			//if any of 8 locations around are flooded, place robot into flood, update nearestWater
 
 			
 			if(nearestWater != null) {
-				rc.setIndicatorLine(location, nearestWater,0, 100, 200);
-				if(Utility.chebyshev(location, nearestWater) <= 1) {
+				//rc.setIndicatorLine(location, nearestWater,0, 100, 200);
+				/*if(Utility.chebyshev(location, nearestWater) <= 1) {
 					if(rc.canDropUnit(location.directionTo(nearestWater))) {
 						rc.dropUnit(location.directionTo(nearestWater));
 						return true;
 					}
 
-				}
+				}*/
+				if (tryDrown()) return true;
 				if (DroneNav.target == null || !DroneNav.target.equals(nearestWater)) {
 					DroneNav.beginNav(rc, this, nearestWater);
 				}
+				System.out.println("Nav water:" + nearestWater);
 				DroneNav.nav(rc, this);
 				return true;
 			} else {
@@ -551,7 +601,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 		} else if (!rc.isCurrentlyHoldingUnit()) {
 			if (targetRobot != null) {
-				if (Utility.chebyshev(location, targetLocation) == 1) {
+				if (Utility.chebyshev(location, targetLocation) <= 1) {
 					if (rc.canPickUpUnit(targetRobot.ID)) {
 						rc.pickUpUnit(targetRobot.ID);
 						carryingEnemy = true;
