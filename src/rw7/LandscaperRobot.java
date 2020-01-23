@@ -815,7 +815,7 @@ public strictfp class LandscaperRobot extends Robot {
 			break;
 		case 15:
 			MapLocation ml15 = new MapLocation(x,y);
-			if (backupFill == null || heuristic(location) + BACKUP_THRESHOLD < heuristic(location)) {
+			if (backupFill == null || heuristic(ml15) + BACKUP_THRESHOLD < heuristic(backupFill)) {
 				backupFill = ml15;
 			}
 			if (Utility.chebyshev(ml15, location) <= 4) {
