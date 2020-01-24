@@ -40,7 +40,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
 	private static final int MAX_TERRAFORM_RANGE = 2; //Chebyshev distance to limit
 	private static final int TERRAFORM_RANGE_SQ = 8; //2x^2
-	private static final int MAX_HEIGHT_THRESHOLD = 12; //don't try to build up to unreachable heights
+	public static final int MAX_HEIGHT_THRESHOLD = 12; //don't try to build up to unreachable heights
 	private static final int BACKUP_THRESHOLD = 8;
 	private static final int MAX_NEARBY_TERRAFORMERS = 5;//Don't communicate location if there are 5 or more terraformers nearby
 

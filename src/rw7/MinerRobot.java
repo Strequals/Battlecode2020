@@ -50,7 +50,7 @@ public strictfp class MinerRobot extends Robot {
 
    public static final int MOVE_TO_MATRIX_LEVEL = 200; //Higher value means miners less likely to move to matrix
    public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
-   public static final int VAPORATOR_WEIGHT = 20; // need VAPORATOR_WEIGHT more soup to build a vaporator with every vaporator in sight
+   public static final int VAPORATOR_WEIGHT = 10; // need VAPORATOR_WEIGHT more soup to build a vaporator with every vaporator in sight
 
 	public MinerState prevState; //Stores state when switching to move_matrix state
 
