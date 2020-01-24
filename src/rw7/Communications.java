@@ -23,7 +23,7 @@ public class Communications {
 	 *11:HQ under attack 
     *12:Enter Transport mode(save miners)
     *13:Enter Assault mode(transport landscapers)
-    *14:
+    *14:Enter Miner Assist Mode
     *15:Terraform location
     **/
 	
