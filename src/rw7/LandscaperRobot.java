@@ -79,7 +79,10 @@ public strictfp class LandscaperRobot extends Robot {
 			} else {
 				state = LandscaperState.TERRAFORMING;
 			}
+			//state = LandscaperState.TERRAFORMING;
 		}
+		
+		
 		Direction[] dirs = Utility.directionsC;
 		MapLocation ml;
 		Direction d;
@@ -229,7 +232,7 @@ public strictfp class LandscaperRobot extends Robot {
 				case HQ:
 					// We found it!
 					enemyHqLocation = r.location;
-					if (round == roundCreated || Utility.chebyshev(location, r.location) <= 1) {
+					if (Utility.chebyshev(location, r.location) <= 1) {
 						state = LandscaperState.ASSAULTING_HQ;
 					}
 					/*distance = Utility.chebyshev(r.location, location);
@@ -718,7 +721,7 @@ public strictfp class LandscaperRobot extends Robot {
 		if (nearestFillTile != null) {
 			//System.out.println("Filling in...");
 			moveTerraform(nearestFillTile);
-			if (communicationDelay == 0) {
+			if (communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile)==1) {
 				if (nearbyTerraformers < MAX_NEARBY_TERRAFORMERS) {
 					Communications.queueMessage(rc, 1, 15, nearestFillTile.x, nearestFillTile.y);
 					communicationDelay = 20;
@@ -796,7 +799,7 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 
 		//dig and place in alternating cycles
-		if (((dirtCarrying < RobotType.LANDSCAPER.dirtLimit && rushDigging) || dirtCarrying == 0) && !isDroneThreat) {
+		if (((dirtCarrying < RobotType.LANDSCAPER.dirtLimit && rushDigging && !isDroneThreat) || dirtCarrying == 0)) {
 			rushDigging = true;
 			rc.digDirt(Direction.CENTER);
 		} else {

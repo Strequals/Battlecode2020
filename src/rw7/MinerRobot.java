@@ -418,7 +418,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 		} 
 		if (isBuilder) {
-			if (!builderDS && (rushDetected || (round > CLOSE_TURTLE_END)) && soup > RobotType.DESIGN_SCHOOL.cost) {
+			if (!builderDS && (rushDetected || (round > TURTLE_ROUND)) && soup > RobotType.DESIGN_SCHOOL.cost) {
 				
 				if (builderFC && hqDist > 1 && hqDist < 5) {
 					//Build Design School
