@@ -26,9 +26,10 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private boolean sentEHQL = false;
 	private Direction lastDirection;
 	private int friendlyDrones;
-	private MapLocation minerAssistLocation;
+	private MapLocation minerAssistLocation;  //where to put
 	private MapLocation emptyWallLocation;
-
+   private RobotInfo minerToAssist;
+   
 	private MapLocation rushLocation;
 	private int turnsSinceRush;
 
@@ -84,6 +85,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		targetLocationf = null;
 		friendlyDrones = 0;
 		int targetDistance = 10000;
+      int minerDistance = 10000;
 		int distance;
 		rushDetected = false;
 
@@ -115,14 +117,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
 					if (homeLocation == null) homeLocation = r.location;
 					break;
 				case MINER:
-					/*if(state == DroneState.TRANSPORTING) {
+					if(state == DroneState.TRANSPORTING || state == DroneState.MINER_ASSIST) {
    					distance = Utility.chebyshev(location, r.location);
-   					if (distance < targetDistance && !pathTile(r.location)) {
-   						targetLocationf = r.location;
-   						targetDistance = distance;
-   						targetFriendly = r;
+   					if (distance < minerDistance && (!pathTile(r.location) || state == DroneState.MINER_ASSIST)) { //kinda hacky, only pick up miner if its not on the path, unless in miner assist mode
+   						minerToAssist = r;
+   						minerDistance = distance;
    					}
-               }*/
+               }
 					break;
 				case LANDSCAPER:
 					if(state == DroneState.ASSAULTING && (enemyHqLocation == null || !r.location.isAdjacentTo(enemyHqLocation))) {
@@ -314,7 +315,10 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		case ASSAULTING:
 			doAssault();
 			break;
-		}
+      case MINER_ASSIST:
+         doAssist();
+         break;
+      }
 		if (rushLocation != null) {
 			turnsSinceRush++;
 			if (turnsSinceRush > RUSH_SAFE_TURNS) {
@@ -327,7 +331,40 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		if (targetLocation != null) rc.setIndicatorDot(targetLocation, 255, 0, 0);
 
 	}
+   
+   public void doAssist() {
+		if(rc.isCurrentlyHoldingUnit()) {
+			if(Utility.chebyshev(location, minerAssistLocation) <= 1) {
+				if(rc.canDropUnit(location.directionTo(minerAssistLocation))) {
+					rc.dropUnit(location.directionTo(minerAssistLocation));
+					return;
+				}
+			}
 
+			return;
+		}
+		else if(minerToAssist != null) {
+			if (Utility.chebyshev(location, minerToAssist.location) <= 1) {
+				if (rc.canPickUpUnit(minerToAssist.ID)) {
+					rc.pickUpUnit(minerToAssist.ID);
+					return;
+				}
+			} else {
+				if (DroneNav.target == null || !DroneNav.target.equals(minerToAssist.location)) {
+					DroneNav.beginNav(rc, this, minerToAssist.location);
+				}
+				DroneNav.nav(rc, this);
+				return;
+			}
+		}
+      else {
+				if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
+					DroneNav.beginNav(rc, this, hqLocation);
+				}
+      }
+
+   }
+   
 	public void doAssault() throws GameActionException {
 
 		doInitiateRush();
@@ -517,16 +554,16 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				return;
 			}
 		}
-		else if(targetFriendly != null) {
-			if (Utility.chebyshev(location, targetLocation) <= 1) {
-				if (rc.canPickUpUnit(targetRobot.ID)) {
-					rc.pickUpUnit(targetRobot.ID);
+		else if(minerToAssist != null) {
+			if (Utility.chebyshev(location, minerToAssist.location) <= 1) {
+				if (rc.canPickUpUnit(minerToAssist.ID)) {
+					rc.pickUpUnit(minerToAssist.ID);
 					scanForSafe();
 					return;
 				}
 			} else {
-				if (DroneNav.target == null || !DroneNav.target.equals(targetLocationf)) {
-					DroneNav.beginNav(rc, this, targetLocationf);
+				if (DroneNav.target == null || !DroneNav.target.equals(minerToAssist.location)) {
+					DroneNav.beginNav(rc, this, minerToAssist.location);
 				}
 				DroneNav.nav(rc, this);
 				return;
@@ -811,8 +848,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			if (shouldAssault()) state = DroneState.ASSAULTING;
 			break;
       case 14:
-         minerAssistLocation = new MapLocation(x, y);
-         state = DroneState.MINER_ASSIST;
+         minerAssistLocation = new MapLocation(x, y);// DOES NOT WORK, NEEDS LOCATION TO FIND MINER AND LOCATION TO PLACE MINER
+         state = DroneState.MINER_ASSIST;           //maybe move miner towards hq if its stuck pathfinding?
          break;
       }
 	}
