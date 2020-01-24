@@ -39,6 +39,8 @@ public abstract strictfp class Robot {
 		mapHeight = rc.getMapHeight();
 		type = rc.getType();
 		round = 0;
+
+		setVars();
 	}
 	
 	public abstract void run() throws GameActionException;
@@ -48,20 +50,10 @@ public abstract strictfp class Robot {
 	public void loop() {
 		while (true) {
 			try {
-				//Update Game State
-				nearbyRobots = rc.senseNearbyRobots();
-				location = rc.getLocation();
-				senseRadiusSq = rc.getCurrentSensorRadiusSquared();
-				dirtCarrying = rc.getDirtCarrying();
-				soupCarrying = rc.getSoupCarrying();
-				cooldownTurns = rc.getCooldownTurns();
-				robotElevation = rc.senseElevation(location);
-				soup = rc.getTeamSoup();
-				
-				//put code common to all units here, such as communication processing
-				
-				
-				//Read messages from last round
+				// Update Game State
+				setVars();
+
+				// Read messages from last round
 				if (round == 0 && type != RobotType.HQ) {
 					//The robot has just been created, find the HQ location
 					Communications.processFirstBlock(rc, this);
@@ -76,23 +68,14 @@ public abstract strictfp class Robot {
 					Communications.processLastBlock(rc, this);
 				}
 				
-				//Update round
-				round = rc.getRoundNum();
-				
-				
-				//Communications
+				// Communications
 				Communications.calculateSecret(round);
-				
-				
-				
-				
 				
 				run();
 				
 				Communications.sendMessages(rc);
 				//System.out.println("BC left: " + Clock.getBytecodesLeft());
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			Clock.yield();
@@ -120,4 +103,15 @@ public abstract strictfp class Robot {
 		return rc.canMove(d) && !rc.senseFlooding(ml);
 	}
 
+	private void setVars() throws GameActionException {
+		nearbyRobots = rc.senseNearbyRobots();
+		location = rc.getLocation();
+		senseRadiusSq = rc.getCurrentSensorRadiusSquared();
+		dirtCarrying = rc.getDirtCarrying();
+		soupCarrying = rc.getSoupCarrying();
+		cooldownTurns = rc.getCooldownTurns();
+		robotElevation = rc.senseElevation(location);
+		soup = rc.getTeamSoup();
+		round = rc.getRoundNum();
+	}
 }

@@ -66,12 +66,6 @@ public strictfp class MinerRobot extends Robot {
 		SEEKING, MINING, RETURNING, MOVE_MATRIX, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
 	}
 
-	enum EnemyHqPossiblePosition {
-		X_FLIP,
-		Y_FLIP,
-		ROTATION
-	}
-
 	public MinerRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		// TODO Auto-generated constructor stub
