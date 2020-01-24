@@ -64,12 +64,15 @@ public abstract strictfp class Robot {
 						hqY3 = hqLocation.y%3;
 					}
 					//System.out.println("hqX2 "+hqX3+", hqY2 "+hqY3);
-				}if (round > 1) {
+				} if (round > 1) {
 					Communications.processLastBlock(rc, this);
 				}
 				
 				// Communications
 				Communications.calculateSecret(round);
+
+				// Set round
+				round = rc.getRoundNum();
 				
 				run();
 				
@@ -112,6 +115,5 @@ public abstract strictfp class Robot {
 		cooldownTurns = rc.getCooldownTurns();
 		robotElevation = rc.senseElevation(location);
 		soup = rc.getTeamSoup();
-		round = rc.getRoundNum();
 	}
 }
