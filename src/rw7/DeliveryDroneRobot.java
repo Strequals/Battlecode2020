@@ -10,7 +10,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		ATTACKING,
 		ASSAULTING,
 		DEFENDING,
-		TRANSPORTING
+		TRANSPORTING,
+      MINER_ASSIST
 	}
 
 	private MapLocation homeLocation;
@@ -531,9 +532,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				return;
 			}
 		}
-
+      else {
+				if (DroneNav.target == null || !DroneNav.target.equals(minerAssistLocation)) {
+					DroneNav.beginNav(rc, this, minerAssistLocation);
+				}
+      }
 		//else wander
-		moveScout(rc);
+		//moveScout(rc);
 	}
 
 	public void scanForWater() throws GameActionException {
@@ -799,12 +804,17 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			break;
 		case 12:
 			state = DroneState.TRANSPORTING;
+         minerAssistLocation = new MapLocation(x, y);
 			break;
 		case 13:
 			enemyHqLocation = new MapLocation(x,y);
 			if (shouldAssault()) state = DroneState.ASSAULTING;
 			break;
-		}
+      case 14:
+         minerAssistLocation = new MapLocation(x, y);
+         state = DroneState.MINER_ASSIST;
+         break;
+      }
 	}
 
 }
