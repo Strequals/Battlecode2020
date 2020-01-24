@@ -117,6 +117,13 @@ public strictfp class LandscaperRobot extends Robot {
 				case HQ:
 					hqLocation = r.location;
 					hqElevation = rc.senseElevation(hqLocation);
+					if (location.isAdjacentTo(hqLocation) && rc.isReady()) {
+						RobotInfo hqInfo = rc.senseRobotAtLocation(hqLocation);
+						if (hqInfo.dirtCarrying > 0) {
+							rc.digDirt(location.directionTo(hqLocation));
+							return;
+						}
+					}
 					break;
 				case LANDSCAPER:
 					if (Utility.chebyshev(r.location, hqLocation) > 2) {
@@ -471,15 +478,15 @@ public strictfp class LandscaperRobot extends Robot {
 		Direction[] dirs = Utility.directions;
 		Direction d;
 		MapLocation m;
-		int elev;
-		int elevDiff;
+		long elev;
+		long elevDiff;
 		for (int i = 8; i-->0; ) {
 			d = dirs[i];
 			m = location.add(d);
 			if (Utility.chebyshev(m, hqLocation) != 1) continue;
 			if (rc.canSenseLocation(m)) {
 				elev = rc.senseElevation(m);
-				elevDiff = robotElevation - elev;
+				elevDiff = (long)(robotElevation) - elev;
 				if (elevDiff > TERRAFORM_THRESHOLD) continue;
 				if (elevDiff < 0) elevDiff = -elevDiff;
 				if (elevDiff > GameConstants.MAX_DIRT_DIFFERENCE) {
@@ -501,22 +508,23 @@ public strictfp class LandscaperRobot extends Robot {
 		Direction[] dirs = Utility.directions;
 		Direction d;
 		MapLocation m;
-		int elev;
-		int elevDiff;
+		long elev;
+		long elevDiff;
 		RobotInfo botInfo;
 		for (int i = 8; i-->0; ) {
 			d = dirs[i];
 			m = location.add(d);
 			if (pitTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
 			if (rc.canSenseLocation(m)) {
-				botInfo = rc.senseRobotAtLocation(m);
-				if (botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) continue;
+				
 				elev = rc.senseElevation(m);
-				elevDiff = robotElevation - elev;
+				elevDiff = (long)(robotElevation) - elev;
 				if (elevDiff > TERRAFORM_THRESHOLD) continue;
 				if (elevDiff < 0) elevDiff = -elevDiff;
 				if (elevDiff > 0 && elev < MAX_HEIGHT_THRESHOLD) {
 					//System.out.println("TUNNEL BRIDGE:" + m);
+					botInfo = rc.senseRobotAtLocation(m);
+					if (botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) continue;
 					tunnelOrBridge(m, d);
 					return;
 				}
@@ -605,13 +613,7 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 
-		if (location.isAdjacentTo(hqLocation)) {
-			RobotInfo hqInfo = rc.senseRobotAtLocation(hqLocation);
-			if (hqInfo.dirtCarrying > 0) {
-				rc.digDirt(location.directionTo(hqLocation));
-				return;
-			}
-		}
+		
 
 		//start turtling if on rank 1
 		if (Utility.chebyshev(location, hqLocation) == 1) {
@@ -666,8 +668,8 @@ public strictfp class LandscaperRobot extends Robot {
 			int dx;
 			int dy;
 			int rad;
-			int elev;
-			int dElev;
+			long elev;
+			long dElev;
 			int bestPriority = 100000;
 			int priority;
 			int rank;
@@ -685,9 +687,8 @@ public strictfp class LandscaperRobot extends Robot {
 					if (csDist > MAX_TERRAFORM_RANGE) continue;
 					if (pitTile(ml)) continue;
 					elev = rc.senseElevation(ml);
-					ri = rc.senseRobotAtLocation(ml);
-					if (ri != null && (ri.type.isBuilding() || (ri.team == team && ri.type == RobotType.LANDSCAPER))) continue;
-					dElev = robotElevation - elev;
+					
+					dElev = (robotElevation) - elev;
 					if (dElev > TERRAFORM_THRESHOLD) continue;
 					rank = Utility.chebyshev(ml, hqLocation);
 					if (rank == 1) continue;
@@ -703,6 +704,8 @@ public strictfp class LandscaperRobot extends Robot {
 					if (elev >= MAX_HEIGHT_THRESHOLD) continue;
 					if (dElev > 0) {
 						if (priority < bestPriority) {
+							ri = rc.senseRobotAtLocation(ml);
+							if (ri != null && (ri.type.isBuilding() || (ri.team == team && ri.type == RobotType.LANDSCAPER))) continue;
 							bestPriority = priority;
 							nearestFillTile = ml;
 						}

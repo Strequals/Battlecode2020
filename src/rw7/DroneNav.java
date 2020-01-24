@@ -33,6 +33,7 @@ public class DroneNav {
 
 	public static void nav(RobotController rc, DeliveryDroneRobot r) throws GameActionException{
 		position = r.location;
+		rc.setIndicatorLine(position, target, 255, 0, 255);
 		if (state == BugState.BUGGING && canEndBug()) {
 			state = BugState.MOTION_TO_GOAL;
 		}

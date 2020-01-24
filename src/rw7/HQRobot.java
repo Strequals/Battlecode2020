@@ -36,6 +36,9 @@ public strictfp class HQRobot extends Robot {
 	
 	public boolean minerRequested = false;
 	
+	public LinkedQueue<MapLocation> open;
+	public ArrayList<MapLocation> closed;
+	
 	enum HQState {
 		NORMAL
 	}
@@ -214,6 +217,8 @@ public strictfp class HQRobot extends Robot {
 		}
 		
 		if (landscaperRequestCooldown > 0) landscaperRequestCooldown--;*/
+        
+        
     }
 
     /**
