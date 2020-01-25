@@ -31,6 +31,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private MapLocation backupFill;
 	private MapLocation nearestNetgun;
 	private int netgunDistance = 10000;
+	private MapLocation diagonalTarget;
 
 
 	private int turnsNavvedHq;
@@ -40,7 +41,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
 	private static final int MAX_TERRAFORM_RANGE = 2; //Chebyshev distance to limit
 	private static final int TERRAFORM_RANGE_SQ = 8; //2x^2
-	public static final int MAX_HEIGHT_THRESHOLD = 12; //don't try to build up to unreachable heights
+	public static final int MAX_HEIGHT_THRESHOLD = 10; //don't try to build up to unreachable heights
 	private static final int BACKUP_THRESHOLD = 8;
 	private static final int MAX_NEARBY_TERRAFORMERS = 5;//Don't communicate location if there are 5 or more terraformers nearby
 
@@ -67,6 +68,8 @@ public strictfp class LandscaperRobot extends Robot {
 		rushDigging = true;
 		turnsNavvedHq = 0;
 		communicationDelay = 0;
+		
+		
 	}
 
 	@Override
@@ -74,12 +77,13 @@ public strictfp class LandscaperRobot extends Robot {
 		int droneDist = 100;
 
 		if (round == roundCreated) {
-			if (initialBuildingTile(homeDsLocation)) {
+			/*if (initialBuildingTile(homeDsLocation)) {
 				state = LandscaperState.TURTLING;
 			} else {
 				state = LandscaperState.TERRAFORMING;
-			}
-			//state = LandscaperState.TERRAFORMING;
+			}*/
+			state = LandscaperState.TERRAFORMING;
+			diagonalTarget = new MapLocation(mapWidth-hqLocation.x-1,mapHeight-hqLocation.y-1);
 		}
 		
 		
@@ -517,7 +521,7 @@ public strictfp class LandscaperRobot extends Robot {
 		for (int i = 8; i-->0; ) {
 			d = dirs[i];
 			m = location.add(d);
-			if (pitTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
+			if (!pathTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
 			if (rc.canSenseLocation(m)) {
 				
 				elev = rc.senseElevation(m);
@@ -615,11 +619,47 @@ public strictfp class LandscaperRobot extends Robot {
 				return;
 			}
 		}
+		
+		if (location.distanceSquaredTo(hqLocation) <= 8) {
+			moveTerraform(diagonalTarget);
+			return;
+		}
+		
+		//Start increasing height of terraform
+				//System.out.println("Increase terraform height");
+		if (robotElevation < MAX_HEIGHT_THRESHOLD) {
+				if (dirtCarrying == 0) {
+					if (pitDirection != null) rc.digDirt(pitDirection);
+				} else {
+					if (!pitTile(location) && robotElevation < MAX_HEIGHT_THRESHOLD) {
+						rc.depositDirt(Direction.CENTER);
+						return;
+					} else {
+						Direction[] dirs = Utility.directions;
+						Direction d;
+						MapLocation m;
+						RobotInfo botInfo;
+						int elev;
+						for (int i = 8; i-->0; ) {
+							d = dirs[i];
+							m = location.add(d);
 
+							if (!pathTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
+							if (rc.canSenseLocation(m)) {
+								botInfo = rc.senseRobotAtLocation(m);
+								elev = rc.senseElevation(m);
+								if ((botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) || elev >= MAX_HEIGHT_THRESHOLD) continue;
+								rc.depositDirt(d);
+								return;
+							}
+						}
+					}
+				}
+		}
 		
 
 		//start turtling if on rank 1
-		if (Utility.chebyshev(location, hqLocation) == 1) {
+		if (Utility.chebyshev(location, hqLocation) == 1 && round > TURTLE_END) {
 			state = LandscaperState.TURTLING;
 			doTurtling();
 			return;
@@ -685,6 +725,9 @@ public strictfp class LandscaperRobot extends Robot {
 					rad = dx * dx + dy * dy;
 					if (rad > rSq) continue;
 					ml = new MapLocation(x, y);
+					
+					rank = Utility.chebyshev(ml, hqLocation);
+					if (rank <= 2) continue;
 
 					csDist = Utility.chebyshev(ml, location);
 					if (csDist > MAX_TERRAFORM_RANGE) continue;
@@ -693,8 +736,7 @@ public strictfp class LandscaperRobot extends Robot {
 					
 					dElev = (robotElevation) - elev;
 					if (dElev > TERRAFORM_THRESHOLD) continue;
-					rank = Utility.chebyshev(ml, hqLocation);
-					if (rank == 1) continue;
+					
 					//heuristic
 					priority = csDist + rank;
 					if (enemyHqLocation != null) {
@@ -732,35 +774,7 @@ public strictfp class LandscaperRobot extends Robot {
 			return;
 		}
 
-		//Start increasing height of terraform
-		//System.out.println("Increase terraform height");
-		if (dirtCarrying == 0) {
-			rc.digDirt(pitDirection);
-		} else {
-			if (!pitTile(location) && robotElevation < MAX_HEIGHT_THRESHOLD) {
-				rc.depositDirt(Direction.CENTER);
-				return;
-			} else {
-				Direction[] dirs = Utility.directions;
-				Direction d;
-				MapLocation m;
-				RobotInfo botInfo;
-				int elev;
-				for (int i = 8; i-->0; ) {
-					d = dirs[i];
-					m = location.add(d);
-
-					if (pitTile(m) || Utility.chebyshev(m, hqLocation) == 1) continue;
-					if (rc.canSenseLocation(m)) {
-						botInfo = rc.senseRobotAtLocation(m);
-						elev = rc.senseElevation(m);
-						if ((botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) || elev >= MAX_HEIGHT_THRESHOLD) continue;
-						rc.depositDirt(d);
-						return;
-					}
-				}
-			}
-		}
+		
 
 		//Move towards terraform edge
 		if (backupFill != null) {

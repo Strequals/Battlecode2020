@@ -18,6 +18,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 	
 	static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
 	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 550;
+	static final int MIN_TERRAFORMER_COUNT = 8;
 	
 	static final int WEIGHT = 150; //need 150 extra soup per nearby landscaper to build
 	static final int VAPORATOR_WEIGHT = 100; //need 150 less soup per nearby vaporator to build
@@ -50,8 +51,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 		fcBuilt = false;
 		isAlliedDrone = false;
 		if (round == roundCreated) {
-			if (initialBuildingTile(location)) {
-				numTurtles = 8;
+			if (location.distanceSquaredTo(hqLocation) <= 2) {
+				numTurtles = MIN_TERRAFORMER_COUNT;
 			}
 		}
 

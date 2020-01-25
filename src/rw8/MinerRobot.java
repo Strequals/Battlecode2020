@@ -33,6 +33,7 @@ public strictfp class MinerRobot extends Robot {
    public int designSchoolBuildCooldown;
    public int turnsSinceDesignSchoolSeen = 100;
    private boolean enemyBuiltDrones = false;
+   public boolean hqInRange = false;
    private boolean builderDS = false;
    private boolean builderFC = false;
    private boolean builderVP = false;
@@ -40,6 +41,17 @@ public strictfp class MinerRobot extends Robot {
    private int numVaporators;
    private MapLocation nearestNetgun;
    private int netgunDistance = 10000;
+   private boolean isBuilder;
+   private boolean isRefineryNearby = false;
+   private boolean isFreeFriendlyDrone;
+	private boolean dsBuilt = false;
+	private boolean fcBuilt = false;
+	private boolean ngBuilt = false;
+	private boolean enemySpotted = false;
+	private boolean enemyDroneSpotted = false;
+	private MapLocation nearestRefinery;
+	private MapLocation nearestSoup;
+	private int hqDist;
 	
 	private MapLocation frontLocation;
 	
@@ -47,7 +59,7 @@ public strictfp class MinerRobot extends Robot {
 	private int maxWaitTurns = 10;
 	private boolean rushDetected = false;
 
-   public static final int MOVE_TO_MATRIX_LEVEL = 200; //Higher value means miners less likely to move to matrix
+   public static final int MOVE_TO_MATRIX_ROUND = 500; 
    public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
    public static final int VAPORATOR_WEIGHT = 10; // need VAPORATOR_WEIGHT more soup to build a vaporator with every vaporator in sight
 
@@ -86,12 +98,10 @@ public strictfp class MinerRobot extends Robot {
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
 		int nearbyMiners = 1;
-		boolean isRefineryNearby = false;
-		boolean dsBuilt = false;
-		boolean fcBuilt = false;
-		boolean ngBuilt = false;
-		boolean enemySpotted = false;
-		boolean enemyDroneSpotted = false;
+		
+		isFreeFriendlyDrone = false;
+		
+		hqInRange = false;
 		nearestTerraformer = null;
 		int terraformerDistance = 1000;
       int droneDist = 100;
@@ -103,6 +113,7 @@ public strictfp class MinerRobot extends Robot {
 				switch (r.getType()) {
 				case HQ:
 					hqLocation = r.getLocation();
+					hqInRange = true;
 					break;
 				case MINER:
 					nearbyMiners++;
@@ -110,6 +121,9 @@ public strictfp class MinerRobot extends Robot {
 				case DESIGN_SCHOOL:
 					if (rc.senseElevation(r.location) >= robotElevation-3) {
 						dsBuilt = true;
+					}
+					if (r.location.isAdjacentTo(hqLocation)) {
+						builderDS = true;
 					}
 					break;
 				case NET_GUN:
@@ -133,8 +147,12 @@ public strictfp class MinerRobot extends Robot {
 					if (rc.senseElevation(r.location) >= robotElevation-3) {
 						fcBuilt = true;
 					}
+					if (r.location.isAdjacentTo(hqLocation)) {
+						builderFC = true;
+					}
 					break;
 				case DELIVERY_DRONE:
+					if (!r.currentlyHoldingUnit) isFreeFriendlyDrone = true;
 					break;
 				case REFINERY:
 					isRefineryNearby = true;
@@ -253,7 +271,7 @@ public strictfp class MinerRobot extends Robot {
 			navigatingReturn = false;
 		}
 
-		MapLocation nearestRefinery = null;
+		nearestRefinery = null;
 		//Calculate return location
 		if (refineries.size()>0) {
 			ArrayList<MapLocation> refs = refineries;
@@ -292,11 +310,9 @@ public strictfp class MinerRobot extends Robot {
 				returnLoc = hqLocation;
 			}
 		}
-		int hqDist = 100;
-		if (hqLocation != null) hqDist = Utility.chebyshev(location, hqLocation);
 
 
-		if (isBuilder) {
+		/*if (isBuilder) {
 			//move towards matrix or hq if far
 			if (minerState != MinerState.MOVE_MATRIX && hqDist > 8 && ((robotElevation < round / MOVE_TO_MATRIX_BUILDER && round > TURTLE_ROUND && round < TURTLE_END) || (robotElevation < TURTLE_END / MOVE_TO_MATRIX_BUILDER && round > TURTLE_END))) {
 				prevState = minerState;
@@ -307,207 +323,118 @@ public strictfp class MinerRobot extends Robot {
 			if (minerState == MinerState.MOVE_MATRIX && (robotElevation > round/MOVE_TO_MATRIX_LEVEL || robotElevation > TURTLE_END/MOVE_TO_MATRIX_LEVEL)) {
 				minerState = prevState;
 			}
-		} else {
+		} else {*/
 			//move towards matrix or hq if far
-			if (minerState != MinerState.MOVE_MATRIX && hqDist > 8 && ((robotElevation < round / MOVE_TO_MATRIX_LEVEL && round > TURTLE_ROUND && round < TURTLE_END) || (robotElevation < TURTLE_END / MOVE_TO_MATRIX_LEVEL && round > TURTLE_END))) {
+			if (minerState != MinerState.MOVE_MATRIX && hqDist > 8 && round > MOVE_TO_MATRIX_ROUND && robotElevation < LandscaperRobot.MAX_HEIGHT_THRESHOLD) {
 				prevState = minerState;
 				minerState = MinerState.MOVE_MATRIX;
 
 			}
 
-			if (minerState == MinerState.MOVE_MATRIX && (robotElevation > round/MOVE_TO_MATRIX_LEVEL || robotElevation > TURTLE_END/MOVE_TO_MATRIX_LEVEL)) {
+			if (minerState == MinerState.MOVE_MATRIX && (robotElevation >= LandscaperRobot.MAX_HEIGHT_THRESHOLD)) {
 				minerState = prevState;
 			}
-		}
+		//}
 
 		if (cooldownTurns >= 1) return;
-
-
-		if (round > TURTLE_ROUND && minerState != MinerState.MOVE_MATRIX) {
-			//Build Refinery
-			if (!isRefineryNearby && soup > RobotType.REFINERY.cost && (round > CLOSE_TURTLE_END || !hqAvailable)) {
-				if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
-					Direction[] dirs = Utility.directions;
-					Direction d;
-					MapLocation refLoc;
-					for (int i = dirs.length; --i >= 0;) {
-						d = dirs[i];
-						refLoc = location.add(d);
-						if (rc.canBuildRobot(RobotType.REFINERY, d) && Utility.chebyshev(refLoc, hqLocation) > 2) {
-							rc.buildRobot(RobotType.REFINERY, d);
-							MapLocation refineryLoc = location.add(d);
-							if (soup>5) Communications.queueMessage(rc, 5, 5, refineryLoc.x, refineryLoc.y);
-							refineries.add(refineryLoc);
-							return;
-						}
-					}
-				}
-			}
-
-			//Build Design School
-			if (designSchoolBuildCooldown > 0)designSchoolBuildCooldown--;
-			if (dsBuilt) turnsSinceDesignSchoolSeen = 0;
-			else turnsSinceDesignSchoolSeen++;
-			if (round > TURTLE_ROUND && (turnsSinceDesignSchoolSeen>DESIGN_SCHOOL_SEEN_TURNS || (soup > 1000 && !dsBuilt)) && designSchoolBuildCooldown == 0 && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 2*TURTLE_ROUND) && hqDist>=2) {
-				Direction[] dirs = Utility.directions;
-				Direction d;
-				ml = null;
-				for (int i = 8; i-->0;) {
-					d = dirs[i];
-					ml = location.add(d);
-					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
-						if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
-							rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
-							dsBuilt = true;
-							return;
-						}
-					}
-				}
-			}
-
-			//Build Vaporator
-			if ((!builderVP || soup > RobotType.VAPORATOR.cost + RobotType.DESIGN_SCHOOL.cost + RobotType.LANDSCAPER.cost) && round < MAX_VAPORATOR_BUILD_ROUND && soup > RobotType.VAPORATOR.cost + VAPORATOR_WEIGHT * numVaporators && hqDist >= 2) {
-				Direction[] dirs = Utility.directions;
-				Direction d;
-				ml = null;
-				for (int i = 8; i-->0;) {
-					d = dirs[i];
-					ml = location.add(d);
-					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
-						if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
-							rc.buildRobot(RobotType.VAPORATOR, d);
-							return;
-						}
-					}
-				}
-			}
-
-			//Build Fulfillment Center
-			if (soup > RobotType.FULFILLMENT_CENTER.cost && !fcBuilt && ((enemySpotted && hqDist < FC_DIST) || soup > 800) && hqDist >= 2) {
-				Direction[] dirs = Utility.directions;
-				Direction d;
-				ml = null;
-				for (int i = 8; i-->0;) {
-					d = dirs[i];
-					ml = location.add(d);
-					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
-						if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
-							rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
-							return;
-						}
-					}
-				}
-			}
-
-			//Build Netgun
-			if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt && hqDist >= 2) {
-				Direction[] dirs = Utility.directions;
-				Direction d;
-				ml = null;
-				for (int i = 8; i-->0;) {
-					d = dirs[i];
-					ml = location.add(d);
-					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
-						if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
-							rc.buildRobot(RobotType.NET_GUN, d);
-							return;
-						}
-					}
-				}
-			}
-		} 
-		if (isBuilder) {
-			if (!builderDS && (rushDetected || (round > TURTLE_ROUND)) && soup > RobotType.DESIGN_SCHOOL.cost) {
-				
-				if (builderFC && hqDist > 1 && hqDist < 5) {
-					//Build Design School
-
-					//if (rushDetected) {
-						Direction[] dirs = Utility.directions;
-						Direction d;
-						ml = null;
-						for (int i = 8; i-->0;) {
-							d = dirs[i];
-							ml = location.add(d);
-							if (initialBuildingTile(ml)) {
-								if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
-									rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
-									dsBuilt = true;
-									builderDS = true;
-									return;
-								}
-							}
-						}
-					//}
-				} else {
-					if (hqDist <=2) {
-						fuzzy(rc, hqLocation.directionTo(location));
-						return;
-					} else {
-						if (Nav.target == null || !Nav.target.equals(hqLocation)) {
-							Nav.beginNav(rc, this, hqLocation);
-						}
-						Nav.nav(rc, this);
-						return;
-					}
-				}
-			} else {
-				
-				//Build Fulfillment Center
-				if (!builderFC && soup > RobotType.FULFILLMENT_CENTER.cost) {
-					Direction[] dirs = Utility.directions;
-					Direction d;
-					ml = null;
-					for (int i = 8; i-->0;) {
-						d = dirs[i];
-						ml = location.add(d);
-						if (initialBuildingTile(ml)) {
-							if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
-								rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
-								builderFC = true;
-								return;
-							}
-						}
-					}
-				}
-
-
-			//Build Vaporator
-			if (round < MAX_VAPORATOR_BUILD_ROUND && soup > RobotType.VAPORATOR.cost + VAPORATOR_WEIGHT * numVaporators && hqDist >= 2) {
-				Direction[] dirs = Utility.directions;
-				Direction d;
-				ml = null;
-				for (int i = 8; i-->0;) {
-					d = dirs[i];
-					ml = location.add(d);
-					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
-						if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
-							rc.buildRobot(RobotType.VAPORATOR, d);
-							return;
-						}
-					}
-				}
-			}
-			
-
-			//Build Netgun
-			if (builderDS && builderFC && soup > RobotType.NET_GUN.cost && !ngBuilt && enemyDroneSpotted) {
-				Direction[] dirs = Utility.directions;
-				Direction d;
-				ml = null;
-				for (int i = 8; i-->0;) {
-					d = dirs[i];
-					ml = location.add(d);
-					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
-						if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
-							rc.buildRobot(RobotType.NET_GUN, d);
-							return;
-						}
-					}
-				}
-			}
-			}
-		}
+		
+		hqDist = 100;
+		if (hqLocation != null) hqDist = Utility.chebyshev(location, hqLocation);
+		
+		if (doBuilding()) return;
+		
+//		if (isBuilder) {
+//			if (!builderDS && (rushDetected || (round > TURTLE_ROUND)) && soup > RobotType.DESIGN_SCHOOL.cost) {
+//				
+//				if (builderFC && hqDist > 1 && hqDist < 5) {
+//					//Build Design School
+//
+//					//if (rushDetected) {
+//						Direction[] dirs = Utility.directions;
+//						Direction d;
+//						ml = null;
+//						for (int i = 8; i-->0;) {
+//							d = dirs[i];
+//							ml = location.add(d);
+//							if (initialBuildingTile(ml)) {
+//								if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
+//									rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
+//									dsBuilt = true;
+//									builderDS = true;
+//									return;
+//								}
+//							}
+//						}
+//					//}
+//				} else {
+//					if (hqDist <=2) {
+//						fuzzy(rc, hqLocation.directionTo(location));
+//						return;
+//					} else {
+//						if (Nav.target == null || !Nav.target.equals(hqLocation)) {
+//							Nav.beginNav(rc, this, hqLocation);
+//						}
+//						Nav.nav(rc, this);
+//						return;
+//					}
+//				}
+//			} else {
+//				
+//				//Build Fulfillment Center
+//				if (!builderFC && soup > RobotType.FULFILLMENT_CENTER.cost) {
+//					Direction[] dirs = Utility.directions;
+//					Direction d;
+//					ml = null;
+//					for (int i = 8; i-->0;) {
+//						d = dirs[i];
+//						ml = location.add(d);
+//						if (initialBuildingTile(ml)) {
+//							if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
+//								rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
+//								builderFC = true;
+//								return;
+//							}
+//						}
+//					}
+//				}
+//
+//
+//			//Build Vaporator
+//			if (round < MAX_VAPORATOR_BUILD_ROUND && soup > RobotType.VAPORATOR.cost + VAPORATOR_WEIGHT * numVaporators && hqDist >= 2) {
+//				Direction[] dirs = Utility.directions;
+//				Direction d;
+//				ml = null;
+//				for (int i = 8; i-->0;) {
+//					d = dirs[i];
+//					ml = location.add(d);
+//					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+//						if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
+//							rc.buildRobot(RobotType.VAPORATOR, d);
+//							return;
+//						}
+//					}
+//				}
+//			}
+//			
+//
+//			//Build Netgun
+//			if (builderDS && builderFC && soup > RobotType.NET_GUN.cost && !ngBuilt && enemyDroneSpotted) {
+//				Direction[] dirs = Utility.directions;
+//				Direction d;
+//				ml = null;
+//				for (int i = 8; i-->0;) {
+//					d = dirs[i];
+//					ml = location.add(d);
+//					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+//						if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
+//							rc.buildRobot(RobotType.NET_GUN, d);
+//							return;
+//						}
+//					}
+//				}
+//			}
+//			}
+//		}
 
 
 
@@ -583,7 +510,7 @@ public strictfp class MinerRobot extends Robot {
 				soupMine = null;
 			}
 
-			if (isBuilder && round < TURTLE_ROUND && hqDist < 2 && round > 20) {
+			//if (isBuilder && round < TURTLE_ROUND && hqDist < 2 && round > 20) {
 				/*if (soupMine != null && soupMine.distanceSquaredTo(hqLocation) >= 2) {
 				if (Nav.target == null || !Nav.target.equals(soupMine)) {
 					Nav.beginNav(rc, this, soupMine);
@@ -592,12 +519,12 @@ public strictfp class MinerRobot extends Robot {
 				System.out.println("BUILDER MOVING AWAY " + soupMine);
 				return;
 				} else {*/
-				moveScout(rc);
-				return;
+				//moveScout(rc);
+				//return;
 				//}
 
 
-			}
+			//}
 			
 			//search for a soup deposit, check optimal soup deposit within radius
 			if (soupMine == null) {
@@ -645,6 +572,9 @@ public strictfp class MinerRobot extends Robot {
 			
 			
 			if (adjacentSoup == null) {
+				if (soupMine != null && (Nav.target == null || !Nav.target.equals(soupMine))) {
+					Nav.beginNav(rc, this,soupMine);
+				}
 				Nav.nav(rc, this);
 			} else {
 				rc.mineSoup(location.directionTo(adjacentSoup));
@@ -703,9 +633,8 @@ public strictfp class MinerRobot extends Robot {
 					if (!allFilled) hqAvailable = false;
 				}
 
-				if (!navigatingReturn) {
+				if (Nav.target == null || !Nav.target.equals(returnLoc)) {
 					Nav.beginNav(rc, this, returnLoc);
-					navigatingReturn = true;
 				}
 				Direction dirToReturn = location.directionTo(returnLoc);
 				if (location.distanceSquaredTo(returnLoc) <= 2) {
@@ -784,6 +713,94 @@ public strictfp class MinerRobot extends Robot {
 			return true;
 		}
 		return false;
+	}
+	
+	public void tryBuildFC() throws GameActionException {
+		int hqDist = location.distanceSquaredTo(hqLocation);
+		if (hqDist <= 4) {
+			Direction d = location.directionTo(hqLocation);
+			if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
+				rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
+				return;
+			}
+			Direction right = d.rotateRight();
+			if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, right)) {
+				rc.buildRobot(RobotType.FULFILLMENT_CENTER, right);
+				return;
+			}
+			Direction left = d.rotateLeft();
+			if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, left)) {
+				rc.buildRobot(RobotType.FULFILLMENT_CENTER, left);
+				return;
+			}
+		} else if (hqDist <= 8) {
+			Direction d = location.directionTo(hqLocation);
+			if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
+				rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
+				return;
+			}
+			Direction right = d.rotateRight();
+			MapLocation rl = location.add(right);
+			if (rl.distanceSquaredTo(hqLocation) <= 2 && rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, right)) {
+				rc.buildRobot(RobotType.FULFILLMENT_CENTER, right);
+				return;
+			}
+			Direction left = d.rotateLeft();
+			MapLocation ll = location.add(left);
+			if (ll.distanceSquaredTo(hqLocation) <= 2 && rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, left)) {
+				rc.buildRobot(RobotType.FULFILLMENT_CENTER, left);
+				return;
+			}
+		}
+		
+		if (Nav.target == null || !Nav.target.equals(hqLocation)) {
+			Nav.beginNav(rc, this, hqLocation);
+		}
+		Nav.nav(rc, this);
+	}
+	
+	public void tryBuildDS() throws GameActionException {
+		int hqDist = location.distanceSquaredTo(hqLocation);
+		if (hqDist <= 4) {
+			Direction d = location.directionTo(hqLocation);
+			if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
+				rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
+				return;
+			}
+			Direction right = d.rotateRight();
+			if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, right)) {
+				rc.buildRobot(RobotType.DESIGN_SCHOOL, right);
+				return;
+			}
+			Direction left = d.rotateLeft();
+			if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, left)) {
+				rc.buildRobot(RobotType.DESIGN_SCHOOL, left);
+				return;
+			}
+		} else if (hqDist <= 8) {
+			Direction d = location.directionTo(hqLocation);
+			if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
+				rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
+				return;
+			}
+			Direction right = d.rotateRight();
+			MapLocation rl = location.add(right);
+			if (rl.distanceSquaredTo(hqLocation) <= 2 && rc.canBuildRobot(RobotType.DESIGN_SCHOOL, right)) {
+				rc.buildRobot(RobotType.DESIGN_SCHOOL, right);
+				return;
+			}
+			Direction left = d.rotateLeft();
+			MapLocation ll = location.add(left);
+			if (ll.distanceSquaredTo(hqLocation) <= 2 && rc.canBuildRobot(RobotType.DESIGN_SCHOOL, left)) {
+				rc.buildRobot(RobotType.DESIGN_SCHOOL, left);
+				return;
+			}
+		}
+		
+		if (Nav.target == null || !Nav.target.equals(hqLocation)) {
+			Nav.beginNav(rc, this, hqLocation);
+		}
+		Nav.nav(rc, this);
 	}
 
 	public void moveScout(RobotController rc) throws GameActionException {
@@ -994,6 +1011,126 @@ public strictfp class MinerRobot extends Robot {
 	public boolean canMove(Direction d) throws GameActionException {
 		MapLocation ml = rc.adjacentLocation(d);
 		return rc.canMove(d) && !rc.senseFlooding(ml) && (minerState != MinerState.MOVE_MATRIX || pathTile(ml));
+	}
+	
+	public boolean doBuilding() throws GameActionException {
+		if (round < TURTLE_ROUND) {
+			if (!builderFC && soup > RobotType.FULFILLMENT_CENTER.cost) {
+				System.out.println("TryFC");
+				tryBuildFC();
+				return true;
+			} else if (!builderDS && (rushDetected || round > TURTLE_ROUND || isFreeFriendlyDrone) && soup > RobotType.DESIGN_SCHOOL.cost) {
+				System.out.println("TryDS");
+				tryBuildDS();
+				return true;
+			} else if (builderFC && builderDS) {
+				//tryBuildVP();
+				//return true;
+			}
+		}
+		
+		MapLocation ml;
+		
+		boolean canBuild = true;
+		if (robotElevation < LandscaperRobot.MAX_HEIGHT_THRESHOLD && hqDist > 2) canBuild = false;
+		
+		
+		if (minerState != MinerState.MOVE_MATRIX) {
+			//Build Refinery
+			if (!isRefineryNearby && soup > RobotType.REFINERY.cost && (round > CLOSE_TURTLE_END || !hqAvailable)) {
+				if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
+					Direction[] dirs = Utility.directions;
+					Direction d;
+					MapLocation refLoc;
+					for (int i = dirs.length; --i >= 0;) {
+						d = dirs[i];
+						refLoc = location.add(d);
+						if (rc.canBuildRobot(RobotType.REFINERY, d) && Utility.chebyshev(refLoc, hqLocation) > 3) {
+							rc.buildRobot(RobotType.REFINERY, d);
+							MapLocation refineryLoc = location.add(d);
+							if (soup>5) Communications.queueMessage(rc, 5, 5, refineryLoc.x, refineryLoc.y);
+							refineries.add(refineryLoc);
+							return true;
+						}
+					}
+				}
+			}
+			
+			if (canBuild) {
+			//Build Design School
+			if (designSchoolBuildCooldown > 0)designSchoolBuildCooldown--;
+			if (dsBuilt) turnsSinceDesignSchoolSeen = 0;
+			else turnsSinceDesignSchoolSeen++;
+			if (round > TURTLE_ROUND && (turnsSinceDesignSchoolSeen>DESIGN_SCHOOL_SEEN_TURNS || (soup > 1000 && !dsBuilt)) && designSchoolBuildCooldown == 0 && soup > RobotType.DESIGN_SCHOOL.cost && hqLocation != null && (refineries.size() > 0 || round > 2*TURTLE_ROUND) && hqDist>=2) {
+				Direction[] dirs = Utility.directions;
+				Direction d;
+				ml = null;
+				for (int i = 8; i-->0;) {
+					d = dirs[i];
+					ml = location.add(d);
+					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+						if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
+							rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
+							dsBuilt = true;
+							return true;
+						}
+					}
+				}
+			}
+
+			//Build Vaporator
+			if ((nearestTerraformer != null)&&(!builderVP || soup > RobotType.VAPORATOR.cost + RobotType.DESIGN_SCHOOL.cost + RobotType.LANDSCAPER.cost) && round < MAX_VAPORATOR_BUILD_ROUND && soup > RobotType.VAPORATOR.cost + VAPORATOR_WEIGHT * numVaporators && hqDist >= 2) {
+				Direction[] dirs = Utility.directions;
+				Direction d;
+				ml = null;
+				for (int i = 8; i-->0;) {
+					d = dirs[i];
+					ml = location.add(d);
+					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+						if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
+							rc.buildRobot(RobotType.VAPORATOR, d);
+							return true;
+						}
+					}
+				}
+			}
+
+			//Build Fulfillment Center
+			if (round > TURTLE_ROUND && soup > RobotType.FULFILLMENT_CENTER.cost && !fcBuilt && ((enemySpotted && hqDist < FC_DIST) || soup > 800) && hqDist >= 2) {
+				Direction[] dirs = Utility.directions;
+				Direction d;
+				ml = null;
+				for (int i = 8; i-->0;) {
+					d = dirs[i];
+					ml = location.add(d);
+					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+						if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
+							rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
+							return true;
+						}
+					}
+				}
+			}
+
+			//Build Netgun
+			if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt && hqDist >= 2) {
+				Direction[] dirs = Utility.directions;
+				Direction d;
+				ml = null;
+				for (int i = 8; i-->0;) {
+					d = dirs[i];
+					ml = location.add(d);
+					if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+						if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
+							rc.buildRobot(RobotType.NET_GUN, d);
+							return true;
+						}
+					}
+				}
+			}
+			}
+		} 
+		return false;
 	}
 
 

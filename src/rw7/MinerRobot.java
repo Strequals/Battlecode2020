@@ -33,6 +33,7 @@ public strictfp class MinerRobot extends Robot {
    public int designSchoolBuildCooldown;
    public int turnsSinceDesignSchoolSeen = 100;
    private boolean enemyBuiltDrones = false;
+   private boolean isBuilder = false;
    private boolean builderDS = false;
    private boolean builderFC = false;
    private boolean builderVP = false;

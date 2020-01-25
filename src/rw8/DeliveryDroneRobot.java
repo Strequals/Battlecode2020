@@ -34,6 +34,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
     private MapLocation rushLocation;
     private int turnsSinceRush;
+    private boolean areEnemies;
 
     private static final int RUSH_SAFE_TURNS = 50;
     private static final int DEFEND_RANGE = 15;
@@ -44,6 +45,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
     private boolean carryingEnemy;
     private boolean carryingAssaulter;
+    private MapLocation netGunLoc;
 
     private int random; // A random number from 0 to 255
     private static final int A = 623;
@@ -90,10 +92,12 @@ public strictfp class DeliveryDroneRobot extends Robot {
         int targetDistance = 10000;
         int minerDistance = 10000;
         int distance;
-        rushDetected = false;
+        //rushDetected = false;
+        areEnemies = false;
 
         //Calculate Random
         random = (A*random+B)%256;
+        netGunLoc = null;
 
         ArrayList<MapLocation> enemyGuns = enemyNetguns;
         MapLocation enemyGun;
@@ -190,12 +194,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
                         break;
                     case NET_GUN:
                         // Avoid
-                        if (!rush && r.location.isWithinDistanceSquared(location, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) {
-                            if (rc.isReady()) {
-                                DroneNav.fuzzy(rc, this, r.location.directionTo(location));
-                                return;
-                            }
-                        }
+                        netGunLoc = r.location;
                         if (!enemyNetguns.contains(r.location))enemyNetguns.add(r.location);
                         break;
                     case REFINERY:
@@ -204,9 +203,9 @@ public strictfp class DeliveryDroneRobot extends Robot {
                     case DESIGN_SCHOOL:
                         // TODO: target?
                         if (Utility.chebyshev(r.location, hqLocation) < RUSH_RANGE) {
-                            System.out.println("DESIGN SCHOOL RUSH");
                             rushDetected = true;
                         }
+                        
                         break;
                     case HQ:
                         // We found it!
@@ -256,8 +255,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
                 }
             }
         }
-        System.out.println("secret " + Communications.verySecretNumber + ", nearby drones: " + friendlyDrones);
-
+        
         if(enemyHqLocation != null && !sentEHQL) {
             Communications.queueMessage(rc, 3, 3, enemyHqLocation.x, enemyHqLocation.y);
             sentEHQL = true;
@@ -268,7 +266,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
             carryingEnemy = false;
         }
 
-        System.out.println("enemy:"+carryingEnemy);
+        if (netGunLoc != null && !rush && !rushDetected && netGunLoc.isWithinDistanceSquared(location, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) {
+            if (rc.isReady()) {
+                if (fuzzy(rc, this, netGunLoc.directionTo(location))) return;
+            }
+        }
 
         if (round < TURTLE_ROUND || rushDetected || (rushLocation != null)) {
             state = DroneState.DEFENDING;
@@ -319,11 +321,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
                 doAssist();
                 break;
         }
-        if (rushLocation != null) {
-            turnsSinceRush++;
+        if (rushDetected) {
+            if (!areEnemies)turnsSinceRush++;
+            else turnsSinceRush=0;
             if (turnsSinceRush > RUSH_SAFE_TURNS) {
                 rushLocation = null;
                 turnsSinceRush = 0;
+                rushDetected = false;
             }
         }
         //if (DroneNav.target != null) rc.setIndicatorDot(DroneNav.target, 255, 0, 255);
@@ -815,24 +819,46 @@ public strictfp class DeliveryDroneRobot extends Robot {
         }
         return false;
     }
-
+    
+    
     public boolean canMove(RobotController rc, Direction d) {
         MapLocation ml = location.add(d);
-        boolean isSafePos = true;
         if (!rush ) {
             ArrayList<MapLocation> enemyGuns = enemyNetguns;
             MapLocation enemyGun;
             for (int i = enemyGuns.size(); i-->0;) {
                 enemyGun = enemyGuns.get(i);
-                if (enemyGun.isWithinDistanceSquared(location, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) return true;
+                //if (enemyGun.isWithinDistanceSquared(location, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) return false;
                 if (enemyGun.isWithinDistanceSquared(ml, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) {
-                    isSafePos = false;
+                    return false;
                 }
 
             }
         }
-        return isSafePos && rc.canMove(d);
+        return rc.canMove(d);
     }
+    
+    public boolean fuzzy(RobotController rc, DeliveryDroneRobot r, Direction d) throws GameActionException {
+		
+		
+		
+		if (canMove(rc, d)) {
+			rc.move(d);
+			return true;
+		}
+		Direction dr = d.rotateRight();
+		Direction dl = d.rotateLeft();
+		if (canMove(rc, dr)) {
+			rc.move(dr);
+			return true;
+		} else if (canMove(rc, dl)) {
+			rc.move(dl);
+			return true;
+		}
+
+
+		return false;
+	}
 
     @Override
     public void processMessage(int m, int x, int y) {

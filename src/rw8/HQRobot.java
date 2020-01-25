@@ -28,7 +28,8 @@ public strictfp class HQRobot extends Robot {
 	public int MAX_MINERS;
 
 
-	public static final int MINER_WEIGHT = 0;
+	public static final int MINER_WEIGHT = 70;
+	public static final int BASE_MINER = -140;
 
 	public boolean isDesignSchool;
 	public boolean isFulfillmentCenter;
@@ -79,13 +80,13 @@ public strictfp class HQRobot extends Robot {
 						numLandscapers++;
 					}
 				case DESIGN_SCHOOL:
-					if (!isDesignSchool && initialBuildingTile(r.location)) {
+					if (!isDesignSchool && r.location.isWithinDistanceSquared(location, 8)) {
 						isDesignSchool = true;
 						MAX_MINERS++;
 					}
 					break;
 				case FULFILLMENT_CENTER:
-					if (!isFulfillmentCenter && initialBuildingTile(r.location)) {
+					if (!isFulfillmentCenter && r.location.isWithinDistanceSquared(location, 8)) {
 						isFulfillmentCenter = true;
 						MAX_MINERS++;
 					}
@@ -160,7 +161,8 @@ public strictfp class HQRobot extends Robot {
 			}
 		}
 
-		if ((numMiners < MAX_MINERS && soup > 45 * numMiners) || soup > RobotType.DESIGN_SCHOOL.cost + 8 * RobotType.VAPORATOR.cost + RobotType.VAPORATOR.cost) {
+		if (soup > RobotType.MINER.cost && 
+				((minerRequested || numMiners < MAX_MINERS) && soup > Math.min(600, BASE_MINER + numMiners*MINER_WEIGHT))) {
 			//Try building miner
 			Direction[] dirs = Utility.directions;
 			for (int i = dirs.length; --i >= 0;) {

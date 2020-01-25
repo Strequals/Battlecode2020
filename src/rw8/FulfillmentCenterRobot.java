@@ -20,6 +20,7 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 	public int nearbyLandscapers;
 	public int nearbyVaporators;
 	public boolean isFreeDrone;
+	public boolean rushDetected = false;
 	
 	public static final int WEIGHT = 100;
 	public static final int BASE_WEIGHT = 600;
@@ -44,7 +45,7 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 		nearbyLandscapers = 0;
 		nearbyVaporators = 0;
 		if (round == roundCreated) {
-			if (initialBuildingTile(location)) {
+			if (location.distanceSquaredTo(hqLocation)<=2) {
 				makeOne = true;
 			}
 		}
@@ -112,7 +113,8 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 		
 		if (!rc.isReady()) return;
 		
-		if (soup > RobotType.DELIVERY_DRONE.cost && (((enemies>friendlyDrones || (enemies > 0 && !isFreeDrone)) && location.distanceSquaredTo(hqLocation) < DIST_HQ) || makeOne || (round < TURTLE_END && soup > RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT - nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT))) {
+		System.out.println("RD:"+rushDetected+",IFD:"+isFreeDrone);
+		if (soup > RobotType.DELIVERY_DRONE.cost && (((enemies/2>friendlyDrones || (rushDetected && !isFreeDrone)) && location.distanceSquaredTo(hqLocation) < DIST_HQ) || makeOne || (round < TURTLE_END && soup > RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT - nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT))) {
 			Direction hqDirection = location.directionTo(hqLocation);
 			if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, hqDirection) && isSafe(location.add(hqDirection))) {
 				rc.buildRobot(RobotType.DELIVERY_DRONE, hqDirection);
@@ -201,7 +203,9 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 			hqLocation = new MapLocation(x,y);
 			System.out.println("Recieved HQ location: " + x + ", " + y);
 			break;
-		
+		case 11:
+			if (location.distanceSquaredTo(hqLocation)<=2)rushDetected = true;
+			break;
 		}
 
 	}

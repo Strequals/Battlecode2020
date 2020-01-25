@@ -97,7 +97,7 @@ public class Communications {
 		int[] m;
 		int c;
 		int message;
-		int vsn1 = getSecret(0);
+		int vsn1 = getSecret(1);
 		for (int i = t.length; i-- > 0;) {
 			trans = t[i];
 			m = trans.getMessage();

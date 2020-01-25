@@ -28,8 +28,8 @@ public abstract strictfp class Robot {
 	public MapLocation enemyHqLocation;
 	
 	
-	public static int hqX3;
-	public static int hqY3;
+	public static int hqX2;
+	public static int hqY2;
 	
 	public Robot(RobotController rc) throws GameActionException {
 		this.rc = rc;
@@ -60,8 +60,8 @@ public abstract strictfp class Robot {
 					roundCreated = rc.getRoundNum();
 					//System.out.println("hqLoc:"+hqLocation);
 					if (hqLocation != null) {
-						hqX3 = hqLocation.x%3;
-						hqY3 = hqLocation.y%3;
+						hqX2 = hqLocation.x%2;
+						hqY2 = hqLocation.y%2;
 					}
 					//System.out.println("hqX2 "+hqX3+", hqY2 "+hqY3);
 				} if (round > 1) {
@@ -85,20 +85,31 @@ public abstract strictfp class Robot {
 		}
 	}
 	
+//	public boolean pathTile(MapLocation ml) {
+//		return (ml.x%3 != hqX3) || (ml.y%3 != hqY3) && (ml.distanceSquaredTo(hqLocation) != 4);
+//	}
+//	
+//	public boolean pitTile(MapLocation ml) {
+//		return ((ml.x%3 == hqX3) && (ml.y%3 == hqY3)) || (ml.distanceSquaredTo(hqLocation) == 4);
+//	}
+//	
+//	public boolean buildingTile(MapLocation ml) {
+//		return ((ml.x%3 != hqX3) && (ml.y%3 != hqY3)) && (ml.distanceSquaredTo(hqLocation) != 4);
+//	}
+//	
+//	public boolean initialBuildingTile(MapLocation ml) {
+//		return !pitTile(ml) && Utility.chebyshev(ml, hqLocation) == 3;
+//	}
 	public boolean pathTile(MapLocation ml) {
-		return (ml.x%3 != hqX3) || (ml.y%3 != hqY3) && (ml.distanceSquaredTo(hqLocation) != 4);
+		return ((ml.x%2 != hqX2) || (ml.y%2 != hqY2)) && !ml.isWithinDistanceSquared(hqLocation, 8);
 	}
 	
 	public boolean pitTile(MapLocation ml) {
-		return ((ml.x%3 == hqX3) && (ml.y%3 == hqY3)) || (ml.distanceSquaredTo(hqLocation) == 4);
+		return ((ml.x%2 == hqX2) && (ml.y%2 == hqY2)) && !ml.isWithinDistanceSquared(hqLocation, 8);
 	}
 	
 	public boolean buildingTile(MapLocation ml) {
-		return ((ml.x%3 != hqX3) && (ml.y%3 != hqY3)) && (ml.distanceSquaredTo(hqLocation) != 4);
-	}
-	
-	public boolean initialBuildingTile(MapLocation ml) {
-		return !pitTile(ml) && Utility.chebyshev(ml, hqLocation) == 3;
+		return ((ml.x%2 != hqX2) && (ml.y%2 != hqY2)) && !ml.isWithinDistanceSquared(hqLocation, 8);
 	}
 	
 	public boolean canMove(Direction d) throws GameActionException {

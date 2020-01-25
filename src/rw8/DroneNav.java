@@ -54,7 +54,6 @@ public class DroneNav {
 	}
 
 	public static boolean canMove(RobotController rc, DeliveryDroneRobot r, Direction d) throws GameActionException {
-
 		return r.canMove(rc, d);
 	}
 

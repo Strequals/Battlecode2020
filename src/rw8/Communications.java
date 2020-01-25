@@ -42,7 +42,7 @@ public class Communications {
 	}
 	
 	public static int getSecret(int round) {
-		return (int)(A*round+C);
+		return (int)(A*round+C+2);
 	}
 	
 	public static void calculateSecret(int round) {
