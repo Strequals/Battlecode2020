@@ -20,11 +20,11 @@ public class Communications {
         verySecretNumber = getSecret(round);
     }
 
-    public static void queueMessage(RobotController rc, int cost, Message m, int x, int y) {
+    public static void queueMessage(int cost, Message m, int x, int y) {
         messageQueue.add(new MessageUnit(cost, (m.ordinal() << 12) + (x << 6) + (y)));
     }
 
-    public static void queueMessage(RobotController rc, int cost, Message m, MapLocation location) {
+    public static void queueMessage(int cost, Message m, MapLocation location) {
         messageQueue.add(new MessageUnit(cost, (m.ordinal() << 12) + (location.x << 6) + (location.y)));
     }
 
@@ -51,12 +51,10 @@ public class Communications {
         Transaction[] t = rc.getBlock(r.round);
         Transaction trans;
         int[] m;
-        int c;
         int message;
         for (int i = t.length; i-- > 0; ) {
             trans = t[i];
             m = trans.getMessage();
-            c = trans.getCost();
             if (m[0] != verySecretNumber) continue;
             for (int j = m.length; j-- > 1; ) {
                 message = m[j];
@@ -71,13 +69,11 @@ public class Communications {
         Transaction[] t = rc.getBlock(1);
         Transaction trans;
         int[] m;
-        int c;
         int message;
         int vsn1 = getSecret(0);
         for (int i = t.length; i-- > 0; ) {
             trans = t[i];
             m = trans.getMessage();
-            c = trans.getCost();
             if (m[0] != vsn1) continue;
             for (int j = m.length; j-- > 1; ) {
                 message = m[j];

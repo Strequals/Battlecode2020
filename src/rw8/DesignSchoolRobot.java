@@ -93,7 +93,7 @@ public strictfp class DesignSchoolRobot extends Robot {
                         //Communications.sendMessage(rc);
                         if (!rushDetected) {
                             rushDetected = true;
-                            Communications.queueMessage(rc, 2, Communications.Message.HQ_UNDER_ATTACK, r.location.x, r.location.y);
+                            Communications.queueMessage(2, Communications.Message.HQ_UNDER_ATTACK, r.location.x, r.location.y);
                         }
                         break;
                     case DELIVERY_DRONE:

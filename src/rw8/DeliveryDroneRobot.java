@@ -182,7 +182,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
         }
 
         if (enemyHqLocation != null && !sentEHQL) {
-            Communications.queueMessage(rc, 3, Communications.Message.ENEMY_HQ_LOCATION, enemyHqLocation);
+            Communications.queueMessage(3, Communications.Message.ENEMY_HQ_LOCATION, enemyHqLocation);
             sentEHQL = true;
         }
 
@@ -213,7 +213,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
         if (state != DroneState.ASSAULTING && enemyHqLocation != null) {
             if (location.distanceSquaredTo(enemyHqLocation) < 8 && targetRobot == null) {
-                Communications.queueMessage(rc, 1, Communications.Message.SOUP_LOCATION, enemyHqLocation);
+                Communications.queueMessage(1, Communications.Message.SOUP_LOCATION, enemyHqLocation);
                 state = DroneState.ASSAULTING;
             }
         }
@@ -350,7 +350,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
         if (enemyHqLocation != null) {
             if (Utility.chebyshev(location, enemyHqLocation) <= CRUNCH_RANGE) {
                 if (friendlyDrones >= DRONE_COUNT_RUSH) {
-                    Communications.queueMessage(rc, 2, Communications.Message.DRONE_RUSH_ENEMY_HQ, enemyHqLocation);
+                    Communications.queueMessage(2, Communications.Message.DRONE_RUSH_ENEMY_HQ, enemyHqLocation);
                 }
             }
         }
