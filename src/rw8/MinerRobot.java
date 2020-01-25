@@ -40,7 +40,7 @@ public strictfp class MinerRobot extends Robot {
    private boolean hqAvailable = true;
    private int numVaporators;
    private MapLocation nearestNetgun;
-   private int netgunDistance = 10000;
+   //private int netgunDistance = 10000;  //bad, moved to run (needs to reset every loop)
    private boolean isBuilder;
    private boolean isRefineryNearby = false;
    private boolean isFreeFriendlyDrone;
@@ -99,13 +99,14 @@ public strictfp class MinerRobot extends Robot {
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
 		int nearbyMiners = 1;
-		
+      int netgunDistance = 10000;
+      
 		isFreeFriendlyDrone = false;
 		
 		hqInRange = false;
 		nearestTerraformer = null;
 		int terraformerDistance = 1000;
-      int droneDist = 100;
+      int droneDist = 1000;
 		numVaporators = 0;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
@@ -181,7 +182,7 @@ public strictfp class MinerRobot extends Robot {
 				case DELIVERY_DRONE:
 					enemyBuiltDrones = true;
 					enemyDroneSpotted = true;
-               int distance = Utility.chebyshev(r.location, location);
+               int distance = location.distanceSquaredTo(r.location);
                if(distance < droneDist) {
                   droneDist = distance;
                }
@@ -220,12 +221,14 @@ public strictfp class MinerRobot extends Robot {
 		//Calculate Random
 		random = (A*random+B)%256;
 
-      if(/*droneDetected && */netgunDistance > 5 && droneDist <=3) {  //not needed, since if no drones, default drone distance is 100
+      if(/*droneDetected && */netgunDistance > 5 && droneDist <=13) {  //not needed, since if no drones, default drone distance is 100
          escape();
+         System.out.println("High run");
          return;
       }
-      else if(droneDist <= 1) {
+      else if(droneDist <= 8) {
          escape();
+         System.out.println("Low run");
          return;
       }
 
@@ -681,19 +684,27 @@ public strictfp class MinerRobot extends Robot {
 	}
 
    private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
-      /*if(nearestNetgun != null) {
-         if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
-            Nav.beginNav(rc, this, nearestNetgun);
+      System.out.println("Running...");
+      if(nearestNetgun != null) {
+         if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
+            if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
+               Nav.beginNav(rc, this, nearestNetgun);
+            }
+            Nav.nav(rc, this);
+            return;
          }
-         Nav.nav(rc, this);
       }
       else {
-         if(Nav.target == null || !Nav.target.equals(hqLocation)) {
-            Nav.beginNav(rc, this, hqLocation);
+         if(location.add(location.directionTo(hqLocation)).distanceSquaredTo(nearestEDrone.location) >= 8) {
+            if(Nav.target == null || !Nav.target.equals(hqLocation)) {
+               Nav.beginNav(rc, this, hqLocation);
+            }
+            Nav.nav(rc, this);
+            return;
          }
-         Nav.nav(rc, this);
-      }*/
+      }
       fuzzy(rc, nearestEDrone.location.directionTo(location));
+      System.out.println("Running with fuzzy");
    }
 
 	public void mine(RobotController rc) {

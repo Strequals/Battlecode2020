@@ -44,7 +44,7 @@ public strictfp class LandscaperRobot extends Robot {
     private MapLocation nearestFillTile;
     private MapLocation backupFill;
     private MapLocation nearestNetgun;
-    private int netgunDistance = 10000;
+    //private int netgunDistance = 10000; needs to reset every loop
     private RobotInfo nearestEDrone;
    
     private int turnsNavedHq;
@@ -99,6 +99,7 @@ public strictfp class LandscaperRobot extends Robot {
 
     private LandscaperState getNextState() throws GameActionException {
         int droneDist = 100;
+        int netgunDistance = 10000;
 
         Direction[] dirs = Utility.directionsC;
         MapLocation ml;
@@ -177,7 +178,7 @@ public strictfp class LandscaperRobot extends Robot {
                 switch (r.getType()) {
                     case DELIVERY_DRONE:
                         isDroneThreat = true;
-                        distance = Utility.chebyshev(r.location, location);
+                        distance = location.distanceSquaredTo(r.location); //distance squared has enough numbers to differentiate, and i can't get it to work on chebyevgfaevg distance for some reason
                         if (distance < droneDist) {
                             droneDist = distance;
                             nearestEDrone = r;
@@ -221,7 +222,7 @@ public strictfp class LandscaperRobot extends Robot {
                 if (Utility.chebyshev(location, hqLocation) == 1) {
                     state = LandscaperState.DEFENSE;
                     defenseState = DefenseState.TURTLE;
-                } else if ((netgunDistance > 5 && droneDist <= 3) || droneDist <= 1) {
+                } else if ((netgunDistance > 5 && droneDist <= 13) || droneDist <= 8) {
                     terraformingState = TerraformingState.ESCAPE;
                 }
         }
@@ -689,18 +690,24 @@ public strictfp class LandscaperRobot extends Robot {
     }
 
    private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
-      /*if(nearestNetgun != null) {
-         if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
-            Nav.beginNav(rc, this, nearestNetgun);
+      if(nearestNetgun != null) {
+         if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
+            if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
+               Nav.beginNav(rc, this, nearestNetgun);
+            }
+            Nav.nav(rc, this);
+            return;
          }
-         Nav.nav(rc, this);
       }
       else {
-         if(Nav.target == null || !Nav.target.equals(hqLocation)) {
-            Nav.beginNav(rc, this, hqLocation);
+         if(location.add(location.directionTo(hqLocation)).distanceSquaredTo(nearestEDrone.location) >= 8) {
+            if(Nav.target == null || !Nav.target.equals(hqLocation)) {
+               Nav.beginNav(rc, this, hqLocation);
+            }
+            Nav.nav(rc, this);
+            return;
          }
-         Nav.nav(rc, this);
-      }*/
+      }
       fuzzy(rc, nearestEDrone.location.directionTo(location));
    }
 
