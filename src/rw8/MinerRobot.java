@@ -881,34 +881,32 @@ public strictfp class MinerRobot extends Robot {
 		}
 	}*/
     @Override
-    public void processMessage(Communications.Message m, int x, int y) {
+    public void processMessage(Communications.Message m, MapLocation messageLocation) {
         switch (m) {
             case HQ_LOCATION:
-                hqLocation = new MapLocation(x, y);
-                //System.out.println("Recieved HQ location: " + x + ", " + y);
+                hqLocation = messageLocation;
+//                System.out.println("Received HQ location: " + x + ", " + y);
                 break;
             case SOUP_LOCATION:
                 if (soupMine == null) {
 
                     if (!isBuilder) {
-                        soupMine = new MapLocation(x, y);
+                        soupMine = messageLocation;
                         Nav.beginNav(rc, this, soupMine);
                     }
                 }
-                //System.out.println("Recieved soup location: " + x + ", " + y);
+//                System.out.println("Received soup location: " + x + ", " + y);
                 break;
             case REFINERY_LOCATION:
-                MapLocation ml5 = new MapLocation(x, y);
-                //System.out.println("Recieved Refinery location: " + x + ", " + y);
-                if (!refineries.contains(ml5)) refineries.add(ml5);
+//                System.out.println("Received Refinery location: " + x + ", " + y);
+                if (!refineries.contains(messageLocation)) refineries.add(messageLocation);
                 break;
             case DESIGN_SCHOOL_LOCATION:
                 designSchoolBuildCooldown = 50;
                 break;
             case REFINERY_REMOVED:
-                MapLocation ml8 = new MapLocation(x, y);
-                refineries.remove(ml8);
-                if (returnLoc != null && returnLoc.equals(ml8)) {
+                refineries.remove(messageLocation);
+                if (returnLoc != null && returnLoc.equals(messageLocation)) {
                     returnLoc = null;
                     navigatingReturn = false;
                 }
@@ -917,9 +915,8 @@ public strictfp class MinerRobot extends Robot {
                 rushDetected = true;
                 break;
             case TERRAFORM_LOCATION:
-                MapLocation ml15 = new MapLocation(x, y);
-                if (frontLocation == null || Utility.chebyshev(location, ml15) < Utility.chebyshev(location, frontLocation)) {
-                    frontLocation = ml15;
+                if (frontLocation == null || Utility.chebyshev(location, messageLocation) < Utility.chebyshev(location, frontLocation)) {
+                    frontLocation = messageLocation;
                 }
                 break;
         }

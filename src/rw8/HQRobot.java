@@ -205,21 +205,20 @@ public strictfp class HQRobot extends Robot {
     }
 
     @Override
-    public void processMessage(Communications.Message m, int x, int y) {
+    public void processMessage(Communications.Message m, MapLocation messageLocation) {
         switch (m) {
             case SOUP_LOCATION:
                 minerRequested = true;
                 break;
             case ENEMY_HQ_LOCATION:
             case DRONE_RUSH_ENEMY_HQ:
-                enemyHqLocation = new MapLocation(x, y);
+                enemyHqLocation = messageLocation;
                 break;
             case DESIGN_SCHOOL_LOCATION:
-                MapLocation ml6 = new MapLocation(x, y);
-                if (!designSchoolLocations.contains(ml6)) {
-                    designSchoolLocations.add(ml6);
+                if (!designSchoolLocations.contains(messageLocation)) {
+                    designSchoolLocations.add(messageLocation);
                 }
-                rc.setIndicatorLine(location, ml6, 0, 255, 255);
+                rc.setIndicatorLine(location, messageLocation, 0, 255, 255);
                 break;
             case HQ_UNDER_ATTACK:
                 rushDetected = true;

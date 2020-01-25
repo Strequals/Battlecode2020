@@ -732,24 +732,24 @@ public strictfp class LandscaperRobot extends Robot {
     }
 
     @Override
-    public void processMessage(Communications.Message m, int x, int y) {
+    public void processMessage(Communications.Message m, MapLocation messageLocation) {
         switch (m) {
             case HQ_LOCATION:
-                hqLocation = new MapLocation(x, y);
-                //System.out.println("Received HQ location: " + x + ", " + y);
+                hqLocation = messageLocation;
+//                System.out.println("Received HQ location: " + x + ", " + y);
                 break;
             case ENEMY_HQ_LOCATION:
-                enemyHqLocation = new MapLocation(x, y);
+                enemyHqLocation = messageLocation;
                 break;
             case TERRAFORM_LOCATION:
-                MapLocation ml15 = new MapLocation(x, y);
+                MapLocation ml15 = messageLocation;
                 if (backupFill == null || heuristic(ml15) + Utility.BACKUP_THRESHOLD < heuristic(backupFill)) {
                     backupFill = ml15;
                 }
-                if (Utility.chebyshev(ml15, location) <= 4) {
+                if (Utility.chebyshev(ml15, messageLocation) <= 4) {
                     communicationDelay += 20;
                 }
-                //System.out.println("recieved a fill location");
+//                System.out.println("recieved a fill location");
                 break;
         }
 

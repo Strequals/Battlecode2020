@@ -1,9 +1,6 @@
 package rw8;
 
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 
 public strictfp class NetGunRobot extends Robot {
 
@@ -36,6 +33,6 @@ public strictfp class NetGunRobot extends Robot {
     }
 
     @Override
-    public void processMessage(Communications.Message m, int x, int y) {
+    public void processMessage(Communications.Message m, MapLocation messageLocation) {
     }
 }

@@ -1,6 +1,7 @@
 package rw8;
 
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
 public strictfp class VaporatorRobot extends Robot {
@@ -14,7 +15,7 @@ public strictfp class VaporatorRobot extends Robot {
     }
 
     @Override
-    public void processMessage(Communications.Message m, int x, int y) {
+    public void processMessage(Communications.Message m, MapLocation messageLocation) {
     }
 
 }

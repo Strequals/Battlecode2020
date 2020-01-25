@@ -60,7 +60,8 @@ public class Communications {
             if (m[0] != verySecretNumber) continue;
             for (int j = m.length; j-- > 1; ) {
                 message = m[j];
-                if (message != 0) r.processMessage(Message.values()[message >> 12], (message >> 6) % 64, message % 64);
+                if (message != 0)
+                    r.processMessage(Message.values()[message >> 12], new MapLocation((message >> 6) % 64, message % 64));
             }
 
         }
@@ -80,7 +81,8 @@ public class Communications {
             if (m[0] != vsn1) continue;
             for (int j = m.length; j-- > 1; ) {
                 message = m[j];
-                if (message != 0) r.processMessage(Message.values()[message >> 12], (message >> 6) % 64, message % 64);
+                if (message != 0)
+                    r.processMessage(Message.values()[message >> 12], new MapLocation((message >> 6) % 64, message % 64));
             }
         }
     }

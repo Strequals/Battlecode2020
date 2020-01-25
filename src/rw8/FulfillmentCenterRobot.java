@@ -187,10 +187,10 @@ public strictfp class FulfillmentCenterRobot extends Robot {
     }
 
     @Override
-    public void processMessage(Communications.Message m, int x, int y) {
+    public void processMessage(Communications.Message m, MapLocation messageLocation) {
         switch (m) {
             case HQ_LOCATION:
-                hqLocation = new MapLocation(x, y);
+                hqLocation = messageLocation;
 //				System.out.println("Received HQ location: " + x + ", " + y);
                 break;
             case HQ_UNDER_ATTACK:

@@ -346,7 +346,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
         return id % 3 == 0;
     }
 
-    private void doInitiateRush() throws GameActionException {
+    private void doInitiateRush() {
         if (enemyHqLocation != null) {
             if (Utility.chebyshev(location, enemyHqLocation) <= CRUNCH_RANGE) {
                 if (friendlyDrones >= DRONE_COUNT_RUSH) {
@@ -702,22 +702,22 @@ public strictfp class DeliveryDroneRobot extends Robot {
     }
 
     @Override
-    public void processMessage(Communications.Message m, int x, int y) {
+    public void processMessage(Communications.Message m, MapLocation messageLocation) {
         switch (m) {
             case HQ_LOCATION:
-                hqLocation = new MapLocation(x, y);
-                System.out.println("Received HQ location: " + x + ", " + y);
+                hqLocation = messageLocation;
+//                System.out.println("Received HQ location: " + location.x + ", " + location.y);
                 break;
             case ENEMY_HQ_LOCATION:
                 if (enemyHqLocation == null) {
-                    enemyHqLocation = new MapLocation(x, y);
+                    enemyHqLocation = messageLocation;
                     enemyNetguns.add(enemyHqLocation);
                 }
-                sentEHQL = true; //if already received enemy hq location, don't rebroadcast
+                sentEHQL = true; // If already received enemy hq location, don't rebroadcast
                 break;
             case DRONE_RUSH_ENEMY_HQ:
                 if (enemyHqLocation == null) {
-                    enemyHqLocation = new MapLocation(x, y);
+                    enemyHqLocation = messageLocation;
                     enemyNetguns.add(enemyHqLocation);
                 }
                 if (Utility.chebyshev(enemyHqLocation, location) <= CRUNCH_RANGE) {
@@ -725,7 +725,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
                 }
                 break;
             case HQ_UNDER_ATTACK:
-                rushLocation = new MapLocation(x, y);
+                rushLocation = messageLocation;
                 turnsSinceRush = 0;
                 if (Utility.chebyshev(location, hqLocation) < DEFEND_RANGE) {
                     rushDetected = true;
@@ -733,16 +733,16 @@ public strictfp class DeliveryDroneRobot extends Robot {
                 break;
             case ENTER_TRANSPORT_MODE:
                 state = DroneState.TRANSPORTING;
-                minerAssistLocation = new MapLocation(x, y);
+                minerAssistLocation = messageLocation;
                 break;
             case ENTER_ASSAULT_MODE:
-                enemyHqLocation = new MapLocation(x, y);
+                enemyHqLocation = messageLocation;
                 if (shouldAssault()) {
                     state = DroneState.ASSAULTING;
                 }
                 break;
             case ENTER_MINER_ASSIST_MODE:
-                minerAssistLocation = new MapLocation(x, y);// DOES NOT WORK, NEEDS LOCATION TO FIND MINER AND LOCATION TO PLACE MINER
+                minerAssistLocation = messageLocation; // DOES NOT WORK, NEEDS LOCATION TO FIND MINER AND LOCATION TO PLACE MINER
                 state = DroneState.MINER_ASSIST;           //maybe move miner towards hq if its stuck pathfinding?
                 break;
         }
