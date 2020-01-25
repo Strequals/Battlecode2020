@@ -52,7 +52,8 @@ public strictfp class MinerRobot extends Robot {
 	private MapLocation nearestRefinery;
 	private MapLocation nearestSoup;
 	private int hqDist;
-	
+	private RobotInfo nearestEDrone;
+   
 	private MapLocation frontLocation;
 	
 	public MapLocation nearestTerraformer;
@@ -184,6 +185,7 @@ public strictfp class MinerRobot extends Robot {
                if(distance < droneDist) {
                   droneDist = distance;
                }
+               nearestDrone = r;
 					break;
 				case MINER:
 					enemySpotted = true;
@@ -679,7 +681,7 @@ public strictfp class MinerRobot extends Robot {
 	}
 
    private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
-      if(nearestNetgun != null) {
+      /*if(nearestNetgun != null) {
          if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
             Nav.beginNav(rc, this, nearestNetgun);
          }
@@ -690,7 +692,8 @@ public strictfp class MinerRobot extends Robot {
             Nav.beginNav(rc, this, hqLocation);
          }
          Nav.nav(rc, this);
-      }
+      }*/
+      fuzzy(rc, nearestEDrone.location.directionTo(location));
    }
 
 	public void mine(RobotController rc) {
@@ -714,7 +717,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 		return false;
 	}
-	
+   
 	public void tryBuildFC() throws GameActionException {
 		int hqDist = location.distanceSquaredTo(hqLocation);
 		if (hqDist <= 4) {
