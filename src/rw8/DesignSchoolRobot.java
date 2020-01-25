@@ -50,7 +50,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 		fcBuilt = false;
 		isAlliedDrone = false;
 		if (round == roundCreated) {
-			if (initialBuildingTile(location)) {
+			if (isInitialBuildingTile(location)) {
 				numTurtles = 8;
 			}
 		}

@@ -44,7 +44,7 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 		nearbyLandscapers = 0;
 		nearbyVaporators = 0;
 		if (round == roundCreated) {
-			if (initialBuildingTile(location)) {
+			if (isInitialBuildingTile(location)) {
 				makeOne = true;
 			}
 		}

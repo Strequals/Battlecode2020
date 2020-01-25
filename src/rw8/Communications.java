@@ -5,8 +5,8 @@ import battlecode.common.*;
 public class Communications {
 	
 	public static int verySecretNumber;
-	public static final long A = 1337133713371337L; //Must be odd
-	public static final long C = 3141592653589793238L;
+	public static final long A = 1337133713371339L; //Must be odd
+	public static final long C = 3141592653589796238L;
 	
 	public static LinkedQueue<MessageUnit> messageQueue = new LinkedQueue<MessageUnit>();
 	

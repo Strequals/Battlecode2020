@@ -61,6 +61,8 @@ public strictfp class MinerRobot extends Robot {
 	public static final int MAX_VAPORATOR_BUILD_ROUND = 1400;
 	public static final int FC_DIST = 8;
 
+	private boolean isBuilder;
+
 	enum MinerState {
 		SEEKING, MINING, RETURNING, MOVE_MATRIX, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
 	}

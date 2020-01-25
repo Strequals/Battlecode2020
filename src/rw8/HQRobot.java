@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import battlecode.common.*;
 
+import static rw8.Utility.MAX_HEIGHT_THRESHOLD;
+
 public strictfp class HQRobot extends Robot {
 
 	public HQState hqState;
@@ -79,13 +81,13 @@ public strictfp class HQRobot extends Robot {
 						numLandscapers++;
 					}
 				case DESIGN_SCHOOL:
-					if (!isDesignSchool && initialBuildingTile(r.location)) {
+					if (!isDesignSchool && isInitialBuildingTile(r.location)) {
 						isDesignSchool = true;
 						MAX_MINERS++;
 					}
 					break;
 				case FULFILLMENT_CENTER:
-					if (!isFulfillmentCenter && initialBuildingTile(r.location)) {
+					if (!isFulfillmentCenter && isInitialBuildingTile(r.location)) {
 						isFulfillmentCenter = true;
 						MAX_MINERS++;
 					}
@@ -248,7 +250,7 @@ public strictfp class HQRobot extends Robot {
 		while (open.hasNext()) {
 			ml = open.poll();
 
-			if ((Utility.chebyshev(location, ml)>2 && rc.senseElevation(ml) < LandscaperRobot.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
+			if ((Utility.chebyshev(location, ml)>2 && rc.senseElevation(ml) < MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
 				return ml;
 			}
 
@@ -257,7 +259,7 @@ public strictfp class HQRobot extends Robot {
 				adj = ml.add(d);
 
 				if (!rc.onTheMap(adj) || !rc.canSenseLocation(adj) || pitTile(adj)) continue;
-				if (rc.senseElevation(adj) >= LandscaperRobot.MAX_HEIGHT_THRESHOLD) continue;
+				if (rc.senseElevation(adj) >= MAX_HEIGHT_THRESHOLD) continue;
 
 				if (!closed.contains(adj)) {
 					open.add(adj);

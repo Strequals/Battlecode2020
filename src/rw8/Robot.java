@@ -28,8 +28,8 @@ public abstract strictfp class Robot {
 	public MapLocation enemyHqLocation;
 	
 	
-	public static int hqX3;
-	public static int hqY3;
+	public static int hqXTerraform;
+	public static int hqYTerraform;
 	
 	public Robot(RobotController rc) throws GameActionException {
 		this.rc = rc;
@@ -41,6 +41,17 @@ public abstract strictfp class Robot {
 		round = 0;
 
 		setVars();
+
+		if (type != RobotType.HQ) {
+			//The robot has just been created, find the HQ location
+			Communications.processFirstBlock(rc, this);
+			roundCreated = rc.getRoundNum();
+
+			if (hqLocation != null) {
+				hqXTerraform = hqLocation.x % Utility.TERRAFORM_HOLES_EVERY;
+				hqYTerraform = hqLocation.y % Utility.TERRAFORM_HOLES_EVERY;
+			}
+		}
 	}
 	
 	public abstract void run() throws GameActionException;
@@ -54,17 +65,7 @@ public abstract strictfp class Robot {
 				setVars();
 
 				// Read messages from last round
-				if (round == 0 && type != RobotType.HQ) {
-					//The robot has just been created, find the HQ location
-					Communications.processFirstBlock(rc, this);
-					roundCreated = rc.getRoundNum();
-					//System.out.println("hqLoc:"+hqLocation);
-					if (hqLocation != null) {
-						hqX3 = hqLocation.x%3;
-						hqY3 = hqLocation.y%3;
-					}
-					//System.out.println("hqX2 "+hqX3+", hqY2 "+hqY3);
-				} if (round > 1) {
+				if (round > 1) {
 					Communications.processLastBlock(rc, this);
 				}
 				
@@ -86,18 +87,18 @@ public abstract strictfp class Robot {
 	}
 	
 	public boolean pathTile(MapLocation ml) {
-		return (ml.x%3 != hqX3) || (ml.y%3 != hqY3) && (ml.distanceSquaredTo(hqLocation) != 4);
+		return (ml.x % Utility.TERRAFORM_HOLES_EVERY != hqXTerraform) || (ml.y % Utility.TERRAFORM_HOLES_EVERY != hqYTerraform) && (ml.distanceSquaredTo(hqLocation) != 4);
 	}
 	
 	public boolean pitTile(MapLocation ml) {
-		return ((ml.x%3 == hqX3) && (ml.y%3 == hqY3)) || (ml.distanceSquaredTo(hqLocation) == 4);
+		return ((ml.x % Utility.TERRAFORM_HOLES_EVERY == hqXTerraform) && (ml.y % Utility.TERRAFORM_HOLES_EVERY == hqYTerraform)) || (ml.distanceSquaredTo(hqLocation) == 4);
 	}
 	
 	public boolean buildingTile(MapLocation ml) {
-		return ((ml.x%3 != hqX3) && (ml.y%3 != hqY3)) && (ml.distanceSquaredTo(hqLocation) != 4);
+		return ((ml.x % Utility.TERRAFORM_HOLES_EVERY != hqXTerraform) && (ml.y % Utility.TERRAFORM_HOLES_EVERY != hqYTerraform)) && (ml.distanceSquaredTo(hqLocation) != 4);
 	}
 	
-	public boolean initialBuildingTile(MapLocation ml) {
+	public boolean isInitialBuildingTile(MapLocation ml) {
 		return !pitTile(ml) && Utility.chebyshev(ml, hqLocation) == 3;
 	}
 	
