@@ -44,8 +44,9 @@ public strictfp class LandscaperRobot extends Robot {
     private MapLocation nearestFillTile;
     private MapLocation backupFill;
     private MapLocation nearestNetgun;
-    private int netgunDistance = 10000;
-
+    //private int netgunDistance = 10000; needs to reset every loop
+    private RobotInfo nearestEDrone;
+   
     private int turnsNavedHq;
     private int nearbyTerraformers = 0;
     private int communicationDelay;
@@ -98,6 +99,7 @@ public strictfp class LandscaperRobot extends Robot {
 
     private LandscaperState getNextState() throws GameActionException {
         int droneDist = 100;
+        int netgunDistance = 10000;
 
         Direction[] dirs = Utility.directionsC;
         MapLocation ml;
@@ -176,9 +178,10 @@ public strictfp class LandscaperRobot extends Robot {
                 switch (r.getType()) {
                     case DELIVERY_DRONE:
                         isDroneThreat = true;
-                        distance = Utility.chebyshev(r.location, location);
+                        distance = location.distanceSquaredTo(r.location); //distance squared has enough numbers to differentiate, and i can't get it to work on chebyevgfaevg distance for some reason
                         if (distance < droneDist) {
                             droneDist = distance;
+                            nearestEDrone = r;
                         }
                         break;
                     case NET_GUN:
@@ -216,11 +219,10 @@ public strictfp class LandscaperRobot extends Robot {
                 }
                 break;
             case TERRAFORMING:
-                /*if (Utility.chebyshev(location, hqLocation) == 1) {
-                    state = LandscaperState.DEFENSE;
-                    defenseState = DefenseState.TURTLE;
-                } else*/
+                
             	if ((netgunDistance > 5 && droneDist <= 3) || droneDist <= 1) {
+            		//TODO: whatever goes here
+                } else if ((netgunDistance > 5 && droneDist <= 13) || droneDist <= 8) {
                     terraformingState = TerraformingState.ESCAPE;
                 }
         }
@@ -692,20 +694,45 @@ public strictfp class LandscaperRobot extends Robot {
         }
     }
 
-    private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
-        if(nearestNetgun != null) {
+   private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
+      if(nearestNetgun != null) {
+         if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
             if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
-                Nav.beginNav(rc, this, nearestNetgun);
+               Nav.beginNav(rc, this, nearestNetgun);
             }
             Nav.nav(rc, this);
-        }
-        else {
+            return;
+         }
+      }
+      else {
+         if(location.add(location.directionTo(hqLocation)).distanceSquaredTo(nearestEDrone.location) >= 8) {
             if(Nav.target == null || !Nav.target.equals(hqLocation)) {
-                Nav.beginNav(rc, this, hqLocation);
+               Nav.beginNav(rc, this, hqLocation);
             }
             Nav.nav(rc, this);
-        }
-    }
+            return;
+         }
+      }
+      fuzzy(rc, nearestEDrone.location.directionTo(location));
+   }
+
+	public boolean fuzzy(RobotController rc, Direction d) throws GameActionException {
+		if (rc.canMove(d) && !rc.senseFlooding(rc.adjacentLocation(d))) {
+			rc.move(d);
+			return true;
+		}
+		Direction dr = d.rotateRight();
+		if (rc.canMove(dr) && !rc.senseFlooding(rc.adjacentLocation(dr))) {
+			rc.move(dr);
+			return true;
+		}
+		Direction dl = d.rotateRight();
+		if (rc.canMove(dl) && !rc.senseFlooding(rc.adjacentLocation(dl))) {
+			rc.move(dl);
+			return true;
+		}
+		return false;
+	}
 
     private int heuristic(MapLocation ml) {
         int k = Utility.chebyshev(ml, location)+Utility.chebyshev(ml, hqLocation);
