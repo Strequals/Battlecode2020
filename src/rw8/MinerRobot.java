@@ -185,7 +185,7 @@ public strictfp class MinerRobot extends Robot {
                if(distance < droneDist) {
                   droneDist = distance;
                }
-               nearestDrone = r;
+               nearestEDrone = r;
 					break;
 				case MINER:
 					enemySpotted = true;
