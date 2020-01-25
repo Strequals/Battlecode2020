@@ -156,7 +156,7 @@ public strictfp class MinerRobot extends Robot {
             } else if (r.getTeam() == Team.NEUTRAL) {
                 // yeet the cow
                 if (round > 100) {
-                    Communications.queueMessage(3, Communications.Message.COW_NEAR_HQ, r.location);
+                    Communications.queueMessage(Communications.Message.COW_NEAR_HQ, r.location);
                 }
             } else {
                 // Enemy Units
@@ -179,14 +179,14 @@ public strictfp class MinerRobot extends Robot {
                         if (round < TURTLE_ROUND) {
                             if (!rushDetected) {
                                 rushDetected = true;
-                                Communications.queueMessage(2, Communications.Message.HQ_UNDER_ATTACK, r.location);
+                                Communications.queueMessage(Communications.Message.HQ_UNDER_ATTACK, r.location);
                             }
                         }
                         break;
                     case HQ:
                         if (enemyHqLocation == null) {
                             // Notify other units of enemy HQ location
-                            Communications.queueMessage(2, Communications.Message.ENEMY_HQ_LOCATION, r.location);
+                            Communications.queueMessage(Communications.Message.ENEMY_HQ_LOCATION, r.location);
                             enemyHqLocation = r.location;
                         }
                         break;
@@ -237,7 +237,7 @@ public strictfp class MinerRobot extends Robot {
 
         if (nearestSoup != null && totalSoup / nearbyMiners > 100 && nearbyMiners < 4) {
             if (soup > 1 && soupCommunicateCooldown == 0) {
-                Communications.queueMessage(1, Communications.Message.SOUP_LOCATION, nearestSoup.x, nearestSoup.y);
+                Communications.queueMessage(Communications.Message.SOUP_LOCATION, nearestSoup);
                 soupCommunicateCooldown += 20; //don't communicate soup location for another 20 turns
             }
         }
@@ -267,7 +267,7 @@ public strictfp class MinerRobot extends Robot {
                             navigatingReturn = false;
                         }
                         if (soup > 1) {
-                            Communications.queueMessage(1, Communications.Message.REFINERY_REMOVED, rl.x, rl.y);
+                            Communications.queueMessage(Communications.Message.REFINERY_REMOVED, rl);
                         }
                         continue;
                     }
@@ -1029,7 +1029,7 @@ public strictfp class MinerRobot extends Robot {
                             rc.buildRobot(RobotType.REFINERY, d);
                             MapLocation refineryLoc = location.add(d);
                             if (soup > 5)
-                                Communications.queueMessage(5, Communications.Message.REFINERY_LOCATION, refineryLoc.x, refineryLoc.y);
+                                Communications.queueMessage(Communications.Message.REFINERY_LOCATION, refineryLoc);
                             refineries.add(refineryLoc);
                             return true;
                         }

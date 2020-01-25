@@ -648,7 +648,7 @@ public strictfp class LandscaperRobot extends Robot {
                     moveTerraform(nearestFillTile);
                     if (communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile) == 1) {
                         if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
-                            Communications.queueMessage(1, Communications.Message.TERRAFORM_LOCATION, nearestFillTile);
+                            Communications.queueMessage(Communications.Message.TERRAFORM_LOCATION, nearestFillTile);
                             communicationDelay = 20;
                         }
                     } else {

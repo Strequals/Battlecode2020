@@ -65,7 +65,7 @@ public strictfp class HQRobot extends Robot {
             } else if (r.getTeam() == Team.NEUTRAL) {
 //				 It's a cow, yeet it from our base
                 if (round > 100) {
-                    Communications.queueMessage(3, Communications.Message.COW_NEAR_HQ, r.location);
+                    Communications.queueMessage(Communications.Message.COW_NEAR_HQ, r.location);
                 }
             } else {
                 //Enemy Units
@@ -76,7 +76,7 @@ public strictfp class HQRobot extends Robot {
                         //Communications.sendMessage(rc);
                         if (!rushDetected) {
                             rushDetected = true;
-                            Communications.queueMessage(2, Communications.Message.HQ_UNDER_ATTACK, r.location);
+                            Communications.queueMessage(Communications.Message.HQ_UNDER_ATTACK, r.location);
                         }
                         break;
                     case DELIVERY_DRONE:
@@ -95,18 +95,18 @@ public strictfp class HQRobot extends Robot {
 
         //Broadcast HQ location on round 1
         if (round == 1) {
-            Communications.queueMessage(20, Communications.Message.HQ_LOCATION, location);
+            Communications.queueMessage(Communications.Message.HQ_LOCATION, location);
         }
 
         if (enemyHqLocation != null && round % 20 == 0) {
             if (soup >= 1)
-                Communications.queueMessage(1, Communications.Message.ENEMY_HQ_LOCATION, enemyHqLocation);
+                Communications.queueMessage(Communications.Message.ENEMY_HQ_LOCATION, enemyHqLocation);
         }
 
         if (round > MIN_ROUND_BFS && round % 20 == 0) {
             MapLocation fillLoc = doBFS();
             if (fillLoc != null) {
-                Communications.queueMessage(2, Communications.Message.TERRAFORM_LOCATION, fillLoc);
+                Communications.queueMessage(Communications.Message.TERRAFORM_LOCATION, fillLoc);
             }
         }
 

@@ -20,12 +20,8 @@ public class Communications {
         verySecretNumber = getSecret(round);
     }
 
-    public static void queueMessage(int cost, Message m, int x, int y) {
-        messageQueue.add(new MessageUnit(cost, (m.ordinal() << 12) + (x << 6) + (y)));
-    }
-
-    public static void queueMessage(int cost, Message m, MapLocation location) {
-        messageQueue.add(new MessageUnit(cost, (m.ordinal() << 12) + (location.x << 6) + (location.y)));
+    public static void queueMessage(Message m, MapLocation location) {
+        messageQueue.add(new MessageUnit(m.COST, (m.ordinal() << 12) + (location.x << 6) + (location.y)));
     }
 
     public static void sendMessages(RobotController rc) throws GameActionException {
@@ -84,26 +80,36 @@ public class Communications {
     }
 
     enum Message {
-        HQ_LOCATION,
-        SOUP_LOCATION,
-        ENEMY_HQ_LOCATION,
-        DRONE_RUSH_ENEMY_HQ,
-        REFINERY_LOCATION,
-        DESIGN_SCHOOL_LOCATION,
-        REFINERY_REMOVED,
-        HQ_UNDER_ATTACK,
+        HQ_LOCATION(20),
+        SOUP_LOCATION(1),
+        ENEMY_HQ_LOCATION(2),
+        DRONE_RUSH_ENEMY_HQ(2),
+        REFINERY_LOCATION(5),
+        // TODO: Never sent
+        DESIGN_SCHOOL_LOCATION(2),
+        REFINERY_REMOVED(1),
+        HQ_UNDER_ATTACK(2),
         /**
          * Save miners
+         * TODO: Never sent
          */
-        ENTER_TRANSPORT_MODE,
+        ENTER_TRANSPORT_MODE(2),
         /**
          * Transport landscapers
+         * TODO: Never sent
          */
-        ENTER_ASSAULT_MODE,
-        ENTER_MINER_ASSIST_MODE,
-        TERRAFORM_LOCATION,
-        // TODO: Implement in drones
-        COW_NEAR_HQ
+        ENTER_ASSAULT_MODE(2),
+        // TODO: Never sent
+        ENTER_MINER_ASSIST_MODE(2),
+        TERRAFORM_LOCATION(2),
+        // TODO: Receive in drones
+        COW_NEAR_HQ(3);
+
+        final int COST;
+
+        Message(int cost) {
+            COST = cost;
+        }
     }
 
     static class MessageUnit {
