@@ -325,13 +325,13 @@ public strictfp class MinerRobot extends Robot {
 			}
 		} else {*/
 			//move towards matrix or hq if far
-			if (minerState != MinerState.MOVE_MATRIX && hqDist > 8 && round > MOVE_TO_MATRIX_ROUND && robotElevation < LandscaperRobot.MAX_HEIGHT_THRESHOLD) {
+			if (minerState != MinerState.MOVE_MATRIX && hqDist > 8 && round > MOVE_TO_MATRIX_ROUND && robotElevation < Utility.MAX_HEIGHT_THRESHOLD) {
 				prevState = minerState;
 				minerState = MinerState.MOVE_MATRIX;
 
 			}
 
-			if (minerState == MinerState.MOVE_MATRIX && (robotElevation >= LandscaperRobot.MAX_HEIGHT_THRESHOLD)) {
+			if (minerState == MinerState.MOVE_MATRIX && (robotElevation >= Utility.MAX_HEIGHT_THRESHOLD)) {
 				minerState = prevState;
 			}
 		//}
@@ -1032,7 +1032,7 @@ public strictfp class MinerRobot extends Robot {
 		MapLocation ml;
 		
 		boolean canBuild = true;
-		if (robotElevation < LandscaperRobot.MAX_HEIGHT_THRESHOLD && hqDist > 2) canBuild = false;
+		if (robotElevation < Utility.MAX_HEIGHT_THRESHOLD && hqDist > 2) canBuild = false;
 		
 		
 		if (minerState != MinerState.MOVE_MATRIX) {

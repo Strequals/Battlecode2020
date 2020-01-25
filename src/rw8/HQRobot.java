@@ -26,6 +26,7 @@ public strictfp class HQRobot extends Robot {
 	public static final int INITIAL_MINERS = 3;
 	public static final int MIN_ROUND_BFS = 200;
 	public int MAX_MINERS;
+	public int nearbyMiners;
 
 
 	public static final int MINER_WEIGHT = 70;
@@ -70,6 +71,7 @@ public strictfp class HQRobot extends Robot {
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
 		numLandscapers = 0;
+		nearbyMiners = 0;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -250,7 +252,7 @@ public strictfp class HQRobot extends Robot {
 		while (open.hasNext()) {
 			ml = open.poll();
 
-			if ((Utility.chebyshev(location, ml)>2 && rc.senseElevation(ml) < LandscaperRobot.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
+			if ((Utility.chebyshev(location, ml)>2 && rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
 				return ml;
 			}
 
@@ -259,7 +261,7 @@ public strictfp class HQRobot extends Robot {
 				adj = ml.add(d);
 
 				if (!rc.onTheMap(adj) || !rc.canSenseLocation(adj) || pitTile(adj)) continue;
-				if (rc.senseElevation(adj) >= LandscaperRobot.MAX_HEIGHT_THRESHOLD) continue;
+				if (rc.senseElevation(adj) >= Utility.MAX_HEIGHT_THRESHOLD) continue;
 
 				if (!closed.contains(adj)) {
 					open.add(adj);

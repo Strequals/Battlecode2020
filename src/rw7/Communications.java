@@ -102,6 +102,7 @@ public class Communications {
 			trans = t[i];
 			m = trans.getMessage();
 			c = trans.getCost();
+			System.out.println(vsn1 == m[0]);
 			if (m[0] != vsn1) continue;
 			for (int j = m.length; j-- > 1;) {
 				message = m[j];

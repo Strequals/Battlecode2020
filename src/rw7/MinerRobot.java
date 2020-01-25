@@ -33,7 +33,6 @@ public strictfp class MinerRobot extends Robot {
    public int designSchoolBuildCooldown;
    public int turnsSinceDesignSchoolSeen = 100;
    private boolean enemyBuiltDrones = false;
-   private boolean isBuilder = false;
    private boolean builderDS = false;
    private boolean builderFC = false;
    private boolean builderVP = false;
@@ -61,6 +60,8 @@ public strictfp class MinerRobot extends Robot {
 
 	public static final int MAX_VAPORATOR_BUILD_ROUND = 1400;
 	public static final int FC_DIST = 8;
+
+	private boolean isBuilder;
 
 	enum MinerState {
 		SEEKING, MINING, RETURNING, MOVE_MATRIX, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
@@ -523,14 +524,14 @@ public strictfp class MinerRobot extends Robot {
 		//System.out.println(SCOUT_ROUND);
 
 		// Possibly switch state to scouting if this is the first miner built
-		if (roundCreated <= 2) { //round == SCOUT_ROUND && 
+		//if (roundCreated <= 2) { //round == SCOUT_ROUND && 
 			/*minerState = MinerState.SCOUTING_ENEMY_HQ;
 			isRush = true;
 			EnemyHqPossiblePosition[] positions = EnemyHqPossiblePosition.values();
 			setScoutEnemyHq(positions[random % positions.length]);*/
-			isBuilder = true;
+			//isBuilder = true;
 			//System.out.println("I'm the builder!");
-		}
+		//}
 		System.out.println(minerState);
 		switch (minerState) {
 		case MINING:

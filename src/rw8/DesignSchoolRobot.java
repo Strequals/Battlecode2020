@@ -5,7 +5,7 @@ import battlecode.common.*;
 public strictfp class DesignSchoolRobot extends Robot {
 	private MapLocation enemyHqLocation;
 
-	private int numTurtles = 0;
+	private int numDefenders = 0;
 
 	private int nearbyAlliedLandscapers = 0;
 	private int nearbyAlliedVaporators = 0;
@@ -52,7 +52,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 		isAlliedDrone = false;
 		if (round == roundCreated) {
 			if (location.distanceSquaredTo(hqLocation) <= 2) {
-				numTurtles = MIN_TERRAFORMER_COUNT;
+				numDefenders = MIN_TERRAFORMER_COUNT;
 			}
 		}
 
@@ -130,9 +130,9 @@ public strictfp class DesignSchoolRobot extends Robot {
 		}
 
 		// Switch between terraforming and building turtles
-		if (numTurtles > 0 && designSchoolState == DesignSchoolState.TERRAFORMING) {
+		if (numDefenders > 0 && designSchoolState == DesignSchoolState.TERRAFORMING) {
 			designSchoolState = DesignSchoolState.BUILDING_TURTLES;
-		} else if (numTurtles == 0 && designSchoolState == DesignSchoolState.BUILDING_TURTLES) {
+		} else if (numDefenders == 0 && designSchoolState == DesignSchoolState.BUILDING_TURTLES) {
 			designSchoolState = DesignSchoolState.TERRAFORMING;
 		}
 		switch (designSchoolState) {
@@ -149,22 +149,22 @@ public strictfp class DesignSchoolRobot extends Robot {
 	}
 
 	private void buildTurtles() throws GameActionException {
-		if (numTurtles > 0 && (round > CLOSE_TURTLE_END && rushDetected || soup > BASE_TURTLE_WEIGHT + (8-numTurtles) * TURTLE_WEIGHT)) {
+		if (numDefenders > 0 && (round > CLOSE_TURTLE_END && rushDetected || soup > BASE_TURTLE_WEIGHT + (8-numDefenders) * TURTLE_WEIGHT)) {
 			
 			//if there is no refinery, do not finish the wall
 			//if the fulfillment center has not been built and two or more landscapers exist, do not build more
-			if ((numTurtles == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost) || (!isAlliedDrone && numTurtles <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
+			if ((numDefenders == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numDefenders <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost) || (!isAlliedDrone && numDefenders <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
 				return;
 			}
 			//Prefer building vaporators to finishing the wall
-			if (nearbyAlliedVaporators == 0 && round < CLOSE_TURTLE_END && numTurtles < 6 && soup < RobotType.VAPORATOR.cost + 100 && !rushDetected) {
+			if (nearbyAlliedVaporators == 0 && round < CLOSE_TURTLE_END && numDefenders < 6 && soup < RobotType.VAPORATOR.cost + 100 && !rushDetected) {
 				return;
 			}
 			
 			Direction hqDirection = location.directionTo(hqLocation);
 			if (rc.canBuildRobot(RobotType.LANDSCAPER, hqDirection)) {
 				rc.buildRobot(RobotType.LANDSCAPER, hqDirection);
-				numTurtles--;
+				numDefenders--;
 				return;
 			}
 			Direction left = hqDirection;
@@ -174,14 +174,14 @@ public strictfp class DesignSchoolRobot extends Robot {
 				right = right.rotateRight();
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, left)) {
 					rc.buildRobot(RobotType.LANDSCAPER, left);
-					numTurtles--;
+					numDefenders--;
 					
 					
 					return;
 				}
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, right)) {
 					rc.buildRobot(RobotType.LANDSCAPER, right);
-					numTurtles--;
+					numDefenders--;
 					
 					
 					return;

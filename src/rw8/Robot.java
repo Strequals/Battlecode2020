@@ -27,9 +27,8 @@ public abstract strictfp class Robot {
 	public int roundCreated;
 	public MapLocation enemyHqLocation;
 	
-	
-	public static int hqX2;
-	public static int hqY2;
+	public int hqXTerraform;
+	public int hqYTerraform;
 	
 	public Robot(RobotController rc) throws GameActionException {
 		this.rc = rc;
@@ -41,6 +40,17 @@ public abstract strictfp class Robot {
 		round = 0;
 
 		setVars();
+
+		if (type != RobotType.HQ) {
+			//The robot has just been created, find the HQ location
+			Communications.processFirstBlock(rc, this);
+			roundCreated = rc.getRoundNum();
+
+			if (hqLocation != null) {
+				hqXTerraform = hqLocation.x % Utility.TERRAFORM_HOLES_EVERY;
+				hqYTerraform = hqLocation.y % Utility.TERRAFORM_HOLES_EVERY;
+			}
+		}
 	}
 	
 	public abstract void run() throws GameActionException;
@@ -60,8 +70,8 @@ public abstract strictfp class Robot {
 					roundCreated = rc.getRoundNum();
 					//System.out.println("hqLoc:"+hqLocation);
 					if (hqLocation != null) {
-						hqX2 = hqLocation.x%2;
-						hqY2 = hqLocation.y%2;
+						hqXTerraform = hqLocation.x%2;
+						hqYTerraform = hqLocation.y%2;
 					}
 					//System.out.println("hqX2 "+hqX3+", hqY2 "+hqY3);
 				} if (round > 1) {
@@ -101,16 +111,26 @@ public abstract strictfp class Robot {
 //		return !pitTile(ml) && Utility.chebyshev(ml, hqLocation) == 3;
 //	}
 	public boolean pathTile(MapLocation ml) {
-		return ((ml.x%2 != hqX2) || (ml.y%2 != hqY2)) && !ml.isWithinDistanceSquared(hqLocation, 8);
+		return ((ml.x%2 != hqXTerraform) || (ml.y%2 != hqYTerraform)) && !ml.isWithinDistanceSquared(hqLocation, 8);
 	}
 	
 	public boolean pitTile(MapLocation ml) {
-		return ((ml.x%2 == hqX2) && (ml.y%2 == hqY2)) && !ml.isWithinDistanceSquared(hqLocation, 8);
+		return ((ml.x%2 == hqXTerraform) && (ml.y%2 == hqYTerraform)) && !ml.isWithinDistanceSquared(hqLocation, 8);
 	}
 	
 	public boolean buildingTile(MapLocation ml) {
-		return ((ml.x%2 != hqX2) && (ml.y%2 != hqY2)) && !ml.isWithinDistanceSquared(hqLocation, 8);
+		return ((ml.x%2 != hqXTerraform) && (ml.y%2 != hqYTerraform)) && !ml.isWithinDistanceSquared(hqLocation, 8);
+
+		//return (ml.x % Utility.TERRAFORM_HOLES_EVERY != hqXTerraform) || (ml.y % Utility.TERRAFORM_HOLES_EVERY != hqYTerraform) && (ml.distanceSquaredTo(hqLocation) != 4);
 	}
+	
+	/*public boolean pitTile(MapLocation ml) {
+		return ((ml.x % Utility.TERRAFORM_HOLES_EVERY == hqXTerraform) && (ml.y % Utility.TERRAFORM_HOLES_EVERY == hqYTerraform)) || (ml.distanceSquaredTo(hqLocation) == 4);
+	}
+	
+	public boolean buildingTile(MapLocation ml) {
+		return ((ml.x % Utility.TERRAFORM_HOLES_EVERY != hqXTerraform) && (ml.y % Utility.TERRAFORM_HOLES_EVERY != hqYTerraform)) && (ml.distanceSquaredTo(hqLocation) != 4);
+	}*/
 	
 	public boolean canMove(Direction d) throws GameActionException {
 		MapLocation ml = rc.adjacentLocation(d);
