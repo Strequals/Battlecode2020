@@ -6,24 +6,20 @@ import java.util.ArrayList;
 
 public strictfp class FulfillmentCenterRobot extends Robot {
 
-    public static final int WEIGHT = 100;
-    public static final int BASE_WEIGHT = 600;
-    public static final int LS_WEIGHT = 20;
-    public static final int VAPORATOR_WEIGHT = 10;
-    public static final int DIST_HQ = 64; // emergency drone range
-    public boolean makeOne;
-    public ArrayList<MapLocation> enemyNetGuns;
-    public int friendlyDrones;
-    public int nearbyLandscapers;
-    public int nearbyVaporators;
-    public boolean isFreeDrone;
-    public boolean rushDetected = false;
+    private static final int WEIGHT = 100;
+    private static final int BASE_WEIGHT = 600;
+    private static final int LS_WEIGHT = 20;
+    private static final int VAPORATOR_WEIGHT = 10;
+    private static final int DIST_HQ = 64; // emergency drone range
+    private boolean makeOne;
+    private ArrayList<MapLocation> enemyNetGuns;
+    private boolean rushDetected = false;
 
     public FulfillmentCenterRobot(RobotController rc) throws GameActionException {
         super(rc);
-        // TODO Auto-generated constructor stub
+
         makeOne = false;
-        enemyNetGuns = new ArrayList<MapLocation>();
+        enemyNetGuns = new ArrayList<>();
     }
 
     @Override
@@ -32,20 +28,20 @@ public strictfp class FulfillmentCenterRobot extends Robot {
         RobotInfo r;
         int enemies = 0;
         enemyNetGuns.clear();
-        friendlyDrones = 0;
-        nearbyLandscapers = 0;
-        nearbyVaporators = 0;
+        int friendlyDrones = 0;
+        int nearbyLandscapers = 0;
+        int nearbyVaporators = 0;
         if (round == roundCreated) {
             if (location.distanceSquaredTo(hqLocation) <= 2) {
                 makeOne = true;
             }
         }
-        isFreeDrone = false;
+        boolean isFreeDrone = false;
 
         for (int i = ri.length; --i >= 0; ) {
             r = ri[i];
             if (r.getTeam() == team) {
-                //Friendly Units
+                // Friendly Units
                 switch (r.getType()) {
                     case DELIVERY_DRONE:
                         friendlyDrones++;
@@ -59,44 +55,16 @@ public strictfp class FulfillmentCenterRobot extends Robot {
                     case VAPORATOR:
                         nearbyVaporators++;
                         break;
-                    default:
-                        break;
-
                 }
-            } else if (r.getTeam() == Team.NEUTRAL) {
-                //It's a cow, yeet it from our base
-                if (round > 100) {
-                    //Call the drones
-                    //Communications.sendMessage(rc);
-                }
-            } else {
-                //Enemy Units
+            } else if (r.getTeam() != Team.NEUTRAL) {
+                // Enemy Units
                 switch (r.getType()) {
                     case MINER:
-                        //Call the drones
-                        //Communications.sendMessage(rc);
-                        enemies++;
-                        break;
                     case LANDSCAPER:
-                        //Call the drones
-                        //Communications.sendMessage(rc);
                         enemies++;
                         break;
-                    case DELIVERY_DRONE:
-                        //pew pew pew
-                        return;
                     case NET_GUN:
-                        //Direct units to bury the net gun
-                        //Communications.sendMessage(rc);
                         enemyNetGuns.add(r.location);
-                        break;
-                    case REFINERY:
-                        //Direct units to bury the refinery
-                        //Communications.sendMessage(rc);
-                        break;
-                    default:
-                        //Probably some structure, bury it if possible but low priority
-                        //Communications.sendMessage(rc);
                         break;
                 }
             }
@@ -105,7 +73,8 @@ public strictfp class FulfillmentCenterRobot extends Robot {
         if (!rc.isReady()) return;
 
         System.out.println("RD:" + rushDetected + ",IFD:" + isFreeDrone);
-        if (soup > RobotType.DELIVERY_DRONE.cost && (((enemies / 2 > friendlyDrones || (rushDetected && !isFreeDrone)) && location.distanceSquaredTo(hqLocation) < DIST_HQ) || makeOne || (round < TURTLE_END && soup > RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT - nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT))) {
+        int totalWeight = RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT - nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT;
+        if (soup > RobotType.DELIVERY_DRONE.cost && (((enemies / 2 > friendlyDrones || (rushDetected && !isFreeDrone)) && location.distanceSquaredTo(hqLocation) < DIST_HQ) || makeOne || (round < TURTLE_END && soup > totalWeight))) {
             Direction hqDirection = location.directionTo(hqLocation);
             if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, hqDirection) && isSafe(location.add(hqDirection))) {
                 rc.buildRobot(RobotType.DELIVERY_DRONE, hqDirection);
@@ -127,12 +96,11 @@ public strictfp class FulfillmentCenterRobot extends Robot {
                     makeOne = false;
                     return;
                 }
-
             }
         }
 
-        //After turtle end
-        if (soup > RobotType.DELIVERY_DRONE.cost && soup > RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT - nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT) {
+        // After turtle end
+        if (soup > RobotType.DELIVERY_DRONE.cost && soup > totalWeight) {
             if (enemyHqLocation != null) {
                 Direction enemyHqDirection = location.directionTo(enemyHqLocation);
                 if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, enemyHqDirection) && isSafe(location.add(enemyHqDirection))) {
@@ -155,7 +123,6 @@ public strictfp class FulfillmentCenterRobot extends Robot {
                         makeOne = false;
                         return;
                     }
-
                 }
             } else {
                 Direction[] directions = Utility.directions;
@@ -168,13 +135,10 @@ public strictfp class FulfillmentCenterRobot extends Robot {
                     }
                 }
             }
-
-
         }
-
     }
 
-    public boolean isSafe(MapLocation ml) {
+    private boolean isSafe(MapLocation ml) {
         ArrayList<MapLocation> ngs = enemyNetGuns;
         MapLocation netGunLoc;
         for (int i = ngs.size(); i-- > 0; ) {
@@ -194,7 +158,7 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 //				System.out.println("Received HQ location: " + x + ", " + y);
                 break;
             case HQ_UNDER_ATTACK:
-                if (location.distanceSquaredTo(hqLocation) <= 2) {
+                if (location.isWithinDistanceSquared(hqLocation, 2)) {
                     rushDetected = true;
                 }
                 break;
