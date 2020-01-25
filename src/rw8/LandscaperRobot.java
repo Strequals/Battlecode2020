@@ -704,6 +704,23 @@ public strictfp class LandscaperRobot extends Robot {
       fuzzy(rc, nearestEDrone.location.directionTo(location));
    }
 
+	public boolean fuzzy(RobotController rc, Direction d) throws GameActionException {
+		if (rc.canMove(d) && !rc.senseFlooding(rc.adjacentLocation(d))) {
+			rc.move(d);
+			return true;
+		}
+		Direction dr = d.rotateRight();
+		if (rc.canMove(dr) && !rc.senseFlooding(rc.adjacentLocation(dr))) {
+			rc.move(dr);
+			return true;
+		}
+		Direction dl = d.rotateRight();
+		if (rc.canMove(dl) && !rc.senseFlooding(rc.adjacentLocation(dl))) {
+			rc.move(dl);
+			return true;
+		}
+		return false;
+	}
 
     private int heuristic(MapLocation ml) {
         int k = Utility.chebyshev(ml, location)+Utility.chebyshev(ml, hqLocation);
