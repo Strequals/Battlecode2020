@@ -3,14 +3,13 @@ package rw8;
 import battlecode.common.*;
 
 public strictfp class DesignSchoolRobot extends Robot {
-    static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
-    static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 550;
-    static final int MIN_TERRAFORMER_COUNT = 8;
-    static final int WEIGHT = 150; //need 150 extra soup per nearby landscaper to build
-    static final int VAPORATOR_WEIGHT = 100; //need 150 less soup per nearby vaporator to build
-    static final int BASE_TURTLE_WEIGHT = 450;
-    static final int TURTLE_WEIGHT = 15;
-    private MapLocation enemyHqLocation;
+    private static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
+    private static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 550;
+    private static final int MIN_TERRAFORMER_COUNT = 8;
+    private static final int WEIGHT = 150; //need 150 extra soup per nearby landscaper to build
+    private static final int VAPORATOR_WEIGHT = 100; //need 150 less soup per nearby vaporator to build
+    private static final int BASE_TURTLE_WEIGHT = 450;
+    private static final int TURTLE_WEIGHT = 15;
     private int numDefenders = 0;
     private int nearbyAlliedLandscapers = 0;
     private int nearbyAlliedVaporators = 0;
@@ -22,16 +21,6 @@ public strictfp class DesignSchoolRobot extends Robot {
 
     DesignSchoolRobot(RobotController rc) throws GameActionException {
         super(rc);
-
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(2, rc.getTeam().opponent());
-        RobotInfo robot;
-		/*for (int i = nearbyRobots.length; i-->0;) {
-			robot = nearbyRobots[i];
-			if (robot.type == RobotType.HQ) {
-				enemyHqLocation = robot.location;
-				designSchoolState = DesignSchoolState.RUSHING;
-			}
-		}*/
     }
 
     @Override
@@ -53,13 +42,15 @@ public strictfp class DesignSchoolRobot extends Robot {
         for (int i = ri.length; --i >= 0; ) {
             r = ri[i];
             if (r.getTeam() == team) {
-                //Friendly Units
+                // Friendly Units
                 switch (r.getType()) {
                     case HQ:
                         hqLocation = r.getLocation();
                         break;
                     case LANDSCAPER:
-                        if (Utility.chebyshev(r.location, hqLocation) != 1) nearbyAlliedLandscapers++;
+                        if (Utility.chebyshev(r.location, hqLocation) != 1) {
+                            nearbyAlliedLandscapers++;
+                        }
                         break;
                     case REFINERY:
                         isRefinery = true;
@@ -74,47 +65,19 @@ public strictfp class DesignSchoolRobot extends Robot {
                         nearbyAlliedVaporators++;
                         break;
                 }
-            } else if (r.getTeam() == Team.NEUTRAL) {
-                //It's a cow, yeet it from our base
-                if (round > 100) {
-                    //Call the drones
-                    //Communications.sendMessage(rc);
-                }
-            } else {
-                //Enemy Units
+            } else if (r.getTeam() != Team.NEUTRAL) {
+                // Enemy Units
                 switch (r.getType()) {
                     case MINER:
-                        //Call the drones
-                        //Communications.sendMessage(rc);
+                    case DESIGN_SCHOOL:
+                    case NET_GUN:
                         rushDetected = true;
                         break;
                     case LANDSCAPER:
-                        //Call the drones
-                        //Communications.sendMessage(rc);
                         if (!rushDetected) {
                             rushDetected = true;
                             Communications.queueMessage(Communications.Message.HQ_UNDER_ATTACK, r.location);
                         }
-                        break;
-                    case DELIVERY_DRONE:
-                        //pew pew pew
-
-                        return;
-                    case DESIGN_SCHOOL:
-                        rushDetected = true;
-                        break;
-                    case NET_GUN:
-                        //Direct units to bury the net gun
-                        //Communications.sendMessage(rc);
-                        rushDetected = true;
-                        break;
-                    case REFINERY:
-                        //Direct units to bury the refinery
-                        //Communications.sendMessage(rc);
-                        break;
-                    default:
-                        //Probably some structure, bury it if possible but low priority
-                        //Communications.sendMessage(rc);
                         break;
                 }
             }

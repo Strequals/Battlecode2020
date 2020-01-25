@@ -743,7 +743,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
                 break;
             case ENTER_MINER_ASSIST_MODE:
                 minerAssistLocation = messageLocation; // DOES NOT WORK, NEEDS LOCATION TO FIND MINER AND LOCATION TO PLACE MINER
-                state = DroneState.MINER_ASSIST;           //maybe move miner towards hq if its stuck pathfinding?
+                state = DroneState.MINER_ASSIST; //maybe move miner towards hq if it's stuck pathfinding?
                 break;
         }
     }
