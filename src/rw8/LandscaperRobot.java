@@ -216,10 +216,11 @@ public strictfp class LandscaperRobot extends Robot {
                 }
                 break;
             case TERRAFORMING:
-                if (Utility.chebyshev(location, hqLocation) == 1) {
+                /*if (Utility.chebyshev(location, hqLocation) == 1) {
                     state = LandscaperState.DEFENSE;
                     defenseState = DefenseState.TURTLE;
-                } else if ((netgunDistance > 5 && droneDist <= 3) || droneDist <= 1) {
+                } else*/
+            	if ((netgunDistance > 5 && droneDist <= 3) || droneDist <= 1) {
                     terraformingState = TerraformingState.ESCAPE;
                 }
         }
@@ -545,7 +546,12 @@ public strictfp class LandscaperRobot extends Robot {
                 }
                 
                 if (location.distanceSquaredTo(hqLocation) <= 8) {
-                	moveTerraform(diagonalTarget);
+                	System.out.println("moving away to " + diagonalTarget);
+                	//moveTerraform(diagonalTarget);
+                	if (Nav.target == null || !Nav.target.equals(diagonalTarget)) {
+                		Nav.beginNav(rc, this, diagonalTarget);
+                	}
+                	Nav.nav(rc, this);
                 	return;
                 }
                 
