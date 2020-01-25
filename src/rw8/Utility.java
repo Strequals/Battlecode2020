@@ -22,9 +22,6 @@ public strictfp class Utility {
 		int y = a.y-b.y;
 		if (x < 0) x = -x;
 		if (y < 0) y = -y;
-		return (x > y ? x : y);
+		return x > y ? x : y;
 	}
-	
-	
-
 }

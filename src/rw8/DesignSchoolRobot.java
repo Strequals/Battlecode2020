@@ -102,7 +102,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 					//Communications.sendMessage(rc);
 					if (!rushDetected) {
 						rushDetected = true;
-						Communications.queueMessage(rc, 2, 11, r.location.x, r.location.y);
+						Communications.queueMessage(rc, 2, Communications.Message.HQ_UNDER_ATTACK, r.location.x, r.location.y);
 					}
 					break;
 				case DELIVERY_DRONE:
@@ -237,19 +237,18 @@ public strictfp class DesignSchoolRobot extends Robot {
 	}
 
 	@Override
-	public void processMessage(int m, int x, int y) {
+	public void processMessage(Communications.Message m, int x, int y) {
 		switch (m) {
-		case 1:
-			hqLocation = new MapLocation(x,y);
-			//System.out.println("Recieved HQ location: " + x + ", " + y);
-			break;
-		case 5:
-			isRefinery = true;
-			break;
-		case 11:
-			rushDetected = true;
+			case HQ_LOCATION:
+				hqLocation = new MapLocation(x,y);
+//				System.out.println("Received HQ location: " + x + ", " + y);
+				break;
+			case REFINERY_LOCATION:
+				isRefinery = true;
+				break;
+			case HQ_UNDER_ATTACK:
+				rushDetected = true;
+				break;
 		}
-
 	}
-
 }

@@ -663,7 +663,6 @@ public strictfp class LandscaperRobot extends Robot {
                                     bestPriority = priority;
                                     nearestFillTile = ml;
                                 }
-
                             }
                         }
                     }
@@ -675,7 +674,7 @@ public strictfp class LandscaperRobot extends Robot {
                     moveTerraform(nearestFillTile);
                     if (communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile)==1) {
                         if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
-                            Communications.queueMessage(rc, 1, 15, nearestFillTile.x, nearestFillTile.y);
+                            Communications.queueMessage(rc, 1, Communications.Message.TERRAFORM_LOCATION, nearestFillTile);
                             communicationDelay = 20;
                         }
                     } else {
@@ -761,16 +760,16 @@ public strictfp class LandscaperRobot extends Robot {
     }
 
     @Override
-    public void processMessage(int m, int x, int y) {
+    public void processMessage(Communications.Message m, int x, int y) {
         switch (m) {
-            case 1:
+            case HQ_LOCATION:
                 hqLocation = new MapLocation(x,y);
                 //System.out.println("Received HQ location: " + x + ", " + y);
                 break;
-            case 3:
+            case ENEMY_HQ_LOCATION:
                 enemyHqLocation = new MapLocation(x,y);
                 break;
-            case 15:
+            case TERRAFORM_LOCATION:
                 MapLocation ml15 = new MapLocation(x,y);
                 if (backupFill == null || heuristic(ml15) + Utility.BACKUP_THRESHOLD < heuristic(backupFill)) {
                     backupFill = ml15;

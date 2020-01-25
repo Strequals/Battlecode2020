@@ -173,52 +173,42 @@ public strictfp class MinerRobot extends Robot {
 
 				}
 			} else if (r.getTeam() == Team.NEUTRAL) {
-				//yeet the cow
+				// yeet the cow
 				if (round > 100) {
-					//Call the drones
-					//Communications.sendMessage(rc);
+					Communications.queueMessage(rc, 3, Communications.Message.COW_NEAR_HQ, r.location);
 				}
 			} else {
-				//Enemy Units
+				// Enemy Units
 				switch (r.getType()) {
-				case FULFILLMENT_CENTER:
-					enemyBuiltDrones = true;
-					break;
-				case DELIVERY_DRONE:
-					enemyBuiltDrones = true;
-					enemyDroneSpotted = true;
-               int distance = location.distanceSquaredTo(r.location);
-               if(distance < droneDist) {
-                  droneDist = distance;
-               }
-               nearestEDrone = r;
-					break;
-				case MINER:
-					enemySpotted = true;
-					if (round < TURTLE_ROUND) {
-						if (!rushDetected) {
-							rushDetected = true;
-							Communications.queueMessage(rc,2,11,r.location.x, r.location.y);
+					case FULFILLMENT_CENTER:
+						enemyBuiltDrones = true;
+						break;
+					case DELIVERY_DRONE:
+						enemyBuiltDrones = true;
+						enemyDroneSpotted = true;
+						int distance = location.distanceSquaredTo(r.location);
+						if(distance < droneDist) {
+							droneDist = distance;
 						}
-
-					}
-					break;
-				case LANDSCAPER:
-					enemySpotted = true;
-					if (round < TURTLE_ROUND) {
-						if (!rushDetected) {
-							rushDetected = true;
-							Communications.queueMessage(rc,2,11,r.location.x, r.location.y);
+						nearestEDrone = r;
+						break;
+					case MINER:
+					case LANDSCAPER:
+						enemySpotted = true;
+						if (round < TURTLE_ROUND) {
+							if (!rushDetected) {
+								rushDetected = true;
+								Communications.queueMessage(rc,2, Communications.Message.HQ_UNDER_ATTACK, r.location);
+							}
 						}
-
-					}
-					break;
-				case HQ:
-					//Notify other units of enemy HQ location
-					break;
-				default:
-
-					break;
+						break;
+					case HQ:
+						if (enemyHqLocation == null) {
+							// Notify other units of enemy HQ location
+							Communications.queueMessage(rc, 2, Communications.Message.ENEMY_HQ_LOCATION, r.location);
+							enemyHqLocation = r.location;
+						}
+						break;
 				}
 			}
 		}
@@ -238,12 +228,10 @@ public strictfp class MinerRobot extends Robot {
 		MapLocation ml;
 		int rSq = senseRadiusSq;
 		int radius = (int)(Math.sqrt(rSq));
-		ml = null;
 		int dx;
 		int dy;
 		int rad0 = -1;
 		int rad;
-		//int bytecode1 = Clock.getBytecodesLeft();
 		int totalSoup = 0;
 		int s;
 		MapLocation nearestSoup = null;
@@ -269,7 +257,7 @@ public strictfp class MinerRobot extends Robot {
 
 		if (nearestSoup !=null && totalSoup / nearbyMiners > 100 && nearbyMiners < 4) {
 			if (soup>1 && soupCommunicateCooldown == 0) {
-				Communications.queueMessage(rc, 1, 2, nearestSoup.x, nearestSoup.y);
+				Communications.queueMessage(rc, 1, Communications.Message.SOUP_LOCATION, nearestSoup.x, nearestSoup.y);
 				soupCommunicateCooldown += 20; //don't communicate soup location for another 20 turns
 			}
 		}
@@ -280,7 +268,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 
 		nearestRefinery = null;
-		//Calculate return location
+		// Calculate return location
 		if (refineries.size()>0) {
 			ArrayList<MapLocation> refs = refineries;
 			int dist = 1000000;
@@ -298,7 +286,9 @@ public strictfp class MinerRobot extends Robot {
 							returnLoc = null;
 							navigatingReturn = false;
 						}
-						if (soup>1)Communications.queueMessage(rc, 1, 8, rl.x, rl.y);
+						if (soup > 1) {
+							Communications.queueMessage(rc, 1, Communications.Message.REFINERY_REMOVED, rl.x, rl.y);
+						}
 						continue;
 					}
 				}
@@ -980,47 +970,47 @@ public strictfp class MinerRobot extends Robot {
 	}*/
 
 	@Override
-	public void processMessage(int m, int x, int y) {
+	public void processMessage(Communications.Message m, int x, int y) {
 		switch (m) {
-		case 1:
-			hqLocation = new MapLocation(x,y);
-			//System.out.println("Recieved HQ location: " + x + ", " + y);
-			break;
-		case 2:
-			if (soupMine == null) {
+			case HQ_LOCATION:
+				hqLocation = new MapLocation(x,y);
+				//System.out.println("Recieved HQ location: " + x + ", " + y);
+				break;
+			case SOUP_LOCATION:
+				if (soupMine == null) {
 
-				if (!isBuilder) {
-					soupMine = new MapLocation(x, y);
-					Nav.beginNav(rc, this, soupMine);
+					if (!isBuilder) {
+						soupMine = new MapLocation(x, y);
+						Nav.beginNav(rc, this, soupMine);
+					}
 				}
-			}
-			//System.out.println("Recieved soup location: " + x + ", " + y);
-			break;
-		case 5:
-			MapLocation ml5 = new MapLocation(x,y);
-			//System.out.println("Recieved Refinery location: " + x + ", " + y);
-			if (!refineries.contains(ml5)) refineries.add(ml5);
-			break;
-		case 6:
-			designSchoolBuildCooldown = 50;
-			break;
-		case 8:
-			MapLocation ml8 = new MapLocation(x, y);
-			refineries.remove(ml8);
-			if (returnLoc != null && returnLoc.equals(ml8)) {
-				returnLoc = null;
-				navigatingReturn = false;
-			}
-			break;
-		case 11:
-			rushDetected = true;
-			break;
-		case 15:
-			MapLocation ml15 = new MapLocation(x,y);
-			if (frontLocation == null || Utility.chebyshev(location, ml15) < Utility.chebyshev(location, frontLocation)) {
-				frontLocation = ml15;
-			}
-			break;
+				//System.out.println("Recieved soup location: " + x + ", " + y);
+				break;
+			case REFINERY_LOCATION:
+				MapLocation ml5 = new MapLocation(x,y);
+				//System.out.println("Recieved Refinery location: " + x + ", " + y);
+				if (!refineries.contains(ml5)) refineries.add(ml5);
+				break;
+			case DESIGN_SCHOOL_LOCATION:
+				designSchoolBuildCooldown = 50;
+				break;
+			case REFINERY_REMOVED:
+				MapLocation ml8 = new MapLocation(x, y);
+				refineries.remove(ml8);
+				if (returnLoc != null && returnLoc.equals(ml8)) {
+					returnLoc = null;
+					navigatingReturn = false;
+				}
+				break;
+			case HQ_UNDER_ATTACK:
+				rushDetected = true;
+				break;
+			case TERRAFORM_LOCATION:
+				MapLocation ml15 = new MapLocation(x,y);
+				if (frontLocation == null || Utility.chebyshev(location, ml15) < Utility.chebyshev(location, frontLocation)) {
+					frontLocation = ml15;
+				}
+				break;
 		}
 
 	}
@@ -1031,20 +1021,20 @@ public strictfp class MinerRobot extends Robot {
 		return rc.canMove(d) && !rc.senseFlooding(ml) && (minerState != MinerState.MOVE_MATRIX || pathTile(ml));
 	}
 
-	public boolean doBuilding() throws GameActionException {
+	private boolean doBuilding() throws GameActionException {
 		if (round < TURTLE_ROUND) {
 			if (!builderFC && soup > RobotType.FULFILLMENT_CENTER.cost) {
 				System.out.println("TryFC");
 				tryBuildFC();
 				return true;
-			} else if (!builderDS && (rushDetected || round > TURTLE_ROUND || isFreeFriendlyDrone) && soup > RobotType.DESIGN_SCHOOL.cost) {
+			} else if (!builderDS && (rushDetected || isFreeFriendlyDrone) && soup > RobotType.DESIGN_SCHOOL.cost) {
 				System.out.println("TryDS");
 				tryBuildDS();
 				return true;
-			} else if (builderFC && builderDS) {
-				//tryBuildVP();
-				//return true;
-			}
+			}// else if (builderFC && builderDS) {
+//				tryBuildVP();
+//				return true;
+//			}
 		}
 
 		MapLocation ml;
@@ -1054,7 +1044,7 @@ public strictfp class MinerRobot extends Robot {
 
 
 		if (minerState != MinerState.MOVE_MATRIX) {
-			//Build Refinery
+			// Build Refinery
 			if (!isRefineryNearby && soup > RobotType.REFINERY.cost && (round > CLOSE_TURTLE_END || !hqAvailable)) {
 				if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
 					Direction[] dirs = Utility.directions;
@@ -1066,7 +1056,7 @@ public strictfp class MinerRobot extends Robot {
 						if (rc.canBuildRobot(RobotType.REFINERY, d) && Utility.chebyshev(refLoc, hqLocation) > 3) {
 							rc.buildRobot(RobotType.REFINERY, d);
 							MapLocation refineryLoc = location.add(d);
-							if (soup>5) Communications.queueMessage(rc, 5, 5, refineryLoc.x, refineryLoc.y);
+							if (soup>5) Communications.queueMessage(rc, 5, Communications.Message.REFINERY_LOCATION, refineryLoc.x, refineryLoc.y);
 							refineries.add(refineryLoc);
 							return true;
 						}
@@ -1075,14 +1065,13 @@ public strictfp class MinerRobot extends Robot {
 			}
 
 			if (canBuild) {
-				//Build Design School
+				// Build Design School
 				if (designSchoolBuildCooldown > 0)designSchoolBuildCooldown--;
 				if (dsBuilt) turnsSinceDesignSchoolSeen = 0;
 				else turnsSinceDesignSchoolSeen++;
 				if (round > TURTLE_ROUND && !dsBuilt && designSchoolBuildCooldown == 0 && soup > DESIGN_SCHOOL_WEIGHT && hqLocation != null && hqDist>=2) {
 					Direction[] dirs = Utility.directions;
 					Direction d;
-					ml = null;
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
@@ -1134,7 +1123,6 @@ public strictfp class MinerRobot extends Robot {
 				if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt && hqDist >= 2) {
 					Direction[] dirs = Utility.directions;
 					Direction d;
-					ml = null;
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
@@ -1150,7 +1138,4 @@ public strictfp class MinerRobot extends Robot {
 		}
 		return false;
 	}
-
-
-
 }

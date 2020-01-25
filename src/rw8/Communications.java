@@ -4,44 +4,42 @@ import battlecode.common.*;
 
 public class Communications {
 	
-	public static int verySecretNumber;
-	public static final long A = 1337133713371339L; //Must be odd
-	public static final long C = 3141592653589796238L;
+	private static int verySecretNumber;
+	private static final long A = 1337133713371339L; // Must be odd
+	private static final long C = 3141592653589796238L;
 	
-	public static LinkedQueue<MessageUnit> messageQueue = new LinkedQueue<MessageUnit>();
-	
-	/*1:HQ location
-	 *2:Soup location
-	 *3:Enemy HQ location
-	 *4:Drone rush enemy HQ
-	 *5:Refinery location
-	 *6:Design school location
-	 *7:
-	 *8:Refinery removed
-	 *9:
-	 *10:
-	 *11:HQ under attack 
-    *12:Enter Transport mode(save miners)
-    *13:Enter Assault mode(transport landscapers)
-    *14:Enter Miner Assist Mode
-    *15:Terraform location
-    **/
-	
+	private static LinkedQueue<MessageUnit> messageQueue = new LinkedQueue<MessageUnit>();
+
 	enum Message {
-		HQ_LOC
+		HQ_LOCATION,
+		SOUP_LOCATION,
+		ENEMY_HQ_LOCATION,
+		DRONE_RUSH_ENEMY_HQ,
+		REFINERY_LOCATION,
+		DESIGN_SCHOOL_LOCATION,
+		REFINERY_REMOVED,
+		HQ_UNDER_ATTACK,
+		/** Save miners */
+		ENTER_TRANSPORT_MODE,
+		/** Transport landscapers */
+		ENTER_ASSAULT_MODE,
+		ENTER_MINER_ASSIST_MODE,
+		TERRAFORM_LOCATION,
+		// TODO: Implement in drones
+		COW_NEAR_HQ
 	}
 	
 	static class MessageUnit {
 		int c;
 		int k;
 		
-		public MessageUnit(int c, int k) {
+		MessageUnit(int c, int k) {
 			this.c = c;
 			this.k = k;
 		}
 	}
 	
-	public static int getSecret(int round) {
+	private static int getSecret(int round) {
 		return (int)(A*round+C+2);
 	}
 	
@@ -49,8 +47,12 @@ public class Communications {
 		verySecretNumber = getSecret(round);
 	}
 	
-	public static void queueMessage(RobotController rc, int cost, int m, int x, int y) throws GameActionException {
-		messageQueue.add(new MessageUnit(cost, (m << 12) + (x << 6) + (y)));
+	public static void queueMessage(RobotController rc, int cost, Message m, int x, int y) throws GameActionException {
+		messageQueue.add(new MessageUnit(cost, (m.ordinal() << 12) + (x << 6) + (y)));
+	}
+
+	public static void queueMessage(RobotController rc, int cost, Message m, MapLocation location) throws GameActionException {
+		messageQueue.add(new MessageUnit(cost, (m.ordinal() << 12) + (location.x << 6) + (location.y)));
 	}
 	
 	public static void sendMessages(RobotController rc) throws GameActionException{
@@ -85,7 +87,7 @@ public class Communications {
 			if (m[0] != verySecretNumber) continue;
 			for (int j = m.length; j-- > 1;) {
 				message = m[j];
-				if (message != 0) r.processMessage((message >> 12), (message >> 6) % 64, message % 64);
+				if (message != 0) r.processMessage(Message.values()[message >> 12], (message >> 6) % 64, message % 64);
 			}
 			
 		}
@@ -105,7 +107,7 @@ public class Communications {
 			if (m[0] != vsn1) continue;
 			for (int j = m.length; j-- > 1;) {
 				message = m[j];
-				if (message != 0) r.processMessage((message >> 12), (message >> 6) % 64, message % 64);
+				if (message != 0) r.processMessage(Message.values()[message >> 12], (message >> 6) % 64, message % 64);
 			}
 			
 		}

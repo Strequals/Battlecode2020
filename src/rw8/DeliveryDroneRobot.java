@@ -257,7 +257,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
         }
         
         if(enemyHqLocation != null && !sentEHQL) {
-            Communications.queueMessage(rc, 3, 3, enemyHqLocation.x, enemyHqLocation.y);
+            Communications.queueMessage(rc, 3, Communications.Message.ENEMY_HQ_LOCATION, enemyHqLocation.x, enemyHqLocation.y);
             sentEHQL = true;
         }
 
@@ -298,7 +298,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
         if (state != DroneState.ASSAULTING && enemyHqLocation != null) {
             if (location.distanceSquaredTo(enemyHqLocation) < 8 && targetRobot == null) {
-                Communications.queueMessage(rc, 1, 2, enemyHqLocation.x, enemyHqLocation.y);
+                Communications.queueMessage(rc, 1, Communications.Message.SOUP_LOCATION, enemyHqLocation.x, enemyHqLocation.y);
                 state = DroneState.ASSAULTING;
             }
         }
@@ -447,7 +447,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
         if (enemyHqLocation != null) {
             if (Utility.chebyshev(location, enemyHqLocation) <= CRUNCH_RANGE) {
                 if (friendlyDrones >= DRONE_COUNT_RUSH) {// || round > FINAL_CRUNCH_ROUND
-                    Communications.queueMessage(rc, 2, 4, enemyHqLocation.x, enemyHqLocation.y);
+                    Communications.queueMessage(rc, 2, Communications.Message.DRONE_RUSH_ENEMY_HQ, enemyHqLocation.x, enemyHqLocation.y);
                     //rush = true;
                 }
             }
@@ -861,21 +861,21 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	}
 
     @Override
-    public void processMessage(int m, int x, int y) {
+    public void processMessage(Communications.Message m, int x, int y) {
         // TODO Auto-generated method stub
         switch (m) {                                       //will probably want to add a case for attack
-            case 1:
+            case HQ_LOCATION:
                 hqLocation = new MapLocation(x,y);
                 System.out.println("Received HQ location: " + x + ", " + y);
                 break;
-            case 3:
+            case ENEMY_HQ_LOCATION:
                 if (enemyHqLocation == null) {
                     enemyHqLocation = new MapLocation(x, y);
                     enemyNetguns.add(enemyHqLocation);
                 }
                 sentEHQL = true; //if already received enemy hq location, don't rebroadcast
                 break;
-            case 4:
+            case DRONE_RUSH_ENEMY_HQ:
                 if (enemyHqLocation == null) {
                     enemyHqLocation = new MapLocation(x, y);
                     enemyNetguns.add(enemyHqLocation);
@@ -884,20 +884,20 @@ public strictfp class DeliveryDroneRobot extends Robot {
                     rush = true;
                 }
                 break;
-            case 11:
+            case HQ_UNDER_ATTACK:
                 rushLocation = new MapLocation(x,y);
                 turnsSinceRush = 0;
                 if (Utility.chebyshev(location,hqLocation)<DEFEND_RANGE)rushDetected = true;
                 break;
-            case 12:
+            case ENTER_TRANSPORT_MODE:
                 state = DroneState.TRANSPORTING;
                 minerAssistLocation = new MapLocation(x, y);
                 break;
-            case 13:
+            case ENTER_ASSAULT_MODE:
                 enemyHqLocation = new MapLocation(x,y);
                 if (shouldAssault()) state = DroneState.ASSAULTING;
                 break;
-            case 14:
+            case ENTER_MINER_ASSIST_MODE:
                 minerAssistLocation = new MapLocation(x, y);// DOES NOT WORK, NEEDS LOCATION TO FIND MINER AND LOCATION TO PLACE MINER
                 state = DroneState.MINER_ASSIST;           //maybe move miner towards hq if its stuck pathfinding?
                 break;

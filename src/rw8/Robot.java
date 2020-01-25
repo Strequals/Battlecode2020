@@ -55,7 +55,7 @@ public abstract strictfp class Robot {
 	
 	public abstract void run() throws GameActionException;
 	
-	public abstract void processMessage(int m, int x, int y);
+	public abstract void processMessage(Communications.Message m, int x, int y);
 	
 	public void loop() {
 		while (true) {

@@ -9,19 +9,11 @@ public strictfp class RefineryRobot extends Robot {
 
 	public RefineryRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	public void run() throws GameActionException {
-		
-		
-	}
+	public void run() throws GameActionException {}
 
 	@Override
-	public void processMessage(int m, int x, int y) {
-		// TODO Auto-generated method stub
-		
-	}
-
+	public void processMessage(Communications.Message m, int x, int y) {}
 }

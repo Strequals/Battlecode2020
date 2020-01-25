@@ -197,15 +197,17 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 	}
 
 	@Override
-	public void processMessage(int m, int x, int y) {
+	public void processMessage(Communications.Message m, int x, int y) {
 		switch (m) {
-		case 1:
-			hqLocation = new MapLocation(x,y);
-			System.out.println("Recieved HQ location: " + x + ", " + y);
-			break;
-		case 11:
-			if (location.distanceSquaredTo(hqLocation)<=2)rushDetected = true;
-			break;
+			case HQ_LOCATION:
+				hqLocation = new MapLocation(x, y);
+//				System.out.println("Received HQ location: " + x + ", " + y);
+				break;
+			case HQ_UNDER_ATTACK:
+				if (location.distanceSquaredTo(hqLocation) <= 2) {
+					rushDetected = true;
+				}
+				break;
 		}
 
 	}
