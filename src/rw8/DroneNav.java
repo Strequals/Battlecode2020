@@ -1,6 +1,9 @@
 package rw8;
 
-import battlecode.common.*;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 public class DroneNav {
     public static BugState state;
@@ -14,8 +17,8 @@ public class DroneNav {
     public static int startDistanceSq;
     public static int turnsBugged;
 
-    //Cory Li's Bug Algorithm - https://github.com/TheDuck314/battlecode2015/blob/master/teams/zephyr26_final/Nav.java
-    public static void beginNav(RobotController rc, DeliveryDroneRobot r, MapLocation ml) {
+    // Cory Li's Bug Algorithm - https://github.com/TheDuck314/battlecode2015/blob/master/teams/zephyr26_final/Nav.java
+    public static void beginNav(DeliveryDroneRobot r, MapLocation ml) {
         target = ml;
         position = r.location;
         state = BugState.MOTION_TO_GOAL;
@@ -30,24 +33,23 @@ public class DroneNav {
 
         switch (state) {
             case MOTION_TO_GOAL:
-                //System.out.println("MTG");
+//                System.out.println("MTG");
                 if (tryDirect(rc, r)) {
                     return;
                 }
                 state = BugState.BUGGING;
                 startBug(rc, r);
             case BUGGING:
-                //System.out.println("BUG");
-                int c1 = Clock.getBytecodesLeft();
+//                System.out.println("BUG");
                 bug(r, rc);
         }
     }
 
-    public static boolean canMove(RobotController rc, DeliveryDroneRobot r, Direction d) throws GameActionException {
+    public static boolean canMove(RobotController rc, DeliveryDroneRobot r, Direction d) {
         return r.canMove(rc, d);
     }
 
-    public static void startBug(RobotController rc, DeliveryDroneRobot r) throws GameActionException {
+    public static void startBug(RobotController rc, DeliveryDroneRobot r) {
         startDistanceSq = position.distanceSquaredTo(target);
         bugDirection = position.directionTo(target);
         lookDirection = bugDirection;
@@ -59,7 +61,6 @@ public class DroneNav {
         for (int i = 0; i < 3; i++) {
             if (canMove(rc, r, left)) break;
             left = left.rotateLeft();
-
         }
 
         Direction right = bugDirection.rotateRight();
@@ -76,8 +77,7 @@ public class DroneNav {
     }
 
     public static void bug(DeliveryDroneRobot r, RobotController rc) throws GameActionException {
-
-        if (detectEdge(r, rc)) {
+        if (detectEdge(r)) {
             startBug(rc, r);
         }
         turnsBugged++;
@@ -101,6 +101,7 @@ public class DroneNav {
                     movesSinceObstacle = 0;
                 }
                 d = null;
+                break;
         }
 
         int rots = 7 - i;
@@ -116,30 +117,31 @@ public class DroneNav {
                 case RIGHT:
                     rotations += rots - ((lookDirection.ordinal() - bugDirection.ordinal() + 8) % 8);
                     lookDirection = d.rotateRight().rotateRight();
+                    break;
             }
 
             bugDirection = d;
         }
-
-
     }
 
     public static boolean canEndBug() {
-        //System.out.println("MSO:"+movesSinceObstacle);
-        //System.out.println("rotations:"+rotations);
-        if (movesSinceObstacle >= 4) return true;
+//        System.out.println("MSO:" + movesSinceObstacle);
+//        System.out.println("rotations:" + rotations);
+        if (movesSinceObstacle >= 4) {
+            return true;
+        }
         return (rotations < 0 || rotations >= 8) && position.isWithinDistanceSquared(target, startDistanceSq - 1);
     }
 
-    public static boolean detectEdge(DeliveryDroneRobot r, RobotController rc) {
-        //TODO: add edge detection
-        MapLocation ml = position.add(bugDirection.rotateLeft());
+    public static boolean detectEdge(DeliveryDroneRobot r) {
+        // TODO: add edge detection
+        MapLocation ml;
         if (side == BugSide.LEFT) {
             ml = position.add(bugDirection.rotateLeft());
         } else {
             ml = position.add(bugDirection.rotateRight());
         }
-        return (ml.x < 0 || ml.x >= r.mapWidth || ml.y < 0 || ml.y >= r.mapHeight);
+        return ml.x < 0 || ml.x >= r.mapWidth || ml.y < 0 || ml.y >= r.mapHeight;
     }
 
     public static boolean tryDirect(RobotController rc, DeliveryDroneRobot r) throws GameActionException {
@@ -150,7 +152,6 @@ public class DroneNav {
         position = r.location;
 
         if (target != null) {
-
             int dsq = position.distanceSquaredTo(target);
             if (canMove(rc, r, d)) {
                 rc.move(d);
@@ -178,7 +179,6 @@ public class DroneNav {
                 return true;
             }
 
-
             return false;
         }
         if (canMove(rc, r, d)) {
@@ -195,7 +195,6 @@ public class DroneNav {
             return true;
         }
 
-
         return false;
     }
 
@@ -206,5 +205,4 @@ public class DroneNav {
     enum BugSide {
         LEFT, RIGHT
     }
-
 }

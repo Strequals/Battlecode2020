@@ -57,7 +57,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
     @Override
     public void run() throws GameActionException {
-        DroneNav.beginNav(rc, this, enemyHqScouting.getLocation(hqLocation, mapWidth, mapHeight));
+        DroneNav.beginNav(this, enemyHqScouting.getLocation(hqLocation, mapWidth, mapHeight));
 
         // Process nearby robots (may have to move this into the if statements below)
         RobotInfo[] ri = nearbyRobots;
@@ -272,13 +272,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
                 }
             } else {
                 if (DroneNav.target == null || !DroneNav.target.equals(minerToAssist.location)) {
-                    DroneNav.beginNav(rc, this, minerToAssist.location);
+                    DroneNav.beginNav(this, minerToAssist.location);
                 }
                 DroneNav.nav(rc, this);
             }
         } else {
             if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
-                DroneNav.beginNav(rc, this, hqLocation);
+                DroneNav.beginNav(this, hqLocation);
             }
         }
     }
@@ -297,7 +297,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
             if (nearestSafe == null) {
                 if (enemyHqLocation != null) {
                     if (DroneNav.target == null || !DroneNav.target.equals(enemyHqLocation)) {
-                        DroneNav.beginNav(rc, this, enemyHqLocation);
+                        DroneNav.beginNav(this, enemyHqLocation);
                     }
                     DroneNav.nav(rc, this);
                 } else {
@@ -310,7 +310,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
                     }
                 } else {
                     if (DroneNav.target == null || !DroneNav.target.equals(nearestSafe)) {
-                        DroneNav.beginNav(rc, this, nearestSafe);
+                        DroneNav.beginNav(this, nearestSafe);
                     }
                     DroneNav.nav(rc, this);
                 }
@@ -325,14 +325,14 @@ public strictfp class DeliveryDroneRobot extends Robot {
                     }
                 } else {
                     if (DroneNav.target == null || !DroneNav.target.equals(targetLocationf)) {
-                        DroneNav.beginNav(rc, this, targetLocationf);
+                        DroneNav.beginNav(this, targetLocationf);
                     }
                     DroneNav.nav(rc, this);
                 }
             } else {
                 if (enemyHqLocation != null) {
                     if (DroneNav.target == null || !DroneNav.target.equals(enemyHqLocation)) {
-                        DroneNav.beginNav(rc, this, enemyHqLocation);
+                        DroneNav.beginNav(this, enemyHqLocation);
                     }
                     DroneNav.nav(rc, this);
                 } else {
@@ -407,11 +407,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
         if (rc.isCurrentlyHoldingUnit()) {
             if (nearestSafe == null) {
                 if (scanForSafe()) {
-                    DroneNav.beginNav(rc, this, nearestSafe);
+                    DroneNav.beginNav(this, nearestSafe);
                     DroneNav.nav(rc, this);
                 } else {
                     if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
-                        DroneNav.beginNav(rc, this, hqLocation);
+                        DroneNav.beginNav(this, hqLocation);
                     }
                     DroneNav.nav(rc, this);
                 }
@@ -422,7 +422,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
                 }
 
                 if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
-                    DroneNav.beginNav(rc, this, hqLocation);
+                    DroneNav.beginNav(this, hqLocation);
                 }
 
                 DroneNav.nav(rc, this);
@@ -435,13 +435,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
                 }
             } else {
                 if (DroneNav.target == null || !DroneNav.target.equals(minerToAssist.location)) {
-                    DroneNav.beginNav(rc, this, minerToAssist.location);
+                    DroneNav.beginNav(this, minerToAssist.location);
                 }
                 DroneNav.nav(rc, this);
             }
         } else {
             if (DroneNav.target == null || !DroneNav.target.equals(minerAssistLocation)) {
-                DroneNav.beginNav(rc, this, minerAssistLocation);
+                DroneNav.beginNav(this, minerAssistLocation);
             }
         }
     }
@@ -486,7 +486,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 //                rc.setIndicatorLine(location, nearestWater, 0, 100, 200);
                 if (tryDrown()) return true;
                 if (DroneNav.target == null || !DroneNav.target.equals(nearestWater)) {
-                    DroneNav.beginNav(rc, this, nearestWater);
+                    DroneNav.beginNav(this, nearestWater);
                 }
                 System.out.println("Nav water:" + nearestWater);
                 DroneNav.nav(rc, this);
@@ -506,14 +506,14 @@ public strictfp class DeliveryDroneRobot extends Robot {
                     }
                 } else {
                     if (DroneNav.target == null || !DroneNav.target.equals(targetLocation)) {
-                        DroneNav.beginNav(rc, this, targetLocation);
+                        DroneNav.beginNav(this, targetLocation);
                     }
                     DroneNav.nav(rc, this);
                     return true;
                 }
             } else if (targetLocation != null) {
                 if (DroneNav.target == null || !DroneNav.target.equals(targetLocation)) {
-                    DroneNav.beginNav(rc, this, targetLocation);
+                    DroneNav.beginNav(this, targetLocation);
                 }
                 DroneNav.nav(rc, this);
                 return true;
@@ -530,7 +530,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
         if (enemyHqLocation != null) {
             if (DroneNav.target == null || !DroneNav.target.equals(enemyHqLocation)) {
-                DroneNav.beginNav(rc, this, enemyHqLocation);
+                DroneNav.beginNav(this, enemyHqLocation);
             }
             DroneNav.nav(rc, this);
             return;
@@ -554,7 +554,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
             moveScout(rc);
         } else {
             if (DroneNav.target == null || !DroneNav.target.equals(hqLocation)) {
-                DroneNav.beginNav(rc, this, hqLocation);
+                DroneNav.beginNav(this, hqLocation);
             }
             DroneNav.nav(rc, this);
         }
@@ -638,7 +638,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
                     case X_FLIP:
                         // Checked our first position
                         enemyHqScouting = EnemyHqPossiblePosition.ROTATION;
-                        DroneNav.beginNav(rc, this, enemyHqScouting.getLocation(hqLocation, mapWidth, mapHeight));
+                        DroneNav.beginNav(this, enemyHqScouting.getLocation(hqLocation, mapWidth, mapHeight));
                         break;
                     case ROTATION:
                         // Checked first and second position, so must be third
