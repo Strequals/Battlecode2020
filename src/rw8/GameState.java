@@ -1,12 +1,13 @@
 package rw8;
 
-import battlecode.common.*;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotInfo;
 
 public class GameState {
-	
-	RobotInfo[] nearbyRobots;
-	int round;
-	MapLocation location;
-	int senseRadiusSq;
+
+    RobotInfo[] nearbyRobots;
+    int round;
+    MapLocation location;
+    int senseRadiusSq;
 
 }

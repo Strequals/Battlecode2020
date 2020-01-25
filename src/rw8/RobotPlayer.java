@@ -1,6 +1,7 @@
 package rw8;
 
-import battlecode.common.*;
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
 
 public strictfp class RobotPlayer {
 

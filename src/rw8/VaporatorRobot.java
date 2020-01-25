@@ -5,14 +5,16 @@ import battlecode.common.RobotController;
 
 public strictfp class VaporatorRobot extends Robot {
 
-	public VaporatorRobot(RobotController rc) throws GameActionException {
-		super(rc);
-	}
+    public VaporatorRobot(RobotController rc) throws GameActionException {
+        super(rc);
+    }
 
-	@Override
-	public void run() throws GameActionException {}
+    @Override
+    public void run() throws GameActionException {
+    }
 
-	@Override
-	public void processMessage(Communications.Message m, int x, int y) {}
+    @Override
+    public void processMessage(Communications.Message m, int x, int y) {
+    }
 
 }
