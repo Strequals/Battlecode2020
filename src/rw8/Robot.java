@@ -54,7 +54,7 @@ public abstract strictfp class Robot {
 
     public abstract void run() throws GameActionException;
 
-    public abstract void processMessage(Communications.Message m, MapLocation messageLocation);
+    public abstract void processMessage(Communications.Message m, MapLocation location);
 
     public void loop() {
         while (true) {
@@ -98,15 +98,15 @@ public abstract strictfp class Robot {
     //	public boolean pathTile(MapLocation ml) {
 //		return (ml.x%3 != hqX3) || (ml.y%3 != hqY3) && (ml.distanceSquaredTo(hqLocation) != 4);
 //	}
-//	
+//
 //	public boolean pitTile(MapLocation ml) {
 //		return ((ml.x%3 == hqX3) && (ml.y%3 == hqY3)) || (ml.distanceSquaredTo(hqLocation) == 4);
 //	}
-//	
+//
 //	public boolean buildingTile(MapLocation ml) {
 //		return ((ml.x%3 != hqX3) && (ml.y%3 != hqY3)) && (ml.distanceSquaredTo(hqLocation) != 4);
 //	}
-//	
+//
 //	public boolean initialBuildingTile(MapLocation ml) {
 //		return !pitTile(ml) && Utility.chebyshev(ml, hqLocation) == 3;
 //	}
