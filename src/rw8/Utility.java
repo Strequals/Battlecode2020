@@ -16,6 +16,9 @@ public strictfp class Utility {
 	static final int MAX_NEARBY_TERRAFORMERS = 5;//Don't communicate location if there are 5 or more terraformers nearby
 
 	static final int TERRAFORM_HOLES_EVERY = 2;
+
+	// From DeliveryDroneRobot. Should better integrate here.
+	static final int[] MOVE_CHANCE_BREAKPOINTS = new int[] { 65, 80, 87, 94, 97, 100 };
 	
 	public static int chebyshev(MapLocation a, MapLocation b) {
 		int x = a.x-b.x;
