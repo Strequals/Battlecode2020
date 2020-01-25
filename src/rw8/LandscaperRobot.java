@@ -742,11 +742,10 @@ public strictfp class LandscaperRobot extends Robot {
                 enemyHqLocation = messageLocation;
                 break;
             case TERRAFORM_LOCATION:
-                MapLocation ml15 = messageLocation;
-                if (backupFill == null || heuristic(ml15) + Utility.BACKUP_THRESHOLD < heuristic(backupFill)) {
-                    backupFill = ml15;
+                if (backupFill == null || heuristic(messageLocation) + Utility.BACKUP_THRESHOLD < heuristic(backupFill)) {
+                    backupFill = messageLocation;
                 }
-                if (Utility.chebyshev(ml15, messageLocation) <= 4) {
+                if (Utility.chebyshev(messageLocation, messageLocation) <= 4) {
                     communicationDelay += 20;
                 }
 //                System.out.println("recieved a fill location");
