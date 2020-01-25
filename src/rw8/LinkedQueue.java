@@ -1,15 +1,14 @@
 package rw8;
 
 public class LinkedQueue<T> {
-    LinkedElement<T> first;
-    LinkedElement<T> last;
+    private LinkedElement<T> first;
+    private LinkedElement<T> last;
 
     public LinkedQueue() {
-
     }
 
     public void add(T value) {
-        LinkedElement<T> n = new LinkedElement<T>(value);
+        LinkedElement<T> n = new LinkedElement<>(value);
         if (last == null) {
             first = n;
             last = n;
@@ -39,7 +38,7 @@ class LinkedElement<T> {
     T value;
     LinkedElement<T> next;
 
-    public LinkedElement(T value) {
+    LinkedElement(T value) {
         this.value = value;
     }
 }
