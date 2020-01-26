@@ -13,12 +13,14 @@ public strictfp class DesignSchoolRobot extends Robot {
 	private boolean rushDetected;
 	private boolean fcBuilt;
 	private boolean isAlliedDrone;
+	private int cooldown;
 
 	private DesignSchoolState designSchoolState = DesignSchoolState.TERRAFORMING;
 	
 	static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
 	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 550;
 	static final int MIN_TERRAFORMER_COUNT = 3;
+	static final int ROUND_COOLDOWN_FACTOR = 50;
 	
 	static final int WEIGHT = 200; //need 150 extra soup per nearby landscaper to build
 	static final int VAPORATOR_WEIGHT = 5; //need 150 less soup per nearby vaporator to build
@@ -68,7 +70,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 					hqLocation = r.getLocation();
 					break;
 				case LANDSCAPER:
-					if (Utility.chebyshev(r.location, hqLocation) != 1) nearbyAlliedLandscapers++;
+					if (Utility.chebyshev(r.location, hqLocation) <=2) nearbyAlliedLandscapers++;
 					break;
 				case REFINERY:
 					isRefinery = true;
@@ -135,6 +137,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 		} else if (numDefenders == 0 && designSchoolState == DesignSchoolState.BUILDING_TURTLES) {
 			designSchoolState = DesignSchoolState.TERRAFORMING;
 		}
+		if (cooldown>0) cooldown--;
 		
 		if (numDefenders > 0) {
 			
@@ -162,13 +165,14 @@ public strictfp class DesignSchoolRobot extends Robot {
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, left)) {
 					rc.buildRobot(RobotType.LANDSCAPER, left);
 					numDefenders--;
-					
+					cooldown+=round/ROUND_COOLDOWN_FACTOR;
 					
 					return;
 				}
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, right)) {
 					rc.buildRobot(RobotType.LANDSCAPER, right);
 					numDefenders--;
+					cooldown+=round/ROUND_COOLDOWN_FACTOR;
 					
 					
 					return;
@@ -179,6 +183,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 
 		}
 		
+		if (cooldown>0) return;
+		
 		if (soup >= MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER + WEIGHT * nearbyAlliedLandscapers - VAPORATOR_WEIGHT * nearbyAlliedVaporators) {
 			Direction[] dirs = Utility.directions;
 			Direction d;
@@ -187,6 +193,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 				d = dirs[i];
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, d)) {
 					rc.buildRobot(RobotType.LANDSCAPER, d);
+					cooldown+=round/ROUND_COOLDOWN_FACTOR;
 					return;
 				}
 			}
@@ -310,7 +317,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 			MapLocation l = new MapLocation(x,y);
 			if (Utility.chebyshev(l, hqLocation) <= 4) {
 				System.out.println("queueing a defender");
-				if (numDefenders == 0 && soup > RobotType.LANDSCAPER.cost*(nearbyAlliedLandscapers+3)) numDefenders++;
+				if (numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) numDefenders++;
 			}
 		}
 
