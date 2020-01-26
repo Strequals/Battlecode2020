@@ -244,8 +244,7 @@ public strictfp class LandscaperRobot extends Robot {
 		if (turnsNavedHq >= 50) {
 			state = LandscaperState.TERRAFORMING;
 		}
-
-		if (targetBuildingLocation == null && !rushDetected) {
+		else if (targetBuildingLocation == null && !rushDetected) {
 			state = LandscaperState.TERRAFORMING;
 		}
 
