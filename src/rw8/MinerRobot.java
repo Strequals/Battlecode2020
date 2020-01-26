@@ -1129,7 +1129,7 @@ public strictfp class MinerRobot extends Robot {
 
 		if (minerState != MinerState.MOVE_MATRIX) {
 			//Build Refinery
-			System.out.println("IRN:"+isRefineryNearby+", nearestRefinery:"+nearestRefinery+", nearestSoup:"+nearestSoup);
+			//System.out.println("IRN:"+isRefineryNearby+", nearestRefinery:"+nearestRefinery+", nearestSoup:"+nearestSoup);
 			if (!isRefineryNearby && soup > RobotType.REFINERY.cost) {// && (round > CLOSE_TURTLE_END || !hqAvailable)
 				if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
 					Direction[] dirs = Utility.directions;
@@ -1150,7 +1150,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 
 			if (canBuild) {
-				if (location.distanceSquaredTo(enemyHqLocation) <= ENEMY_HQ_RANGE) {
+				if (enemyHqLocation != null && location.distanceSquaredTo(enemyHqLocation) <= ENEMY_HQ_RANGE) {
 					//Build Netgun
 					if (soup > RobotType.NET_GUN.cost && enemyDroneSpotted && hqDist >= 2) {
 						Direction[] dirs = Utility.directions;
