@@ -23,6 +23,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DESIGN_SCHOOL_SEEN_TURNS = 50;
 	public static final int DESIGN_SCHOOL_WEIGHT = 550;
 	public static final int FULFILLMENT_CENTER_WEIGHT = 570;
+	public static final int ENEMY_HQ_RANGE = 64;
 
 	public MapLocation soupMine;
 	public boolean navigatingReturn;
@@ -1149,6 +1150,27 @@ public strictfp class MinerRobot extends Robot {
 			}
 
 			if (canBuild) {
+				if (location.distanceSquaredTo(enemyHqLocation) <= ENEMY_HQ_RANGE) {
+					//Build Netgun
+					if (soup > RobotType.NET_GUN.cost && enemyDroneSpotted && hqDist >= 2) {
+						Direction[] dirs = Utility.directions;
+						Direction d;
+						ml = null;
+						for (int i = 8; i-->0;) {
+							d = dirs[i];
+							ml = location.add(d);
+							
+							if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
+								if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
+									if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
+									rc.buildRobot(RobotType.NET_GUN, d);
+									return true;
+								}
+							}
+						}
+					}
+					return false;
+				}
 				//Build Design School
 				if (designSchoolBuildCooldown > 0)designSchoolBuildCooldown--;
 				if (dsBuilt) turnsSinceDesignSchoolSeen = 0;
@@ -1204,25 +1226,6 @@ public strictfp class MinerRobot extends Robot {
 							if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
 								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
 								rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
-								return true;
-							}
-						}
-					}
-				}
-
-				//Build Netgun
-				if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt && hqDist >= 2) {
-					Direction[] dirs = Utility.directions;
-					Direction d;
-					ml = null;
-					for (int i = 8; i-->0;) {
-						d = dirs[i];
-						ml = location.add(d);
-						
-						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
-							if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
-								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
-								rc.buildRobot(RobotType.NET_GUN, d);
 								return true;
 							}
 						}

@@ -13,7 +13,7 @@ public strictfp class Utility {
 	static final int TERRAFORM_RANGE_SQ = 8;
 	static final int MAX_HEIGHT_THRESHOLD = 8; //don't try to build up to unreachable heights
 	static final int BACKUP_THRESHOLD = 8;
-	static final int MAX_NEARBY_TERRAFORMERS = 5;//Don't communicate location if there are 5 or more terraformers nearby
+	static final int MAX_NEARBY_TERRAFORMERS = 8;//Don't communicate location if there are 5 or more terraformers nearby
 
 	static final int TERRAFORM_HOLES_EVERY = 2;
 	
