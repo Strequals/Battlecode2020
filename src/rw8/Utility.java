@@ -10,7 +10,7 @@ public strictfp class Utility {
 	static final int TERRAFORM_THRESHOLD = 100; //If change in elevation is greater, do not terraform this tile
 	static final int MAX_TERRAFORM_RANGE = 2; //Chebyshev distance to limit
 //	static final int TERRAFORM_RANGE_SQ = 8; //2x^2
-	static final int TERRAFORM_RANGE_SQ = 6;
+	static final int TERRAFORM_RANGE_SQ = 8;
 	static final int MAX_HEIGHT_THRESHOLD = 8; //don't try to build up to unreachable heights
 	static final int BACKUP_THRESHOLD = 8;
 	static final int MAX_NEARBY_TERRAFORMERS = 5;//Don't communicate location if there are 5 or more terraformers nearby

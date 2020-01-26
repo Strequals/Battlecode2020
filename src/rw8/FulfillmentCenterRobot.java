@@ -21,12 +21,14 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 	public int nearbyVaporators;
 	public boolean isFreeDrone;
 	public boolean rushDetected = false;
+	public int rushRound;
 	
 	public static final int WEIGHT = 100;
 	public static final int BASE_WEIGHT = 600;
 	public static final int LS_WEIGHT = 20;
 	public static final int VAPORATOR_WEIGHT = 10;
 	public static final int DIST_HQ = 64; // emergency drone range
+	public static final int END_RUSH_TURNS = 20;
 
 	public FulfillmentCenterRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -50,6 +52,7 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 			}
 		}
 		isFreeDrone = false;
+		if (rushDetected && round - rushRound > END_RUSH_TURNS) rushDetected = false;
 		
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
@@ -114,7 +117,10 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 		if (!rc.isReady()) return;
 		
 		System.out.println("RD:"+rushDetected+",IFD:"+isFreeDrone);
-		if (soup > RobotType.DELIVERY_DRONE.cost && (((enemies/2>friendlyDrones || (rushDetected && !isFreeDrone)) && location.distanceSquaredTo(hqLocation) < DIST_HQ) || makeOne || (round < TURTLE_END && soup > RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT - nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT))) {
+		if (soup > RobotType.DELIVERY_DRONE.cost && 
+				((enemies/2>friendlyDrones || (rushDetected && !isFreeDrone)) && location.distanceSquaredTo(hqLocation) < DIST_HQ)
+				|| makeOne
+				|| (round < TURTLE_END && soup > RobotType.DELIVERY_DRONE.cost + BASE_WEIGHT + friendlyDrones * WEIGHT - nearbyLandscapers * LS_WEIGHT - nearbyVaporators * VAPORATOR_WEIGHT)) {
 			Direction hqDirection = location.directionTo(hqLocation);
 			if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, hqDirection) && isSafe(location.add(hqDirection))) {
 				rc.buildRobot(RobotType.DELIVERY_DRONE, hqDirection);
@@ -204,7 +210,10 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 			System.out.println("Recieved HQ location: " + x + ", " + y);
 			break;
 		case 11:
-			if (location.distanceSquaredTo(hqLocation)<=2)rushDetected = true;
+			if (location.distanceSquaredTo(hqLocation)<=2) {
+				rushDetected = true;
+				rushRound = round;
+			}
 			break;
 		}
 

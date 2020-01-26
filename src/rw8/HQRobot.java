@@ -23,14 +23,14 @@ public strictfp class HQRobot extends Robot {
 	boolean rushDetected = false;
 
 	public static final int ROUND_3x3 = 400; //If 3x3 wall not completed by round 400, do not try 5x5
-	public static final int INITIAL_MINERS = 3;
 	public static final int MIN_ROUND_BFS = 200;
-	public int MAX_MINERS;
 	public int nearbyMiners;
+	public int minerCooldown;
 
 
 	public static final int MINER_WEIGHT = 70;
 	public static final int BASE_MINER = -140;
+	public static final int MINER_COOL = 20;
 
 	public boolean isDesignSchool;
 	public boolean isFulfillmentCenter;
@@ -38,6 +38,7 @@ public strictfp class HQRobot extends Robot {
 	public boolean isEnemyRushing;
 
 	public boolean minerRequested = false;
+	public int minMiners = 3;
 
 	public LinkedQueue<MapLocation> open;
 	public ArrayList<MapLocation> closed;
@@ -49,7 +50,6 @@ public strictfp class HQRobot extends Robot {
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		// TODO Auto-generated constructor stub
-		MAX_MINERS = INITIAL_MINERS;
 		numMiners = 0;
 		numLandscapers = 0;
 		designSchoolLocations = new ArrayList<MapLocation>();
@@ -84,13 +84,13 @@ public strictfp class HQRobot extends Robot {
 				case DESIGN_SCHOOL:
 					if (!isDesignSchool && r.location.isWithinDistanceSquared(location, 8)) {
 						isDesignSchool = true;
-						MAX_MINERS++;
+						minMiners++;
 					}
 					break;
 				case FULFILLMENT_CENTER:
 					if (!isFulfillmentCenter && r.location.isWithinDistanceSquared(location, 8)) {
 						isFulfillmentCenter = true;
-						MAX_MINERS++;
+						minMiners++;
 					}
 					break;
 				default:
@@ -162,15 +162,18 @@ public strictfp class HQRobot extends Robot {
 				Communications.queueMessage(rc, 2, 15, fillLoc.x, fillLoc.y);
 			}
 		}
-
-		if (soup > RobotType.MINER.cost && 
-				((minerRequested || numMiners < MAX_MINERS) && soup > Math.min(600, BASE_MINER + numMiners*MINER_WEIGHT))) {
+		
+		if (minerCooldown > 0) minerCooldown--;
+		if (soup > RobotType.MINER.cost && minerCooldown <= 0 &&
+				(((minerRequested || nearbyMiners == 0) && soup > BASE_MINER + MINER_WEIGHT * numMiners)
+						|| numMiners<minMiners)) {
 			//Try building miner
 			Direction[] dirs = Utility.directions;
 			for (int i = dirs.length; --i >= 0;) {
 				if (rc.canBuildRobot(RobotType.MINER, dirs[i])) {
 					rc.buildRobot(RobotType.MINER, dirs[i]);
 					numMiners++;
+					if (round > 40) minerCooldown+=Math.min(numMiners*MINER_COOL,50);
 				}
 			}
 		}

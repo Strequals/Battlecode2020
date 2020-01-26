@@ -51,7 +51,7 @@ public class GridNav {
 	}
 
 	public static boolean canMove(LandscaperRobot r, Direction d) throws GameActionException {
-		return r.canMove(d) && r.pathTile(r.location.add(d));
+		return r.canMove(d) && (r.location.isWithinDistanceSquared(r.hqLocation, 8) || r.pathTile(r.location.add(d)));
 	}
 
 	public static void startBug(LandscaperRobot r) throws GameActionException {

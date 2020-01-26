@@ -41,6 +41,7 @@ public strictfp class MinerRobot extends Robot {
 	private boolean builderVP = false;
 	private boolean hqAvailable = true;
 	private int numVaporators;
+	private int wallVaporators;
 	private MapLocation nearestNetgun;
 	private boolean isBuilder;
 	private boolean isRefineryNearby = false;
@@ -60,6 +61,7 @@ public strictfp class MinerRobot extends Robot {
 	public MapLocation nearestTerraformer;
 	private int maxWaitTurns = 10;
 	private boolean rushDetected = false;
+	public boolean isFreeHQSpot = true;
 
 	public static final int MOVE_TO_MATRIX_ROUND = 500; 
 	public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
@@ -72,7 +74,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DISTANCE_REFINERY_THRESHOLD = 400; // minimum distance apart for refineries
 	public static final int DISTANCE_SOUP_THRESHOLD = 25; //maximum distance from refinery to soup deposit upon creation
 
-	public static final int MAX_VAPORATOR_BUILD_ROUND = 1400;
+	public static final int MAX_VAPORATOR_BUILD_ROUND = 1200;
 	public static final int FC_DIST = 8;
 
 	enum MinerState {
@@ -113,6 +115,7 @@ public strictfp class MinerRobot extends Robot {
 
 		fcBuilt = false;
 		dsBuilt = false;
+		isRefineryNearby = false;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -167,6 +170,7 @@ public strictfp class MinerRobot extends Robot {
 					break;
 				case VAPORATOR:
 					numVaporators++;
+					if (r.location.isAdjacentTo(hqLocation)) wallVaporators++;
 					break;
 				default:
 					break;
@@ -246,7 +250,7 @@ public strictfp class MinerRobot extends Robot {
 		//int bytecode1 = Clock.getBytecodesLeft();
 		int totalSoup = 0;
 		int s;
-		MapLocation nearestSoup = null;
+		nearestSoup = null;
 		for (int x = Math.max(0, location.x - radius); x <= Math.min(mapWidth - 1, location.x + radius); x++) {
 			for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
 				dx = x - location.x;
@@ -270,11 +274,11 @@ public strictfp class MinerRobot extends Robot {
 		if (nearestSoup !=null && totalSoup / nearbyMiners > 100 && nearbyMiners < 4) {
 			if (soup>1 && soupCommunicateCooldown == 0) {
 				Communications.queueMessage(rc, 1, 2, nearestSoup.x, nearestSoup.y);
-				soupCommunicateCooldown += 20; //don't communicate soup location for another 20 turns
+				soupCommunicateCooldown += 35; //don't communicate soup location for another 20 turns
 			}
 		}
 
-		if (round >= TURTLE_ROUND && returnLoc == hqLocation && refineries.size() > 0) {
+		if (round >= MOVE_TO_MATRIX_ROUND && returnLoc == hqLocation) {
 			returnLoc = null;
 			navigatingReturn = false;
 		}
@@ -820,6 +824,50 @@ public strictfp class MinerRobot extends Robot {
 		}
 		Nav.nav(rc, this);
 	}
+	
+	public void tryBuildVP() throws GameActionException {
+		int hqDist = location.distanceSquaredTo(hqLocation);
+		if (hqDist <= 4) {
+			Direction d = location.directionTo(hqLocation);
+			if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
+				rc.buildRobot(RobotType.VAPORATOR, d);
+				return;
+			}
+			Direction right = d.rotateRight();
+			if (rc.canBuildRobot(RobotType.VAPORATOR, right)) {
+				rc.buildRobot(RobotType.VAPORATOR, right);
+				return;
+			}
+			Direction left = d.rotateLeft();
+			if (rc.canBuildRobot(RobotType.VAPORATOR, left)) {
+				rc.buildRobot(RobotType.VAPORATOR, left);
+				return;
+			}
+		} else if (hqDist <= 8) {
+			Direction d = location.directionTo(hqLocation);
+			if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
+				rc.buildRobot(RobotType.VAPORATOR, d);
+				return;
+			}
+			Direction right = d.rotateRight();
+			MapLocation rl = location.add(right);
+			if (rl.distanceSquaredTo(hqLocation) <= 2 && rc.canBuildRobot(RobotType.VAPORATOR, right)) {
+				rc.buildRobot(RobotType.VAPORATOR, right);
+				return;
+			}
+			Direction left = d.rotateLeft();
+			MapLocation ll = location.add(left);
+			if (ll.distanceSquaredTo(hqLocation) <= 2 && rc.canBuildRobot(RobotType.VAPORATOR, left)) {
+				rc.buildRobot(RobotType.VAPORATOR, left);
+				return;
+			}
+		}
+
+		if (Nav.target == null || !Nav.target.equals(hqLocation)) {
+			Nav.beginNav(rc, this, hqLocation);
+		}
+		Nav.nav(rc, this);
+	}
 
 	public void moveScout(RobotController rc) throws GameActionException {
 		if (lastDirection == null) {
@@ -857,7 +905,7 @@ public strictfp class MinerRobot extends Robot {
 	}
 
 	public boolean tryMove(RobotController rc, Direction d) throws GameActionException {
-		if (rc.canMove(d) && !rc.senseFlooding(location.add(d))) {
+		if (canMove(d)) {
 			rc.move(d);
 			lastDirection = d;
 			return true;
@@ -1028,6 +1076,9 @@ public strictfp class MinerRobot extends Robot {
 	@Override
 	public boolean canMove(Direction d) throws GameActionException {
 		MapLocation ml = rc.adjacentLocation(d);
+		if (robotElevation >= Utility.MAX_HEIGHT_THRESHOLD && pathTile(location)) {
+			return rc.canMove(d) && !rc.senseFlooding(ml) && pathTile(ml) && rc.senseElevation(ml) >= Utility.MAX_HEIGHT_THRESHOLD;
+		}
 		return rc.canMove(d) && !rc.senseFlooding(ml) && (minerState != MinerState.MOVE_MATRIX || pathTile(ml));
 	}
 
@@ -1041,9 +1092,31 @@ public strictfp class MinerRobot extends Robot {
 				System.out.println("TryDS");
 				tryBuildDS();
 				return true;
-			} else if (builderFC && builderDS) {
+			} else if (builderFC && builderDS && isFreeHQSpot && soup > RobotType.VAPORATOR.cost) {
 				//tryBuildVP();
 				//return true;
+				if (isFreeHQSpot) {
+					int numWalls = 0;
+					if (hqLocation.x == 0 || hqLocation.x == mapWidth - 1) {
+						numWalls += 1;
+					}
+					if (hqLocation.y == 0 || hqLocation.y == mapHeight - 1) {
+						numWalls += 1;
+					}
+					if (numWalls == 0) {
+						if (wallVaporators < 5) {
+							tryBuildVP();
+							return true;
+						}
+					}
+					if (numWalls == 1) {
+						if (wallVaporators < 2) {
+							tryBuildVP();
+							return true;
+						}
+					}
+					isFreeHQSpot = false;
+				}
 			}
 		}
 
@@ -1055,7 +1128,8 @@ public strictfp class MinerRobot extends Robot {
 
 		if (minerState != MinerState.MOVE_MATRIX) {
 			//Build Refinery
-			if (!isRefineryNearby && soup > RobotType.REFINERY.cost && (round > CLOSE_TURTLE_END || !hqAvailable)) {
+			System.out.println("IRN:"+isRefineryNearby+", nearestRefinery:"+nearestRefinery+", nearestSoup:"+nearestSoup);
+			if (!isRefineryNearby && soup > RobotType.REFINERY.cost) {// && (round > CLOSE_TURTLE_END || !hqAvailable)
 				if ((nearestRefinery == null || location.distanceSquaredTo(nearestRefinery) >= DISTANCE_REFINERY_THRESHOLD) && nearestSoup != null && location.distanceSquaredTo(nearestSoup) <= DISTANCE_SOUP_THRESHOLD) {
 					Direction[] dirs = Utility.directions;
 					Direction d;
@@ -1066,7 +1140,7 @@ public strictfp class MinerRobot extends Robot {
 						if (rc.canBuildRobot(RobotType.REFINERY, d) && Utility.chebyshev(refLoc, hqLocation) > 3) {
 							rc.buildRobot(RobotType.REFINERY, d);
 							MapLocation refineryLoc = location.add(d);
-							if (soup>5) Communications.queueMessage(rc, 5, 5, refineryLoc.x, refineryLoc.y);
+							if (soup>3) Communications.queueMessage(rc, 3, 5, refineryLoc.x, refineryLoc.y);
 							refineries.add(refineryLoc);
 							return true;
 						}
@@ -1086,8 +1160,10 @@ public strictfp class MinerRobot extends Robot {
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
+						
 						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 							if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
+								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
 								rc.buildRobot(RobotType.DESIGN_SCHOOL, d);
 								dsBuilt = true;
 								return true;
@@ -1104,8 +1180,10 @@ public strictfp class MinerRobot extends Robot {
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
+						
 						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 							if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
+								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
 								rc.buildRobot(RobotType.VAPORATOR, d);
 								return true;
 							}
@@ -1121,8 +1199,10 @@ public strictfp class MinerRobot extends Robot {
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
+						
 						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 							if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
+								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
 								rc.buildRobot(RobotType.FULFILLMENT_CENTER, d);
 								return true;
 							}
@@ -1138,8 +1218,10 @@ public strictfp class MinerRobot extends Robot {
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
+						
 						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 							if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
+								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
 								rc.buildRobot(RobotType.NET_GUN, d);
 								return true;
 							}
