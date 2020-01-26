@@ -163,13 +163,13 @@ public strictfp class HQRobot extends Robot {
 		
 		if (bfsCool > 0) bfsCool--;
 
-		if (round > MIN_ROUND_BFS && prevLandscapers > numLandscapers && bfsCool == 0) {
+		if (round > MIN_ROUND_BFS && (prevLandscapers > numLandscapers || bfsCool == 0)) {
 			MapLocation fillLoc = doBFS();
 			System.out.println("needs to fill:"+fillLoc);
 			if (fillLoc != null) {
-				Communications.queueMessage(rc, 2, 15, fillLoc.x, fillLoc.y);
+				Communications.queueMessage(rc, 1, 15, fillLoc.x, fillLoc.y);
 			}
-			bfsCool = 10;
+			bfsCool = 20;
 		}
 		
 		if (minerCooldown > 0) minerCooldown--;

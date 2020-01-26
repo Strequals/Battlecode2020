@@ -6,7 +6,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 	private MapLocation enemyHqLocation;
 
 	private int numDefenders = 0;
-
+	
+	
 	private int nearbyAlliedLandscapers = 0;
 	private int nearbyAlliedVaporators = 0;
 	private boolean isRefinery;
@@ -14,6 +15,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 	private boolean fcBuilt;
 	private boolean isAlliedDrone;
 	private int cooldown;
+	private MapLocation wallHoleLocation;
 
 	private DesignSchoolState designSchoolState = DesignSchoolState.TERRAFORMING;
 	
@@ -52,6 +54,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 		rushDetected = false;
 		fcBuilt = false;
 		isAlliedDrone = false;
+		
 		if (round == roundCreated) {
 			if (location.distanceSquaredTo(hqLocation) <= 2) {
 				numDefenders = MIN_TERRAFORMER_COUNT;
@@ -71,6 +74,11 @@ public strictfp class DesignSchoolRobot extends Robot {
 					break;
 				case LANDSCAPER:
 					if (Utility.chebyshev(r.location, hqLocation) <=2) nearbyAlliedLandscapers++;
+					if (wallHoleLocation != null) {
+						if (r.location.isAdjacentTo(wallHoleLocation)) {
+							wallHoleLocation = null;
+						}
+					}
 					break;
 				case REFINERY:
 					isRefinery = true;
@@ -138,6 +146,12 @@ public strictfp class DesignSchoolRobot extends Robot {
 			designSchoolState = DesignSchoolState.TERRAFORMING;
 		}
 		if (cooldown>0) cooldown--;
+		
+		System.out.println("cooldown:"+cooldown+", numDefenders:"+numDefenders+", nearbyAlliedLandscapers:"+nearbyAlliedLandscapers);
+		if (wallHoleLocation != null && numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) {
+			System.out.println("queueing a defender:"+wallHoleLocation);
+			numDefenders++;
+		}
 		
 		if (numDefenders > 0) {
 			
@@ -316,8 +330,10 @@ public strictfp class DesignSchoolRobot extends Robot {
 		case 15:
 			MapLocation l = new MapLocation(x,y);
 			if (Utility.chebyshev(l, hqLocation) <= 4) {
-				System.out.println("queueing a defender");
-				if (numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) numDefenders++;
+				
+				//System.out.println("queueing a defender");
+				wallHoleLocation = l;
+				//if (numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) numDefenders++;
 			}
 		}
 
