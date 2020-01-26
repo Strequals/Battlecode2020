@@ -262,7 +262,7 @@ public strictfp class LandscaperRobot extends Robot {
 // 			if ((netgunDistance > 5 && droneDist <= 3) || droneDist <= 1) {
 // 				//TODO: whatever goes here
 // 			} else 
-         if ((netgunDistance > 5 && droneDist <= 13) || droneDist <= 8) {
+         if ((netgunDistance > 5 && droneDist <= 8) || droneDist <= 2) {
 				terraformingState = TerraformingState.ESCAPE;
 			}
 		}
@@ -852,7 +852,8 @@ public strictfp class LandscaperRobot extends Robot {
 			                            dx = x - location.x;
 			                            dy = y - location.y;
 			                            rad = dx * dx + dy * dy;
-			                            if (rad > rSq) continue;
+			                            if (rad > rSq) 
+                                       continue;
 			                            ml = new MapLocation(x, y);
 			
 			                            csDist = Utility.chebyshev(ml, location);
@@ -861,14 +862,14 @@ public strictfp class LandscaperRobot extends Robot {
 			
 			                            dElev = (robotElevation) - elev;
 			                            if (dElev > TERRAFORM_THRESHOLD) continue;
-			                            rank = Utility.chebyshev(ml, hqLocation);
+			                            rank = Utility.chebyshev(ml, hqLocation) * 2;
 			                            // Don't create a huge bubble around HQ, just enough to keep floods out
 			                            rank = rank < 7 ? rank : 0;
 			                            if (rank == 1) continue;
 			                            //heuristic
 			                            priority = csDist + rank;
 			                            if (enemyHqLocation != null) {
-			                                priority += Utility.chebyshev(ml, enemyHqLocation);
+			                                priority += Utility.chebyshev(ml, enemyHqLocation) * 2;
 			                            }
 			                            if (dElev < 0) {
 			                                dElev = -dElev;
