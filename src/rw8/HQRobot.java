@@ -10,6 +10,7 @@ public strictfp class HQRobot extends Robot {
 	public int numMiners;
 	public boolean completedWall = false;
 	public int numLandscapers;
+	public int prevLandscapers;
 
 	public int wallBoundLower;
 	public int wallBoundUpper;
@@ -42,6 +43,7 @@ public strictfp class HQRobot extends Robot {
 
 	public LinkedQueue<MapLocation> open;
 	public ArrayList<MapLocation> closed;
+	public int bfsCool;
 
 	enum HQState {
 		NORMAL
@@ -52,7 +54,10 @@ public strictfp class HQRobot extends Robot {
 		// TODO Auto-generated constructor stub
 		numMiners = 0;
 		numLandscapers = 0;
+		bfsCool = 0;
 		designSchoolLocations = new ArrayList<MapLocation>();
+		open = new LinkedQueue<MapLocation>();
+		closed = new ArrayList<MapLocation>();
 	}
 
 	@Override
@@ -155,12 +160,16 @@ public strictfp class HQRobot extends Robot {
 		if (enemyHqLocation != null && round % 20 == 0) {
 			if (soup >= 1) Communications.queueMessage(rc, 1, 3, enemyHqLocation.x, enemyHqLocation.y);
 		}
+		
+		if (bfsCool > 0) bfsCool--;
 
-		if (round > MIN_ROUND_BFS && round % 20 == 0) {
+		if (round > MIN_ROUND_BFS && prevLandscapers > numLandscapers && bfsCool == 0) {
 			MapLocation fillLoc = doBFS();
+			System.out.println("needs to fill:"+fillLoc);
 			if (fillLoc != null) {
 				Communications.queueMessage(rc, 2, 15, fillLoc.x, fillLoc.y);
 			}
+			bfsCool = 10;
 		}
 		
 		if (minerCooldown > 0) minerCooldown--;
@@ -177,6 +186,7 @@ public strictfp class HQRobot extends Robot {
 				}
 			}
 		}
+		prevLandscapers = numLandscapers;
 
 
 
@@ -254,8 +264,9 @@ public strictfp class HQRobot extends Robot {
 		MapLocation adj;
 		while (open.hasNext()) {
 			ml = open.poll();
+			rc.setIndicatorDot(ml, 125, 250, 125);
 
-			if ((Utility.chebyshev(location, ml)>2 && rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
+			if ((Utility.chebyshev(location, ml)>3 && rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
 				return ml;
 			}
 
@@ -263,10 +274,11 @@ public strictfp class HQRobot extends Robot {
 				d = directions[i];
 				adj = ml.add(d);
 
-				if (!rc.onTheMap(adj) || !rc.canSenseLocation(adj) || pitTile(adj)) continue;
+				if (!rc.onTheMap(adj) || !rc.canSenseLocation(adj)) continue;
 				if (rc.senseElevation(adj) >= Utility.MAX_HEIGHT_THRESHOLD) continue;
 
 				if (!closed.contains(adj)) {
+					rc.setIndicatorDot(adj, 250, 100, 100);
 					open.add(adj);
 					closed.add(adj);
 				}

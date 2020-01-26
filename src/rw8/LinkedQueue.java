@@ -10,7 +10,7 @@ public class LinkedQueue<T> {
 	
 	public void add(T value) {
 		LinkedElement<T> n = new LinkedElement<T>(value);
-		if (last == null) {
+		if (first == null) {
 			first = n;
 			last = n;
 		} else {

@@ -1,5 +1,7 @@
 package rw8;
 
+import javax.crypto.spec.RC2ParameterSpec;
+
 import battlecode.common.*;
 
 public class GridNav {
@@ -51,7 +53,10 @@ public class GridNav {
 	}
 
 	public static boolean canMove(LandscaperRobot r, Direction d) throws GameActionException {
-		return r.canMove(d) && (r.location.isWithinDistanceSquared(r.hqLocation, 8) || r.pathTile(r.location.add(d)));
+		if (r.location.isWithinDistanceSquared(r.hqLocation, 8)) {
+			return r.canMove(d) && (r.hqFill == null || r.rc.senseElevation(r.location.add(d)) < Utility.MAX_HEIGHT_THRESHOLD);
+		}
+		else return r.canMove(d) && r.pathTile(r.location.add(d));
 	}
 
 	public static void startBug(LandscaperRobot r) throws GameActionException {

@@ -20,8 +20,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 550;
 	static final int MIN_TERRAFORMER_COUNT = 3;
 	
-	static final int WEIGHT = 150; //need 150 extra soup per nearby landscaper to build
-	static final int VAPORATOR_WEIGHT = 20; //need 150 less soup per nearby vaporator to build
+	static final int WEIGHT = 200; //need 150 extra soup per nearby landscaper to build
+	static final int VAPORATOR_WEIGHT = 5; //need 150 less soup per nearby vaporator to build
 	static final int BASE_TURTLE_WEIGHT = 450;
 	static final int TURTLE_WEIGHT = 15;
 	

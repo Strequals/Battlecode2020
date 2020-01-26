@@ -88,11 +88,19 @@ public strictfp class FulfillmentCenterRobot extends Robot {
 					//Call the drones
 					//Communications.sendMessage(rc);
 					enemies++;
+					if (location.distanceSquaredTo(hqLocation)<=2) {
+						rushDetected = true;
+						rushRound = round;
+					}
 					break;
 				case LANDSCAPER:
 					//Call the drones
 					//Communications.sendMessage(rc);
 					enemies++;
+					if (location.distanceSquaredTo(hqLocation)<=2) {
+						rushDetected = true;
+						rushRound = round;
+					}
 					break;
 				case DELIVERY_DRONE:
 					//pew pew pew

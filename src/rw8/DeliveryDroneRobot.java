@@ -525,7 +525,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			d = directions[i];
 			ml = location.add(d);
 			if (pathTile(ml)) {
-				if (rc.canDropUnit(d)) {
+				if (rc.canDropUnit(d) && !rc.senseFlooding(ml)) {
 					rc.dropUnit(d);
 					return true;
 				}

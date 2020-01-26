@@ -43,7 +43,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private int hqElevation;
 	private MapLocation nearestFillTile;
 	private MapLocation backupFill;
-	private MapLocation hqFill;
+	public MapLocation hqFill;
 	private MapLocation nearestNetgun;
 	//private int netgunDistance = 10000; needs to reset every loop
 	private RobotInfo nearestEDrone;
@@ -524,10 +524,6 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 
-		if (backupFill == null) {
-
-		}
-
 		// Move towards location
 		if (!ml.equals(GridNav.target)) {
 			GridNav.beginNav(this, ml);
@@ -616,20 +612,32 @@ public strictfp class LandscaperRobot extends Robot {
 		if (rc.senseFlooding(ml)) {
 			if (dirtCarrying > 0) {
 				rc.depositDirt(d);
+				return;
 			} else {
-				if (pitDirection != null) rc.digDirt(pitDirection);
+				if (pitDirection != null) {
+					rc.digDirt(pitDirection);
+					return;
+				}
 			}
 		} else if (elDistance > 0) {
 			if (dirtCarrying > 0) {
-				if (pitDirection != null) rc.depositDirt(pitDirection);
+				if (pitDirection != null) {
+					rc.depositDirt(pitDirection);
+					return;
+				}
 			} else {
 				rc.digDirt(d);
+				return;
 			}
 		} else if (elDistance < 0) {
 			if (dirtCarrying > 0) {
 				rc.depositDirt(d);
+				return;
 			} else {
-				if (pitDirection != null) rc.digDirt(pitDirection);
+				if (pitDirection != null) {
+					rc.digDirt(pitDirection);
+					return;
+				}
 			}
 		}
 	}
@@ -675,6 +683,36 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 			break;
 		case NORMAL:
+			if (nearestFillTile != null) {
+                // Check if still needs filling
+                if (rc.canSenseLocation(nearestFillTile)) {
+                	int elev = rc.senseElevation(nearestFillTile);
+                    if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
+                        nearestFillTile = null;
+                    } else {
+                        RobotInfo ri = rc.senseRobotAtLocation(nearestFillTile);
+                        if (ri != null && ri.team == team && ri.type.isBuilding()) {
+                            nearestFillTile = null;
+                        }
+                    }
+                }
+            }
+            
+            if (hqFill != null) {
+                // Check if still needs filling
+                if (rc.canSenseLocation(hqFill)) {
+                	int elev = rc.senseElevation(hqFill);
+                    if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
+                        hqFill = null;
+                    } else {
+                        RobotInfo ri = rc.senseRobotAtLocation(hqFill);
+                        if (ri != null && ri.team == team && ri.type.isBuilding()) {
+                            hqFill = null;
+                        }
+                    }
+                }
+            }
+			
 			// Move off of pit
 			if (pitTile(location)) {
 				Direction[] dirs = Utility.directions;
@@ -778,20 +816,9 @@ public strictfp class LandscaperRobot extends Robot {
 
 
 
-			                if (nearestFillTile != null) {
-			                    // Check if still needs filling
-			                    if (rc.canSenseLocation(nearestFillTile)) {
-			                    	int elev = rc.senseElevation(nearestFillTile);
-			                        if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
-			                            nearestFillTile = null;
-			                        } else {
-			                            RobotInfo ri = rc.senseRobotAtLocation(nearestFillTile);
-			                            if (ri != null && ri.team == team && ri.type.isBuilding()) {
-			                                nearestFillTile = null;
-			                            }
-			                        }
-			                    }
-			                }
+			                
+			                
+			                
 			
 			                if (backupFill != null && Utility.chebyshev(location, backupFill) <= 2) {
 			                    backupFill = null;
@@ -863,8 +890,8 @@ public strictfp class LandscaperRobot extends Robot {
 			                }
 			
 			                if (nearestFillTile != null) {
-			                    moveTerraform(nearestFillTile);
-			                    if (communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile)==1) {
+			                    boolean filled = moveTerraform(nearestFillTile);
+			                    if (filled && pitDirection != null && communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile)==1) {
 			                        if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
 			                            Communications.queueMessage(rc, 1, 15, nearestFillTile.x, nearestFillTile.y);
 			                            communicationDelay = 20*(nearbyTerraformers+1);
@@ -880,11 +907,13 @@ public strictfp class LandscaperRobot extends Robot {
 			                // Move towards terraform edge
 			                if (backupFill != null) {
 			                    moveTerraform(backupFill);
+			                    return;
 			                }
 			                
 			                //Move towards enemy HQ
 			                if (enemyHqLocation != null) {
 			                	moveTerraform(enemyHqLocation);
+			                	return;
 			                }
 			                break;
 		}
