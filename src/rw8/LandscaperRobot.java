@@ -187,6 +187,7 @@ public strictfp class LandscaperRobot extends Robot {
 						nearestEDrone = r;
 					}
 					break;
+               
 				case NET_GUN:
 				case FULFILLMENT_CENTER:
 				case VAPORATOR:
@@ -199,6 +200,19 @@ public strictfp class LandscaperRobot extends Robot {
 						terraformingState = TerraformingState.TARGET_ENEMY_BUILDING;
 						//}
 
+					}
+					break;
+				case HQ:
+					enemyHqLocation = r.location;
+					if (Utility.chebyshev(location, r.location) <= 1) {
+						return LandscaperState.ASSAULTING_HQ;
+					} else {
+						distance = Utility.chebyshev(r.location, location);
+						if (distance < targetBuildingDistance) {
+							targetBuildingDistance = distance;
+							targetBuildingLocation = r.location;
+							terraformingState = TerraformingState.TARGET_ENEMY_BUILDING;
+						}
 					}
 					break;
 				case DESIGN_SCHOOL:
@@ -224,19 +238,7 @@ public strictfp class LandscaperRobot extends Robot {
 					if (Utility.chebyshev(r.location, hqLocation)<=4) {
 						rushDetected = true;
 					}
-				case HQ:
-					enemyHqLocation = r.location;
-					if (Utility.chebyshev(location, r.location) <= 1) {
-						return LandscaperState.ASSAULTING_HQ;
-					} else {
-						distance = Utility.chebyshev(r.location, location);
-						if (distance < targetBuildingDistance) {
-							targetBuildingDistance = distance;
-							targetBuildingLocation = r.location;
-							terraformingState = TerraformingState.TARGET_ENEMY_BUILDING;
-						}
-					}
-					break;
+               break;
 				}
 			}
 		}
