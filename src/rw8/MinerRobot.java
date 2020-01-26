@@ -230,11 +230,11 @@ public strictfp class MinerRobot extends Robot {
 		//Calculate Random
 		random = (A*random+B)%256;
 
-		if(/*droneDetected && */netgunDistance > 5 && droneDist <=3) {  //not needed, since if no drones, default drone distance is 100
+		if(/*droneDetected && */netgunDistance > 5 && droneDist <=13) {  //not needed, since if no drones, default drone distance is 100
 			escape();
 			return;
 		}
-		else if(droneDist <= 1) {
+		else if(droneDist <= 8) {
 			escape();
 			return;
 		}
@@ -691,7 +691,7 @@ public strictfp class MinerRobot extends Robot {
 	}
 
    private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
-      System.out.println("Running...");
+      //System.out.println("Running...");
       if(nearestNetgun != null) {
          if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
             if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
