@@ -52,6 +52,8 @@ public strictfp class LandscaperRobot extends Robot {
 	private int nearbyTerraformers = 0;
 	private int communicationDelay;
 	private MapLocation diagonalTarget;
+   private MapLocation stuckLocation;
+   private int turnsStuck = 0;
 	
 	public static final int TERRAFORM_TOWARDS_ENEMY_ROUND = 550;
 
@@ -646,6 +648,13 @@ public strictfp class LandscaperRobot extends Robot {
 
 	private void doTerraforming() throws GameActionException {
 		//System.out.println("Terraforming state: " + terraformingState);
+      if(stuckLocation == null || stuckLocation != location) {
+         stuckLocation = location;
+      }
+      turnsStuck++;
+      if(turnsStuck > 100) {
+         rc.disintegrate();
+      }
 		int csDist;
 		switch (terraformingState) {
 		case HELP_MINER_UP:
@@ -763,7 +772,8 @@ public strictfp class LandscaperRobot extends Robot {
 					}
 				}
 			}
-
+         
+         
 //			if (backupFill != null && Utility.chebyshev(location, backupFill) <= 2) {
 //				backupFill = null;
 //			}
