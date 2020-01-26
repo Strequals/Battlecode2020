@@ -62,12 +62,7 @@ public strictfp class HQRobot extends Robot {
                     default:
                         break;
                 }
-            } else if (r.getTeam() == Team.NEUTRAL) {
-//				 It's a cow, yeet it from our base
-                if (round > 100) {
-                    Communications.queueMessage(Communications.Message.COW_NEAR_HQ, r.location);
-                }
-            } else {
+            } else if (r.getTeam() != Team.NEUTRAL) {
                 //Enemy Units
                 switch (r.getType()) {
                     case MINER:

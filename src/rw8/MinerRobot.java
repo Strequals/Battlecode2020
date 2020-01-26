@@ -125,12 +125,7 @@ public strictfp class MinerRobot extends Robot {
                     case VAPORATOR:
                         break;
                 }
-            } else if (r.getTeam() == Team.NEUTRAL) {
-                // Yeet the cow
-                if (round > 100) {
-                    Communications.queueMessage(Communications.Message.COW_NEAR_HQ, r.location);
-                }
-            } else {
+            } else if (r.getTeam() != Team.NEUTRAL) {
                 // Enemy Units
                 switch (r.getType()) {
                     case DELIVERY_DRONE:

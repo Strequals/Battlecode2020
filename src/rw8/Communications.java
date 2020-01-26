@@ -101,9 +101,7 @@ public class Communications {
         ENTER_ASSAULT_MODE(2),
         // TODO: Never sent
         ENTER_MINER_ASSIST_MODE(2),
-        TERRAFORM_LOCATION(2),
-        // TODO: Receive in drones
-        COW_NEAR_HQ(3);
+        TERRAFORM_LOCATION(2);
 
         final int COST;
 
