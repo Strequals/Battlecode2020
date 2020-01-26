@@ -119,7 +119,7 @@ public abstract strictfp class Robot {
 	}
 	
 	public boolean buildingTile(MapLocation ml) {
-		return ((ml.x%2 != hqXTerraform) && (ml.y%2 != hqYTerraform)) && !ml.isWithinDistanceSquared(hqLocation, 8);
+		return ((ml.x%2 != hqXTerraform) && (ml.y%2 != hqYTerraform)) && !ml.isWithinDistanceSquared(hqLocation, 2);
 
 		//return (ml.x % Utility.TERRAFORM_HOLES_EVERY != hqXTerraform) || (ml.y % Utility.TERRAFORM_HOLES_EVERY != hqYTerraform) && (ml.distanceSquaredTo(hqLocation) != 4);
 	}

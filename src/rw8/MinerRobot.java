@@ -1162,7 +1162,7 @@ public strictfp class MinerRobot extends Robot {
 							
 							if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 								if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
-									if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
+									if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD && !ml.isWithinDistanceSquared(hqLocation, 8)) continue;
 									rc.buildRobot(RobotType.NET_GUN, d);
 									return true;
 								}
