@@ -57,6 +57,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private static final int RUSH_RANGE = 12; //Chebyshev range to regard an enemy as a rusher
 	private static final int CRUNCH_RANGE = 8; //If within this distance when crunch signal detected, crunch
 	private static final int FINAL_CRUNCH_ROUND = 1550;
+	private static final int GIVE_UP_RANGE = 8; //gives up on pursuing a target if within this distance from the location it was last seen
 
 	private ArrayList<MapLocation> enemyNetguns;
 	private static final int ASSAULT_ROUND = 1300;
@@ -88,14 +89,34 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		// Process nearby robots (may have to move this into the if statements below)
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
-		targetRobot = null;
-		targetLocation = null;
-		targetFriendly = null;
-		targetLocationf = null;
-		friendlyDrones = 0;
+		
 		int targetDistance = 10000;
 		int allyDistance = 10000;
 		int distance;
+		
+		if (targetRobot != null) {
+			if (rc.canSenseRobot(targetRobot.ID)) {
+				r = rc.senseRobot(targetRobot.ID);
+				targetLocation = r.location;
+				targetDistance = Utility.chebyshev(location, targetLocation);
+			} else if (location.isWithinDistanceSquared(targetLocation, GIVE_UP_RANGE)) {
+				targetRobot = null;
+				targetLocation = null;
+			}
+		}
+		if (targetFriendly != null) {
+			if (rc.canSenseRobot(targetRobot.ID)) {
+				r = rc.senseRobot(targetRobot.ID);
+				targetLocationf = r.location;
+				allyDistance = Utility.chebyshev(location, targetLocationf);
+			} else if (location.isWithinDistanceSquared(targetLocation, GIVE_UP_RANGE)) {
+				targetFriendly = null;
+				targetLocationf = null;
+			}
+		}
+		
+		friendlyDrones = 0;
+		
 		//rushDetected = false;
 		areEnemies = false;
 
@@ -397,7 +418,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
          }
          else*/
 
-
+			if (tryDropAssaulter()) return;
 			scanForSafe();
 			if(nearestSafe == null) {
 
@@ -473,9 +494,30 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		}
 	}
 
-	private boolean scanForSafe() throws GameActionException {
-		//scan for a safe spot next to enemy hq
+	private void scanForSafe() throws GameActionException {
+		if (enemyHqLocation == null) return;
+		Direction[] dirs = Utility.directions;
+		Direction d;
 		MapLocation ml;
+		MapLocation nearestSafe = null;
+		int nearestCSD = 1000;
+		int csd;
+		for (int i = 8; i-->0;) {
+			d = dirs[i];
+			ml = enemyHqLocation.add(d);
+			if (!rc.canSenseLocation(ml)) continue;
+			if (rc.senseRobotAtLocation(ml) != null) continue;
+			csd = Utility.chebyshev(location, ml);
+			if (csd < nearestCSD) {
+				nearestCSD = csd;
+				nearestSafe = ml;
+			}
+		}
+		
+		this.nearestSafe = nearestSafe;
+		
+		//scan for a safe spot next to enemy hq
+		/*MapLocation ml;
 		int rSq = senseRadiusSq;
 		int radius = (int)(Math.sqrt(rSq));
 		int dx;
@@ -488,9 +530,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			for (int y = Math.max(0, location.y - radius); y <= Math.min(mapHeight - 1, location.y + radius); y++) {
 				dx = x - location.x;
 				dy = y - location.y;
-				if (dx == 0 && dy == 0) continue;
 				rad = dx * dx + dy * dy;
-				if (rad > rSq) continue;
+				if (rad > rSq || rad <= 2) continue;
 				ml = new MapLocation(x, y);
 				csDist = Utility.chebyshev(location, ml);
 				if (csDist < rad0 && enemyHqLocation != null && Utility.chebyshev(ml, enemyHqLocation) == 1) {
@@ -502,7 +543,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				}
 			}
 		}
-		return toRet;
+		return toRet;*/
 	}
 
 	private boolean tryDrown() throws GameActionException {
@@ -533,6 +574,24 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			ml = location.add(d);
 			if (pathTile(ml)) {
 				if (rc.canDropUnit(d) && !rc.senseFlooding(ml)) {
+					rc.dropUnit(d);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	private boolean tryDropAssaulter() throws GameActionException {
+		if (enemyHqLocation == null) return false;
+		Direction[] directions = Utility.directions;
+		Direction d;
+		MapLocation ml;
+		for (int i = 8; i-->0;) {
+			d = directions[i];
+			ml = location.add(d);
+			if (enemyHqLocation.isAdjacentTo(ml)) {
+				if (rc.canDropUnit(d)) {
 					rc.dropUnit(d);
 					return true;
 				}
