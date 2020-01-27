@@ -56,6 +56,7 @@ public strictfp class LandscaperRobot extends Robot {
    private int turnsStuck = 0;
 	
 	public static final int TERRAFORM_TOWARDS_ENEMY_ROUND = 550;
+	public static final int FINAL_HQ_DISTANCE = 64;
 
 
 	LandscaperRobot(RobotController rc) throws GameActionException {
@@ -932,10 +933,17 @@ public strictfp class LandscaperRobot extends Robot {
 			                }
 			                
 			                //Move towards enemy HQ
-			                if (enemyHqLocation != null) {
+			                if (enemyHqLocation != null && !location.isWithinDistanceSquared(enemyHqLocation, FINAL_HQ_DISTANCE)) {
 			                	moveTerraform(enemyHqLocation);
 			                	return;
 			                }
+			                
+			                //pick up dirt so if an assaulter carries to enemy HQ, can begin placing immediately
+			                if (dirtCarrying < RobotType.LANDSCAPER.dirtLimit) {
+			                	if (pitDirection != null) rc.digDirt(pitDirection);
+			                	return;
+			                }
+			                moveTerraform(hqLocation);
 			                break;
 		}
 	}

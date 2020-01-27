@@ -41,6 +41,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private static final int RUSH_SAFE_TURNS = 50;
 	private static final int DEFEND_RANGE = 15;
 	public static final int DRONE_COUNT_RUSH = 16;
+	private static final int MIN_TRANSPORT_ROUND = 250;
 	private boolean scouting = true;
 	private boolean rushDetected = true;
 	private int enemyLandscapers;
@@ -105,11 +106,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			}
 		}
 		if (targetFriendly != null) {
-			if (rc.canSenseRobot(targetRobot.ID)) {
-				r = rc.senseRobot(targetRobot.ID);
+			if (rc.canSenseRobot(targetFriendly.ID)) {
+				r = rc.senseRobot(targetFriendly.ID);
 				targetLocationf = r.location;
 				allyDistance = Utility.chebyshev(location, targetLocationf);
-			} else if (location.isWithinDistanceSquared(targetLocation, GIVE_UP_RANGE)) {
+			} else if (location.isWithinDistanceSquared(targetLocationf, GIVE_UP_RANGE)) {
 				targetFriendly = null;
 				targetLocationf = null;
 			}
@@ -831,7 +832,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		if (rushLocation != null && targetLocation == null) targetLocation = rushLocation;
 
 		if (doDropEnemy()) return;
-		if (doTransport()) return;
+		if (round > MIN_TRANSPORT_ROUND && doTransport()) return;
 
 
 		if (Utility.chebyshev(location, hqLocation) < 5) {
