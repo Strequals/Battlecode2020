@@ -53,10 +53,12 @@ public class GridNav {
 	}
 
 	public static boolean canMove(LandscaperRobot r, Direction d) throws GameActionException {
-		if (r.location.isWithinDistanceSquared(r.hqLocation, 8)) {
-			return r.canMove(d) && (r.hqFill == null || r.rc.senseElevation(r.location.add(d)) < Utility.MAX_HEIGHT_THRESHOLD);
-		}
-		else return r.canMove(d) && r.pathTile(r.location.add(d));
+		return r.canMove(d);
+		
+//		if (r.location.isWithinDistanceSquared(r.hqLocation, 8)) {
+//			return r.canMove(d) && (r.hqFill == null || r.rc.senseElevation(r.location.add(d)) < Utility.MAX_HEIGHT_THRESHOLD);
+//		}
+//		else return r.canMove(d) && r.pathTile(r.location.add(d));
 	}
 
 	public static void startBug(LandscaperRobot r) throws GameActionException {

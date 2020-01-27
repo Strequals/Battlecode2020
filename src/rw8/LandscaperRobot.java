@@ -1044,7 +1044,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 	@Override
 	public boolean canMove(Direction d) throws GameActionException {
-
+		MapLocation ml = location.add(d);
 		ArrayList<MapLocation> eDrones = enemyDrones;
 		MapLocation eDroneLoc;
 		for (int i = eDrones.size(); i-->0;) {
@@ -1053,9 +1053,9 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 
 		if (location.isWithinDistanceSquared(hqLocation, 8)) {
-			return rc.canMove(d) && (hqFill == null || rc.senseElevation(location.add(d)) < Utility.MAX_HEIGHT_THRESHOLD);
+			return rc.canMove(d) && !rc.senseFlooding(ml) && (hqFill == null || rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD);
 		}
-		else return rc.canMove(d) && pathTile(location.add(d));
+		else return rc.canMove(d) && pathTile(location.add(d)) && !rc.senseFlooding(ml);
 
 
 
