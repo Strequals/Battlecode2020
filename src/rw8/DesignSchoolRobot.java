@@ -147,7 +147,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 		}
 		if (cooldown>0) cooldown--;
 		
-		System.out.println("cooldown:"+cooldown+", numDefenders:"+numDefenders+", nearbyAlliedLandscapers:"+nearbyAlliedLandscapers);
+		System.out.println("cooldown:"+cooldown+", numDefenders:"+numDefenders+", nearbyAlliedLandscapers:"+nearbyAlliedLandscapers+", wallHole:"+wallHoleLocation);
 		if (wallHoleLocation != null && numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) {
 			System.out.println("queueing a defender:"+wallHoleLocation);
 			numDefenders++;
@@ -327,11 +327,14 @@ public strictfp class DesignSchoolRobot extends Robot {
 			break;
 		case 11:
 			if (location.isAdjacentTo(hqLocation)) rushDetected = true;
+			break;
 		case 15:
 			MapLocation l = new MapLocation(x,y);
+			System.out.println("15:"+l+", csl" + Utility.chebyshev(l, hqLocation));
 			if (Utility.chebyshev(l, hqLocation) <= 4 && Utility.chebyshev(location, hqLocation) <= 2) {
 				
 				//System.out.println("queueing a defender");
+				System.out.println("Wall hole detected");
 				wallHoleLocation = l;
 				//if (numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) numDefenders++;
 			}

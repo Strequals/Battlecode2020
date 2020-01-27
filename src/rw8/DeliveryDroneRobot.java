@@ -978,7 +978,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			state = DroneState.MINER_ASSIST;           //maybe move miner towards hq if its stuck pathfinding?
 			break;
 		case 15:
-			MapLocation ml15 = new MapLocation(x,y);
+			//MapLocation ml15 = new MapLocation(x,y);
 			
 		}
 	}

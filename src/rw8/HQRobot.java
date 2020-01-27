@@ -42,7 +42,7 @@ public strictfp class HQRobot extends Robot {
 	public int minMiners = 3;
 
 	public LinkedQueue<MapLocation> open;
-	public ArrayList<MapLocation> closed;
+	public ArrayList<Integer> closed;
 	public int bfsCool;
 
 	enum HQState {
@@ -57,7 +57,7 @@ public strictfp class HQRobot extends Robot {
 		bfsCool = 0;
 		designSchoolLocations = new ArrayList<MapLocation>();
 		open = new LinkedQueue<MapLocation>();
-		closed = new ArrayList<MapLocation>();
+		closed = new ArrayList<Integer>();
 	}
 
 	@Override
@@ -161,17 +161,6 @@ public strictfp class HQRobot extends Robot {
 			if (soup >= 1) Communications.queueMessage(rc, 1, 3, enemyHqLocation.x, enemyHqLocation.y);
 		}
 		
-		if (bfsCool > 0) bfsCool--;
-
-		if (round > MIN_ROUND_BFS && (prevLandscapers > numLandscapers || bfsCool == 0)) {
-			MapLocation fillLoc = doBFS();
-			System.out.println("needs to fill:"+fillLoc);
-			if (fillLoc != null) {
-				Communications.queueMessage(rc, 1, 15, fillLoc.x, fillLoc.y);
-			}
-			bfsCool = 20;
-		}
-		
 		if (minerCooldown > 0) minerCooldown--;
 		if (soup > RobotType.MINER.cost && minerCooldown <= 0 &&
 				(((minerRequested || nearbyMiners == 0) && soup > BASE_MINER + MINER_WEIGHT * numMiners)
@@ -242,7 +231,18 @@ public strictfp class HQRobot extends Robot {
 		}
 
 		if (landscaperRequestCooldown > 0) landscaperRequestCooldown--;*/
+		
+		if (bfsCool > 0) bfsCool--;
 
+		if (round > MIN_ROUND_BFS && (prevLandscapers > numLandscapers || bfsCool == 0)) {
+			MapLocation fillLoc = doBFS();
+			if (fillLoc != null) {
+				Communications.calculateSecret(round);
+				round = rc.getRoundNum();
+				Communications.queueMessage(rc, 1, 15, fillLoc.x, fillLoc.y);
+			}
+			bfsCool = 20;
+		}
 
 
 
@@ -257,16 +257,17 @@ public strictfp class HQRobot extends Robot {
 		open.clear();
 		open.add(location);
 		closed.clear();
-		closed.add(location);
+		closed.add(location.x+(location.y<<6));
 		MapLocation ml;
 		Direction[] directions = Utility.directions;
 		Direction d;
 		MapLocation adj;
+		int v;
 		while (open.hasNext()) {
 			ml = open.poll();
+			System.out.println(Clock.getBytecodeNum());
 			rc.setIndicatorDot(ml, 125, 250, 125);
-
-			if ((Utility.chebyshev(location, ml)>3 && rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
+			if ((Utility.chebyshev(location, ml)>2 && rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
 				return ml;
 			}
 
@@ -274,13 +275,14 @@ public strictfp class HQRobot extends Robot {
 				d = directions[i];
 				adj = ml.add(d);
 
-				if (!rc.onTheMap(adj) || !rc.canSenseLocation(adj)) continue;
+				if (!rc.canSenseLocation(adj)) continue;
 				if (rc.senseElevation(adj) >= Utility.MAX_HEIGHT_THRESHOLD) continue;
-
-				if (!closed.contains(adj)) {
+				
+				v = adj.x+(adj.y << 6);
+				if (!closed.contains(v)) {
 					rc.setIndicatorDot(adj, 250, 100, 100);
 					open.add(adj);
-					closed.add(adj);
+					closed.add(v);
 				}
 			}
 		}
