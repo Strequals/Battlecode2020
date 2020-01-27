@@ -44,6 +44,7 @@ public strictfp class MinerRobot extends Robot {
 	private boolean hqAvailable = true;
 	private int numVaporators;
 	private int wallVaporators;
+	private int numNetguns;
 	private MapLocation nearestNetgun;
 	private boolean isBuilder;
 	private boolean isRefineryNearby = false;
@@ -70,6 +71,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
 	public static final int VAPORATOR_WEIGHT = 20; // need VAPORATOR_WEIGHT more soup to build a vaporator with every vaporator in sight
 	public static final int RUN_AWAY_DISTANCE = 3;
+	public static final int MAX_NETGUNS_EHQ = 3;
 	
 	public MinerState prevState; //Stores state when switching to move_matrix state
 
@@ -117,6 +119,7 @@ public strictfp class MinerRobot extends Robot {
 		int droneDist = 1000;
 		numVaporators = 0;
 		vaporatorsInWall = 0;
+		numNetguns = 0;
 		enemyDrones.clear();
 
 		fcBuilt = false;
@@ -148,6 +151,11 @@ public strictfp class MinerRobot extends Robot {
 					if (distance <= netgunDistance) {
 						nearestNetgun = r.location;
 						netgunDistance = distance;       //won't update if the nearest netgun isnt in visual range, but not a problem
+					}
+					if (enemyHqLocation != null) {
+						if (r.location.isWithinDistanceSquared(enemyHqLocation, ENEMY_HQ_RANGE)) {
+							numNetguns++;
+						}
 					}
 					break;
 				case LANDSCAPER:
@@ -1194,6 +1202,7 @@ public strictfp class MinerRobot extends Robot {
 
 			if (canBuild) {
 				if (enemyHqLocation != null && location.distanceSquaredTo(enemyHqLocation) <= ENEMY_HQ_RANGE) {
+					if (numNetguns > MAX_NETGUNS_EHQ) return false;
 					//Build Netgun
 					if (soup > RobotType.NET_GUN.cost && hqDist >= 2) {// && enemyDroneSpotted
 						Direction[] dirs = Utility.directions;
@@ -1212,7 +1221,7 @@ public strictfp class MinerRobot extends Robot {
 							}
 						}
 					}
-					return false;
+					
 				}
 				//Build Design School
 				if (designSchoolBuildCooldown > 0)designSchoolBuildCooldown--;

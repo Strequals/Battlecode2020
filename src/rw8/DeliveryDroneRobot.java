@@ -30,6 +30,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private MapLocation emptyWallLocation;
 	private MapLocation nearestPath;
 	private RobotInfo allyToAssist;
+	private int assaulterRushDelay = -1;
 
 	private EnemyHqPossiblePosition enemyHqScouting = EnemyHqPossiblePosition.X_FLIP;
 	private MapLocation enemyHqScoutingLocation;
@@ -43,6 +44,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	public static final int DRONE_COUNT_RUSH = 16;
 	public static final int DRONE_COUNT_ASSAULT = 16;
 	private static final int MIN_TRANSPORT_ROUND = 250;
+	private static final int ASSAULTER_DELAY = 2;
 	private boolean scouting = true;
 	private boolean rushDetected = true;
 	private int enemyLandscapers;
@@ -505,6 +507,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				}
 			}
 			
+		}
+		
+		if (assaulterRushDelay > 0) {
+			assaulterRushDelay--;
+		}
+		if (assaulterRushDelay == 0) {
+			rush = true;
 		}
 		
 	}
@@ -1044,7 +1053,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				enemyNetguns.add(enemyHqLocation);
 			}
 			if (Utility.chebyshev(enemyHqLocation, location) <= CRUNCH_RANGE) {
-				rush = true;
+				if (state == DroneState.ATTACKING) {
+					rush = true;
+				} else if (state == DroneState.ASSAULTING) {
+					assaulterRushDelay = ASSAULTER_DELAY;
+				}
 			}
 			break;
 		case 11:

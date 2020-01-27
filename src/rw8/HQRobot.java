@@ -27,7 +27,7 @@ public strictfp class HQRobot extends Robot {
 
 	public static final int ROUND_3x3 = 400; //If 3x3 wall not completed by round 400, do not try 5x5
 	public static final int MIN_ROUND_BFS = 200;
-	public static final int BYTECODE_BFS_END = 1000;
+	public static final int BYTECODE_BFS_END = 2500;
 	public int nearbyMiners;
 	public int minerCooldown;
 

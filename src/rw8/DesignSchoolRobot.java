@@ -16,7 +16,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 	private boolean isAlliedDrone;
 	private int cooldown;
 	private MapLocation wallHoleLocation;
-
+	private boolean terraformedToEnemyBase = false;
 	private DesignSchoolState designSchoolState = DesignSchoolState.TERRAFORMING;
 
 	static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
@@ -342,6 +342,14 @@ public strictfp class DesignSchoolRobot extends Robot {
 
 		case 16:
 			cooldown += 10;
+			break;
+		case 17:
+			if (terraformedToEnemyBase) {
+				cooldown += 10;
+			} else {
+				cooldown += 20;
+				terraformedToEnemyBase = true;
+			}
 			break;
 		}
 

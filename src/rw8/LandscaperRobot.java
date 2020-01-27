@@ -52,6 +52,7 @@ public strictfp class LandscaperRobot extends Robot {
 	//private int netgunDistance = 10000; needs to reset every loop
 	private RobotInfo nearestEDrone;
 	private boolean terraformedToEnemyHQ;
+	private boolean broadcastedTerraform = false;
 
 	private int turnsNavedHq;
 	private int nearbyTerraformers = 0;
@@ -680,9 +681,13 @@ public strictfp class LandscaperRobot extends Robot {
 			rc.disintegrate();
 		}
 		
-		if (enemyHqLocation != null && enemyHqLocation.isWithinDistanceSquared(enemyHqLocation, 35)) {
+		if (!terraformedToEnemyHQ && enemyHqLocation != null && enemyHqLocation.isWithinDistanceSquared(location, 35)) {
 			terraformedToEnemyHQ = true;
-			
+			if (!broadcastedTerraform && soup > 1) {
+				rc.setIndicatorLine(location, enemyHqLocation, 255, 255, 255);
+				Communications.queueMessage(rc, 1, 17, location.x, location.y);
+				broadcastedTerraform = true;
+			}
 		}
 		
 		int csDist;
@@ -941,7 +946,7 @@ public strictfp class LandscaperRobot extends Robot {
 						Communications.queueMessage(rc, 1, 15, nearestFillTile.x, nearestFillTile.y);
 						communicationDelay = 20*(nearbyTerraformers+1);
 					}
-					if (nearbyTerraformers > 5) {
+					if (nearbyTerraformers > Utility.MAX_NEARBY_TERRAFORMERS) {
 						Communications.queueMessage(rc, 1, 16, 0, 0);
 						communicationDelay = 20*(nearbyTerraformers+1);
 					}
@@ -1091,7 +1096,12 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 			//System.out.println("recieved a fill location");
 			break;
+		case 17:
+			//broadcastedTerraform = true;
 		}
+		
+		
+		
 
 	}
 }
