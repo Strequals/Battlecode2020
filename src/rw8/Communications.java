@@ -1,6 +1,8 @@
 package rw8;
 
-import battlecode.common.*;
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
+import battlecode.common.Transaction;
 
 public class Communications {
 	
@@ -19,7 +21,7 @@ public class Communications {
 	 *7:
 	 *8:Refinery removed
 	 *9:
-	 *10:
+     *10: Terraform wall on location
 	 *11:HQ under attack 
     *12:Enter Transport mode(save miners)
     *13:Enter Assault mode(transport landscapers)
@@ -67,9 +69,12 @@ public class Communications {
 			if (c < mu.c) c = mu.c;
 			i++;
 		}
-		if (rc.canSubmitTransaction(message, c)) {
-			rc.submitTransaction(message, c);
-		}
+        if (rc.canSubmitTransaction(message, c)) {
+            rc.submitTransaction(message, c);
+            System.out.println("Sent message");
+        } else {
+            System.out.println("Didn't send message");
+        }
 		messageQueue.clear();
 	}
 	

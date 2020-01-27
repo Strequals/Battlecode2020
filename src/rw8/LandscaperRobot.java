@@ -1,10 +1,10 @@
 package rw8;
 
-import static rw8.Utility.TERRAFORM_THRESHOLD;
+import battlecode.common.*;
 
 import java.util.ArrayList;
 
-import battlecode.common.*;
+import static rw8.Utility.TERRAFORM_THRESHOLD;
 
 public strictfp class LandscaperRobot extends Robot {
 
@@ -47,7 +47,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private int hqElevation;
 	private MapLocation nearestFillTile;
 	private MapLocation backupFill;
-	public MapLocation hqFill;
+	public WeightedMapLocation hqFill;
 	private MapLocation nearestNetgun;
 	//private int netgunDistance = 10000; needs to reset every loop
 	private RobotInfo nearestEDrone;
@@ -96,6 +96,8 @@ public strictfp class LandscaperRobot extends Robot {
 		if (round == roundCreated) {
 			diagonalTarget = new MapLocation(mapWidth-hqLocation.x-1,mapHeight-hqLocation.y-1);
 		}
+
+		System.out.println("State: " + state);
 
 		if (rc.isReady()) {
 			handleState();
@@ -670,7 +672,8 @@ public strictfp class LandscaperRobot extends Robot {
 	}
 
 	private void doTerraforming() throws GameActionException {
-		//System.out.println("Terraforming state: " + terraformingState);
+		System.out.println("Terraforming state: " + terraformingState);
+		System.out.println("HQ Fill: " + hqFill);
 		if(stuckLocation == null || !stuckLocation.equals(location)) {
 			stuckLocation = location;
 			turnsStuck = 0;
@@ -743,18 +746,21 @@ public strictfp class LandscaperRobot extends Robot {
 
 			if (hqFill != null) {
 				// Check if still needs filling
-				if (rc.canSenseLocation(hqFill)) {
-					int elev = rc.senseElevation(hqFill);
+				MapLocation hqFillLoc = hqFill.mapLocation;
+				if (rc.canSenseLocation(hqFillLoc)) {
+					int elev = rc.senseElevation(hqFillLoc);
 					if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
 						hqFill = null;
 					} else {
-						RobotInfo ri = rc.senseRobotAtLocation(hqFill);
+						RobotInfo ri = rc.senseRobotAtLocation(hqFillLoc);
 						if (ri != null && ri.team == team && ri.type.isBuilding()) {
 							hqFill = null;
 						}
 					}
 				}
 			}
+
+			System.out.println("HQ fill at end: " + hqFill);
 
 			// Move off of pit
 			if (pitTile(location)) {
@@ -870,7 +876,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 			if (nearestFillTile == null) {
 				if (hqFill != null) {
-					nearestFillTile = hqFill;
+					nearestFillTile = hqFill.mapLocation;
 					hqFill = null;
 
 				} else {
@@ -935,20 +941,38 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 
 			if (nearestFillTile != null) {
+				if (location.isAdjacentTo(nearestFillTile) && Utility.chebyshev(nearestFillTile, hqLocation) == 2) {
+					if (dirtCarrying == 0) {
+						Direction direction = location.directionTo(hqLocation);
+						// TODO: Find alternate direction if this doesn't work
+						if (rc.canDigDirt(direction)) {
+							rc.digDirt(direction);
+							return;
+						}
+					} else {
+						Direction direction = location.directionTo(nearestFillTile);
+						if (rc.canDepositDirt(direction)) {
+							rc.depositDirt(direction);
+							return;
+						}
+					}
+				}
+
 				boolean filled = moveTerraform(nearestFillTile);
-				if (filled && pitDirection != null && communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile)==1) {
+				if (filled && pitDirection != null && communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile) == 1) {
 					if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
 						Communications.queueMessage(rc, 1, 15, nearestFillTile.x, nearestFillTile.y);
-						communicationDelay = 20*(nearbyTerraformers+1);
+						communicationDelay = 20 * (nearbyTerraformers + 1);
 					}
 					if (nearbyTerraformers > 5) {
 						Communications.queueMessage(rc, 1, 16, 0, 0);
-						communicationDelay = 20*(nearbyTerraformers+1);
+						communicationDelay = 20 * (nearbyTerraformers + 1);
 					}
 				} else {
 					if (communicationDelay > 0)
 						communicationDelay--;
 				}
+
 				return;
 			}
 
@@ -1063,35 +1087,57 @@ public strictfp class LandscaperRobot extends Robot {
 
 	@Override
 	public void processMessage(int m, int x, int y) {
+		System.out.println("Message: " + m + " (" + x + ", " + y + ")");
 		switch (m) {
-		case 1:
-			hqLocation = new MapLocation(x,y);
-			//System.out.println("Received HQ location: " + x + ", " + y);
-			break;
-		case 3:
-			enemyHqLocation = new MapLocation(x,y);
-			break;
-		case 15:
-			MapLocation ml15 = new MapLocation(x,y);
-			if (Utility.chebyshev(hqLocation, ml15) <= 4) {
+			case 1:
+				hqLocation = new MapLocation(x, y);
+				//System.out.println("Received HQ location: " + x + ", " + y);
+				break;
+			case 3:
+				enemyHqLocation = new MapLocation(x, y);
+				break;
+			case 15:
+				MapLocation ml15 = new MapLocation(x, y);
+				System.out.println("Received location: " + ml15);
+				//			if (Utility.chebyshev(hqLocation, ml15) <= 6) {
 				if (Utility.chebyshev(location, hqLocation) <= 2) {
 					diagonalTarget = ml15;
-					hqFill = ml15;
+					hqFill = new WeightedMapLocation(ml15, 0);
 				} else {
 
-					hqFill = ml15;
+					hqFill = new WeightedMapLocation(ml15, 0);
 				}
-			}
+				//			}
 
-			if (backupFill == null || heuristic(ml15) + Utility.BACKUP_THRESHOLD < heuristic(backupFill)) {
-				backupFill = ml15;
-			}
-			if (Utility.chebyshev(ml15, location) <= 4) {
-				communicationDelay += 10;
-			}
-			//System.out.println("recieved a fill location");
-			break;
+				if (backupFill == null || heuristic(ml15) + Utility.BACKUP_THRESHOLD < heuristic(backupFill)) {
+					backupFill = ml15;
+				}
+				if (Utility.chebyshev(ml15, location) <= 4) {
+					communicationDelay += 10;
+				}
+				//System.out.println("recieved a fill location");
+				break;
+			case 10:
+				MapLocation ml10 = new MapLocation(x, y);
+				System.out.println("Received location: " + ml10);
+				//			if (Utility.chebyshev(hqLocation, ml15) <= 6) {
+				if (Utility.chebyshev(location, hqLocation) <= 2) {
+					diagonalTarget = ml10;
+					hqFill = new WeightedMapLocation(ml10, 1);
+				} else {
+
+					hqFill = new WeightedMapLocation(ml10, 1);
+				}
+				//			}
+
+				if (backupFill == null || heuristic(ml10) + Utility.BACKUP_THRESHOLD < heuristic(backupFill)) {
+					backupFill = ml10;
+				}
+				if (Utility.chebyshev(ml10, location) <= 4) {
+					communicationDelay += 10;
+				}
+				//System.out.println("recieved a fill location");
+				break;
 		}
-
 	}
 }
