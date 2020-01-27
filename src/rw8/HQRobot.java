@@ -18,13 +18,16 @@ public strictfp class HQRobot extends Robot {
 	public int wallBoundLeft;
 	public int landscaperRequestCooldown = 0;
 	public boolean dsAvailable = false;
+	public MapLocation fillLoc;
 
 	public ArrayList<MapLocation> designSchoolLocations;
 	public MapLocation closestDesignSchool;
 	boolean rushDetected = false;
+	boolean isBFS = false;
 
 	public static final int ROUND_3x3 = 400; //If 3x3 wall not completed by round 400, do not try 5x5
 	public static final int MIN_ROUND_BFS = 200;
+	public static final int BYTECODE_BFS_END = 1000;
 	public int nearbyMiners;
 	public int minerCooldown;
 
@@ -234,30 +237,45 @@ public strictfp class HQRobot extends Robot {
 		
 		if (bfsCool > 0) bfsCool--;
 
-		if (round > MIN_ROUND_BFS && (prevLandscapers > numLandscapers || bfsCool == 0)) {
-			MapLocation fillLoc = doBFS();
-			if (fillLoc != null) {
-				Communications.calculateSecret(round);
-				round = rc.getRoundNum();
-				Communications.queueMessage(rc, 1, 15, fillLoc.x, fillLoc.y);
+		if (!isBFS && round > MIN_ROUND_BFS && (prevLandscapers > numLandscapers || bfsCool == 0)) {
+			initBFS();
+			isBFS = true;
+		}
+		
+		if (isBFS) {
+			if (doBFS()) {
+				isBFS = false;
+				if (fillLoc != null) {
+					Communications.queueMessage(rc, 1, 15, fillLoc.x, fillLoc.y);
+				}
+				bfsCool = 20;
 			}
-			bfsCool = 20;
 		}
 
 
 
 	}
-
+	
 	/**
-	 * Searches for a low elevation or flooded tile near the HQ
-	 * @return The MapLocation of the closest, by Chebyshev distance, low elevation or flooded tile
-	 * @throws GameActionException 
+	 * Initializes the BFS
+	 * @throws GameActionException
 	 */
-	public MapLocation doBFS() throws GameActionException {
+	
+	public void initBFS() throws GameActionException {
 		open.clear();
 		open.add(location);
 		closed.clear();
 		closed.add(location.x+(location.y<<6));
+	}
+	
+	/**
+	 * Executes the BFS until bytecode is low.
+	 * @return Whether or not the BFS is complete
+	 * @throws GameActionException
+	 */
+	
+	public boolean doBFS() throws GameActionException {
+		
 		MapLocation ml;
 		Direction[] directions = Utility.directions;
 		Direction d;
@@ -268,7 +286,8 @@ public strictfp class HQRobot extends Robot {
 			System.out.println(Clock.getBytecodeNum());
 			rc.setIndicatorDot(ml, 125, 250, 125);
 			if ((Utility.chebyshev(location, ml)>2 && rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
-				return ml;
+				fillLoc = ml;
+				return true;
 			}
 
 			for (int i = 8; i-->0;) {
@@ -285,9 +304,13 @@ public strictfp class HQRobot extends Robot {
 					closed.add(v);
 				}
 			}
+			
+			if (Clock.getBytecodesLeft() < BYTECODE_BFS_END) {
+				return false;
+			}
 		}
-
-		return null;
+		fillLoc = null;
+		return true;
 
 	}
 
