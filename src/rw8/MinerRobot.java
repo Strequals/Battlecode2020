@@ -1,8 +1,8 @@
 package rw8;
 
-import java.util.ArrayList;
-
 import battlecode.common.*;
+
+import java.util.ArrayList;
 
 public strictfp class MinerRobot extends Robot {
 
@@ -60,6 +60,7 @@ public strictfp class MinerRobot extends Robot {
 	private RobotInfo nearestEDrone;
 	private MapLocation frontLocation;
 	private ArrayList<MapLocation> enemyDrones;
+	private MapLocation netGunLocation = null;
 
 	public MapLocation nearestTerraformer;
 	private int maxWaitTurns = 10;
@@ -815,6 +816,43 @@ public strictfp class MinerRobot extends Robot {
 		Nav.nav(rc, this);
 	}
 
+	private void tryBuildNetGun() throws GameActionException {
+		if (netGunLocation == null) {
+			boolean hqOnLeft = hqLocation.x < mapWidth / 2;
+			boolean hqOnBottom = hqLocation.y < mapHeight / 2;
+
+			Direction direction;
+			if (hqOnLeft) {
+				if (hqOnBottom) {
+					direction = Direction.NORTHEAST;
+				} else {
+					direction = Direction.SOUTHEAST;
+				}
+			} else {
+				if (hqOnBottom) {
+					direction = Direction.NORTHWEST;
+				} else {
+					direction = Direction.SOUTHWEST;
+				}
+			}
+
+			netGunLocation = hqLocation.add(direction).add(direction);
+		}
+
+		if (location.isAdjacentTo(netGunLocation)) {
+			Direction direction = location.directionTo(netGunLocation);
+			if (rc.canBuildRobot(RobotType.NET_GUN, direction)) {
+				rc.buildRobot(RobotType.NET_GUN, direction);
+				return;
+			}
+		}
+
+		if (Nav.target == null || !Nav.target.equals(netGunLocation)) {
+			Nav.beginNav(rc, this, netGunLocation);
+		}
+		Nav.nav(rc, this);
+	}
+
 	public void tryBuildDS() throws GameActionException {
 		int hqDist = location.distanceSquaredTo(hqLocation);
 		if (hqDist <= 4) {
@@ -1128,7 +1166,10 @@ public strictfp class MinerRobot extends Robot {
 
 	public boolean doBuilding() throws GameActionException {
 		if (round < TURTLE_ROUND) {
-			if (!builderFC && soup > RobotType.FULFILLMENT_CENTER.cost) {
+			if (soup > RobotType.NET_GUN.cost) {
+				System.out.println("TryNetGun");
+				tryBuildNetGun();
+			} else if (!builderFC && soup > RobotType.FULFILLMENT_CENTER.cost) {
 				System.out.println("TryFC");
 				tryBuildFC();
 				return true;
