@@ -260,7 +260,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 					break;
 				}
 			} else {
-				if (targetLocation == null) {
+				if (targetLocation == null && !rushDetected) {
 					targetLocation = r.location;
 					targetRobot = r;
 				}
@@ -286,7 +286,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			}
 		}
 
-		if (netGunLoc != null && !rush && !rushDetected && netGunLoc.isWithinDistanceSquared(location, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) {
+		if (netGunLoc != null && !rush && netGunLoc.isWithinDistanceSquared(location, GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) {
 			if (rc.isReady()) {
 				if (fuzzy(rc, this, netGunLoc.directionTo(location))) return;
 			}
