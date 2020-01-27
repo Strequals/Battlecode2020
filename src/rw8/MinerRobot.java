@@ -68,7 +68,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int MOVE_TO_MATRIX_ROUND = 500; 
 	public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
 	public static final int VAPORATOR_WEIGHT = 20; // need VAPORATOR_WEIGHT more soup to build a vaporator with every vaporator in sight
-	public static final int RUN_AWAY_DISTANCE = 2;
+	public static final int RUN_AWAY_DISTANCE = 3;
 	
 	public MinerState prevState; //Stores state when switching to move_matrix state
 
@@ -1065,6 +1065,8 @@ public strictfp class MinerRobot extends Robot {
 			}
 			//System.out.println("Recieved soup location: " + x + ", " + y);
 			break;
+		case 3:
+			enemyHqLocation = new MapLocation(x,y);
 		case 5:
 			MapLocation ml5 = new MapLocation(x,y);
 			//System.out.println("Recieved Refinery location: " + x + ", " + y);

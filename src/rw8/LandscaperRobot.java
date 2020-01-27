@@ -63,7 +63,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 	public static final int TERRAFORM_TOWARDS_ENEMY_ROUND = 550;
 	public static final int FINAL_HQ_DISTANCE = 64;
-	public static final int RUN_AWAY_DISTANCE = 2;
+	public static final int RUN_AWAY_DISTANCE = 3;
 
 
 	LandscaperRobot(RobotController rc) throws GameActionException {
