@@ -25,6 +25,7 @@ public class Communications {
     *13:Enter Assault mode(transport landscapers)
     *14:Enter Miner Assist Mode
     *15:Terraform location
+    *16:Assault terraform
     **/
 	
 	enum Message {

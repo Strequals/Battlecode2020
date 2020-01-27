@@ -41,6 +41,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private static final int RUSH_SAFE_TURNS = 50;
 	private static final int DEFEND_RANGE = 15;
 	public static final int DRONE_COUNT_RUSH = 16;
+	public static final int DRONE_COUNT_ASSAULT = 16;
 	private static final int MIN_TRANSPORT_ROUND = 250;
 	private boolean scouting = true;
 	private boolean rushDetected = true;
@@ -497,7 +498,15 @@ public strictfp class DeliveryDroneRobot extends Robot {
 					//rush = true;
 				}
 			}
+			
+			if (state == DroneState.ASSAULTING) {
+				if (friendlyDrones >= DRONE_COUNT_ASSAULT && netGunLoc != null) {
+					if (soup>1) Communications.queueMessage(rc, 1, 16, netGunLoc.x, netGunLoc.y);
+				}
+			}
+			
 		}
+		
 	}
 
 	private void scanForSafe() throws GameActionException {
@@ -1057,7 +1066,14 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			break;
 		case 15:
 			//MapLocation ml15 = new MapLocation(x,y);
-			
+			break;
+		case 16:
+			MapLocation ml16 = new MapLocation(x,y);
+			if (state == DroneState.ASSAULTING) {
+				if (Utility.chebyshev(location,ml16) < CRUNCH_RANGE) {
+					rush = true;
+				}
+			}
 		}
 	}
 

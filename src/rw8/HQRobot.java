@@ -80,6 +80,14 @@ public strictfp class HQRobot extends Robot {
 		RobotInfo r;
 		numLandscapers = 0;
 		nearbyMiners = 0;
+		
+		boolean isTarget = false;
+		int bestTargetID = 0;
+		int bestTargetPriority = 10000; // lower priority better
+		int id;
+		int dist;
+		RobotInfo botCarrying;
+		int priority;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -135,10 +143,20 @@ public strictfp class HQRobot extends Robot {
 				case DELIVERY_DRONE:
 					//pew pew pew
 					if (rc.canShootUnit(r.ID)) {
-						rc.shootUnit(r.ID);
-					}
+						isTarget = true;
+						dist = Utility.chebyshev(location, r.location);
+						id = r.getHeldUnitID();
+						botCarrying = null;
+						if (rc.canSenseRobot(id)) {
+							botCarrying = rc.senseRobot(id);
+						}
+						priority = shootPriority(dist, botCarrying);
 
-					return;
+						if (priority < bestTargetPriority) {
+							bestTargetPriority = priority;
+							bestTargetID = r.ID;
+						}
+					}
 				case NET_GUN:
 					//Direct units to bury the net gun
 					//Communications.sendMessage(rc);
@@ -154,6 +172,8 @@ public strictfp class HQRobot extends Robot {
 				}
 			}
 		}
+		
+		
 
 		//Broadcast HQ location on round 1
 		if (round == 1) {
@@ -164,8 +184,15 @@ public strictfp class HQRobot extends Robot {
 			if (soup >= 1) Communications.queueMessage(rc, 1, 3, enemyHqLocation.x, enemyHqLocation.y);
 		}
 		
+		boolean ready = rc.isReady();
+		
+		if (ready && isTarget) {
+			rc.shootUnit(bestTargetID);
+			ready = false;
+		}
+		
 		if (minerCooldown > 0) minerCooldown--;
-		if (soup > RobotType.MINER.cost && minerCooldown <= 0 &&
+		if (ready && soup > RobotType.MINER.cost && minerCooldown <= 0 &&
 				(((minerRequested || nearbyMiners == 0) && soup > BASE_MINER + MINER_WEIGHT * numMiners)
 						|| numMiners<minMiners)) {
 			//Try building miner
@@ -354,6 +381,26 @@ public strictfp class HQRobot extends Robot {
 		rc.setIndicatorLine(new MapLocation(15, 2), new MapLocation(14, 2), 0, 0, 0);
 		rc.setIndicatorLine(new MapLocation(14, 2), new MapLocation(15, 0), 0, 0, 0);
 		rc.setIndicatorLine(new MapLocation(15, 0), new MapLocation(14, 0), 0, 0, 0);
+	}
+	
+	public int shootPriority(int dist, RobotInfo botCarrying) throws GameActionException {
+		int priority = dist;
+		if (botCarrying != null) {
+			if (botCarrying.team == team) {
+				if (rc.senseFlooding(botCarrying.location)) {
+					priority += 100;
+				} else {
+					priority -= 100;
+				}
+			} else {
+				if (rc.senseFlooding(botCarrying.location)) {
+					priority -= 100;
+				} else {
+					priority += 100;
+				}
+			}
+		}
+		return priority;
 	}
 
 	@Override
