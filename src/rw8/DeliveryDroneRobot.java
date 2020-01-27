@@ -46,6 +46,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 	private boolean carryingEnemy;
 	private boolean carryingAssaulter;
+	private boolean carryingAllyLandscaper;
 	private boolean carryingAlly;
 	private MapLocation netGunLoc;
 
@@ -358,6 +359,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		} else if(allyToAssist != null) {
 			if (Utility.chebyshev(location, allyToAssist.location) <= 1) {
 				if (rc.canPickUpUnit(allyToAssist.ID)) {
+					if (allyToAssist.type == RobotType.LANDSCAPER) {
+						carryingAllyLandscaper = true;
+					
+					}
+					carryingAlly = true;
 					rc.pickUpUnit(allyToAssist.ID);
 				}
 			} else {
@@ -556,6 +562,9 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			if (Utility.chebyshev(location, allyToAssist.location) <= 1) {
 				if (rc.canPickUpUnit(allyToAssist.ID)) {
 					rc.pickUpUnit(allyToAssist.ID);
+					if (allyToAssist.type == RobotType.LANDSCAPER) {
+						carryingAllyLandscaper = true;
+					}
 					carryingAlly = true;
 					return true;
 				}
@@ -626,7 +635,13 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				ml = new MapLocation(x, y);
 				csDist = Utility.chebyshev(location, ml);
 				if (csDist < rad0 && pathTile(ml) && !rc.senseFlooding(ml)) {
-					if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) csDist += 100;
+					if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) {
+						if (carryingAllyLandscaper) {
+							csDist -= 1000;
+						} else {
+							csDist += 1000;
+						}
+					}
 
 					ri = rc.senseRobotAtLocation(ml);
 
