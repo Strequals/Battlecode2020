@@ -1,8 +1,8 @@
 package rw8;
 
-import java.util.ArrayList;
-
 import battlecode.common.*;
+
+import java.util.ArrayList;
 
 public strictfp class HQRobot extends Robot {
 
@@ -18,7 +18,7 @@ public strictfp class HQRobot extends Robot {
 	public int wallBoundLeft;
 	public int landscaperRequestCooldown = 0;
 	public boolean dsAvailable = false;
-	public MapLocation fillLoc;
+	public WeightedMapLocation fillLoc;
 
 	public ArrayList<MapLocation> designSchoolLocations;
 	public MapLocation closestDesignSchool;
@@ -80,7 +80,7 @@ public strictfp class HQRobot extends Robot {
 		RobotInfo r;
 		numLandscapers = 0;
 		nearbyMiners = 0;
-		
+
 		boolean isTarget = false;
 		int bestTargetID = 0;
 		int bestTargetPriority = 10000; // lower priority better
@@ -172,8 +172,7 @@ public strictfp class HQRobot extends Robot {
 				}
 			}
 		}
-		
-		
+
 
 		//Broadcast HQ location on round 1
 		if (round == 1) {
@@ -185,12 +184,12 @@ public strictfp class HQRobot extends Robot {
 		}
 		
 		boolean ready = rc.isReady();
-		
+
 		if (ready && isTarget) {
 			rc.shootUnit(bestTargetID);
 			ready = false;
 		}
-		
+
 		if (minerCooldown > 0) minerCooldown--;
 		if (ready && soup > RobotType.MINER.cost && minerCooldown <= 0 &&
 				(((minerRequested || nearbyMiners == 0) && soup > BASE_MINER + MINER_WEIGHT * numMiners)
@@ -268,41 +267,45 @@ public strictfp class HQRobot extends Robot {
 			initBFS();
 			isBFS = true;
 		}
-		
+
 		if (isBFS) {
 			if (doBFS()) {
 				isBFS = false;
 				if (fillLoc != null) {
-					Communications.queueMessage(rc, 1, 15, fillLoc.x, fillLoc.y);
+					MapLocation fillLocMl = fillLoc.mapLocation;
+					if (fillLoc.weight == 0) {
+						Communications.queueMessage(rc, 1, 15, fillLocMl.x, fillLocMl.y);
+					} else {
+						Communications.queueMessage(rc, 1, 10, fillLocMl.x, fillLocMl.y);
+					}
 				}
+
 				bfsCool = 20;
 			}
 		}
-
-
-
 	}
-	
+
 	/**
 	 * Initializes the BFS
 	 * @throws GameActionException
 	 */
-	
+
 	public void initBFS() throws GameActionException {
+//	public WeightedMapLocation doBFS() throws GameActionException {
 		open.clear();
 		open.add(location);
 		closed.clear();
 		closed.add(location.x+(location.y<<6));
 	}
-	
+
 	/**
 	 * Executes the BFS until bytecode is low.
 	 * @return Whether or not the BFS is complete
 	 * @throws GameActionException
 	 */
-	
+
 	public boolean doBFS() throws GameActionException {
-		
+
 		MapLocation ml;
 		Direction[] directions = Utility.directions;
 		Direction d;
@@ -312,8 +315,9 @@ public strictfp class HQRobot extends Robot {
 			ml = open.poll();
 			System.out.println(Clock.getBytecodeNum());
 			rc.setIndicatorDot(ml, 125, 250, 125);
+
 			if ((Utility.chebyshev(location, ml)>2 && rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) || rc.senseFlooding(ml)) {
-				fillLoc = ml;
+				fillLoc = new WeightedMapLocation(ml, 0);
 				return true;
 			}
 
@@ -322,7 +326,18 @@ public strictfp class HQRobot extends Robot {
 				adj = ml.add(d);
 
 				if (!rc.canSenseLocation(adj)) continue;
-				if (rc.senseElevation(adj) >= Utility.MAX_HEIGHT_THRESHOLD) continue;
+				int elevation = rc.senseElevation(adj);
+				if (elevation >= Utility.MAX_HEIGHT_THRESHOLD) continue;
+
+				int distance = Utility.chebyshev(location, adj);
+
+				// TODO: Use HQ's elevation instead of 8
+				if (elevation < 8 - Utility.TERRAFORM_THRESHOLD && distance == 3) {
+					// Tile on wall is so deep that no landscaper will (can) fill it
+					// Therefore, adjacent tiles are at risk to be flooded, so we must fill in adjacent tiles
+					fillLoc = new WeightedMapLocation(ml, 1);
+					return true;
+				}
 				
 				v = adj.x+(adj.y << 6);
 				if (!closed.contains(v)) {
@@ -331,7 +346,7 @@ public strictfp class HQRobot extends Robot {
 					closed.add(v);
 				}
 			}
-			
+
 			if (Clock.getBytecodesLeft() < BYTECODE_BFS_END) {
 				return false;
 			}
@@ -382,7 +397,7 @@ public strictfp class HQRobot extends Robot {
 		rc.setIndicatorLine(new MapLocation(14, 2), new MapLocation(15, 0), 0, 0, 0);
 		rc.setIndicatorLine(new MapLocation(15, 0), new MapLocation(14, 0), 0, 0, 0);
 	}
-	
+
 	public int shootPriority(int dist, RobotInfo botCarrying) throws GameActionException {
 		int priority = dist;
 		if (botCarrying != null) {
