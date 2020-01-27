@@ -24,7 +24,8 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DESIGN_SCHOOL_WEIGHT = 550;
 	public static final int FULFILLMENT_CENTER_WEIGHT = 570;
 	public static final int ENEMY_HQ_RANGE = 48;
-
+	
+	public boolean placedNetgunsAtEnemyHQ = false;
 	public MapLocation soupMine;
 	public boolean navigatingReturn;
 	public MapLocation returnLoc;
@@ -357,8 +358,10 @@ public strictfp class MinerRobot extends Robot {
 		}
 		//}
 
-		if (round > MAX_VAPORATOR_BUILD_ROUND && enemyHqLocation != null) {
+		if (minerState != MinerState.ATTACKING_ENEMY_HQ && round > MAX_VAPORATOR_BUILD_ROUND && enemyHqLocation != null && !placedNetgunsAtEnemyHQ) {
+			if (prevState != MinerState.ATTACKING_ENEMY_HQ) prevState = minerState;
 			minerState = MinerState.ATTACKING_ENEMY_HQ;
+			
 		}
 
 		if (cooldownTurns >= 1) return;
@@ -700,12 +703,22 @@ public strictfp class MinerRobot extends Robot {
 			}
 			break;
 		case ATTACKING_ENEMY_HQ:
-			if (location.distanceSquaredTo(enemyHqLocation) >= 15) {
+			if (location.distanceSquaredTo(enemyHqLocation) >= 24) {
 				if (Nav.target == null || !Nav.target.equals(enemyHqLocation)) {
 					Nav.beginNav(rc, this, enemyHqLocation);
 				}
 				Nav.nav(rc, this);
 				return;
+			}
+			System.out.println(ngBuilt + " " + enemyDroneSpotted);
+			if (ngBuilt && !enemyDroneSpotted) {
+				placedNetgunsAtEnemyHQ = true;
+				if (minerState != MinerState.ATTACKING_ENEMY_HQ) {
+					minerState = prevState;
+				} else {
+					minerState = MinerState.SEEKING;
+				}
+				
 			}
 
 

@@ -51,6 +51,7 @@ public strictfp class LandscaperRobot extends Robot {
 	private MapLocation nearestNetgun;
 	//private int netgunDistance = 10000; needs to reset every loop
 	private RobotInfo nearestEDrone;
+	private boolean terraformedToEnemyHQ;
 
 	private int turnsNavedHq;
 	private int nearbyTerraformers = 0;
@@ -217,16 +218,20 @@ public strictfp class LandscaperRobot extends Robot {
 					break;
 				case HQ:
 					enemyHqLocation = r.location;
-					if (Utility.chebyshev(location, r.location) <= 1) {
+					int dist = Utility.chebyshev(location,  r.location);
+					if (dist <= 1) {
 						return LandscaperState.ASSAULTING_HQ;
 					} else {
-						distance = Utility.chebyshev(r.location, location);
-						if (distance < targetBuildingDistance) {
-							targetBuildingDistance = distance;
-							targetBuildingLocation = r.location;
-							terraformingState = TerraformingState.TARGET_ENEMY_BUILDING;
+						if (round < TURTLE_END || !terraformedToEnemyHQ) {
+							distance = Utility.chebyshev(r.location, location);
+							if (distance < targetBuildingDistance) {
+								targetBuildingDistance = distance;
+								targetBuildingLocation = r.location;
+								terraformingState = TerraformingState.TARGET_ENEMY_BUILDING;
+							}
 						}
 					}
+					
 					break;
 				case DESIGN_SCHOOL:
 					distance = Utility.chebyshev(r.location, location);
@@ -667,6 +672,12 @@ public strictfp class LandscaperRobot extends Robot {
 		if(turnsStuck > 100 && enemyHqLocation != null && location.isWithinDistanceSquared(enemyHqLocation, 64)) {
 			rc.disintegrate();
 		}
+		
+		if (enemyHqLocation != null && enemyHqLocation.isWithinDistanceSquared(enemyHqLocation, 35)) {
+			terraformedToEnemyHQ = true;
+			
+		}
+		
 		int csDist;
 		switch (terraformingState) {
 		case HELP_MINER_UP:
