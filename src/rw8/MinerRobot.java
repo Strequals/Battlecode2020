@@ -23,7 +23,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DESIGN_SCHOOL_SEEN_TURNS = 50;
 	public static final int DESIGN_SCHOOL_WEIGHT = 550;
 	public static final int FULFILLMENT_CENTER_WEIGHT = 570;
-	public static final int ENEMY_HQ_RANGE = 64;
+	public static final int ENEMY_HQ_RANGE = 48;
 
 	public MapLocation soupMine;
 	public boolean navigatingReturn;
@@ -79,7 +79,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int FC_DIST = 8;
 
 	enum MinerState {
-		SEEKING, MINING, RETURNING, MOVE_MATRIX, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ
+		SEEKING, MINING, RETURNING, MOVE_MATRIX, SCOUTING_ENEMY_HQ, RUSHING_ENEMY_HQ, DRONE_NETTING_ENEMY_HQ, ATTACKING_ENEMY_HQ
 	}
 
 	enum EnemyHqPossiblePosition {
@@ -352,6 +352,10 @@ public strictfp class MinerRobot extends Robot {
 			minerState = prevState;
 		}
 		//}
+		
+		if (round > MAX_VAPORATOR_BUILD_ROUND && enemyHqLocation != null) {
+			minerState = MinerState.ATTACKING_ENEMY_HQ;
+		}
 
 		if (cooldownTurns >= 1) return;
 
@@ -689,6 +693,15 @@ public strictfp class MinerRobot extends Robot {
 					Nav.beginNav(rc, this, hqLocation);
 				}
 				Nav.nav(rc, this);
+			}
+			break;
+		case ATTACKING_ENEMY_HQ:
+			if (location.distanceSquaredTo(enemyHqLocation) >= ENEMY_HQ_RANGE) {
+				if (Nav.target == null || !Nav.target.equals(enemyHqLocation)) {
+					Nav.beginNav(rc, this, enemyHqLocation);
+				}
+				Nav.nav(rc, this);
+				return;
 			}
 
 
@@ -1156,7 +1169,7 @@ public strictfp class MinerRobot extends Robot {
 			if (canBuild) {
 				if (enemyHqLocation != null && location.distanceSquaredTo(enemyHqLocation) <= ENEMY_HQ_RANGE) {
 					//Build Netgun
-					if (soup > RobotType.NET_GUN.cost && enemyDroneSpotted && hqDist >= 2) {
+					if (soup > RobotType.NET_GUN.cost && hqDist >= 2) {// && enemyDroneSpotted
 						Direction[] dirs = Utility.directions;
 						Direction d;
 						ml = null;
