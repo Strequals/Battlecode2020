@@ -232,10 +232,14 @@ public strictfp class MinerRobot extends Robot {
 		random = (A*random+B)%256;
 
 		if(/*droneDetected && */netgunDistance > 5 && droneDist <=13) {  //not needed, since if no drones, default drone distance is 100
+         if(doBuilding())
+            return;
 			escape();
 			return;
 		}
 		else if(droneDist <= 8) {
+         if(doBuilding())
+            return;
 			escape();
 			return;
 		}

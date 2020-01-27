@@ -266,7 +266,7 @@ public strictfp class LandscaperRobot extends Robot {
 // 			if ((netgunDistance > 5 && droneDist <= 3) || droneDist <= 1) {
 // 				//TODO: whatever goes here
 // 			} else 
-         if ((netgunDistance > 5 && droneDist <= 8) || droneDist <= 2) {
+         if ((netgunDistance > 5 && droneDist <= 13) || droneDist <= 8) {
 				terraformingState = TerraformingState.ESCAPE;
 			}
 		}
