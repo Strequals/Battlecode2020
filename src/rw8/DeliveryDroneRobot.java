@@ -104,6 +104,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				targetRobot = null;
 				targetLocation = null;
 			}
+		} else {
+			targetLocation = null;
 		}
 		if (targetFriendly != null) {
 			if (rc.canSenseRobot(targetFriendly.ID)) {
@@ -114,8 +116,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				targetFriendly = null;
 				targetLocationf = null;
 			}
+		} else {
+			targetLocationf = null;
 		}
-		
+		System.out.println("TL:"+targetLocation);
+		System.out.println("TF:"+targetLocationf);
 		friendlyDrones = 0;
 		
 		//rushDetected = false;
@@ -925,7 +930,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				case X_FLIP:
 					// Checked our first position
 					enemyHqScouting = EnemyHqPossiblePosition.ROTATION;
-					DroneNav.beginNav(rc, this, enemyHqScouting.getLocation(hqLocation, mapWidth, mapHeight));
+					enemyHqScoutingLocation = enemyHqScouting.getLocation(hqLocation, mapWidth, mapHeight);
+					DroneNav.beginNav(rc, this, enemyHqScoutingLocation);
 					break;
 				case ROTATION:
 					// Checked first and second position, so must be third
@@ -936,7 +942,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				}
 			}
 		}
-
+		
+		if (DroneNav.target == null || !DroneNav.target.equals(enemyHqScoutingLocation)) {
+			DroneNav.beginNav(rc, this, enemyHqScoutingLocation);
+		}
+		
 		DroneNav.nav(rc, this);
 	}
 

@@ -291,14 +291,17 @@ public strictfp class LandscaperRobot extends Robot {
 	}
 
 	private void handleState() throws GameActionException {
+		System.out.println(state);
 		switch (state) {
 		case DEFENSE:
+			System.out.println(defenseState);
 			defend();
 			break;
 		case ASSAULTING_HQ:
 			doAssault();
 			break;
 		case TERRAFORMING:
+			System.out.println(terraformingState);
 			doTerraforming();
 			break;
 		}
@@ -535,15 +538,18 @@ public strictfp class LandscaperRobot extends Robot {
 					//System.out.println("TUNNEL BRIDGE:" + m);
 					botInfo = rc.senseRobotAtLocation(m);
 					if (botInfo != null && botInfo.team == team && botInfo.type.isBuilding()) continue;
-					tunnelOrBridge(m, d);
-					return true;
+					if (tunnelOrBridge(m, d)) {
+						return true;
+					}
+					//System.out.println("TBMT-"+d);
+					
 				}
 				else if (elev > digTo) {
 					digLoc = m;
 				}
 			}
 		}
-
+		//System.out.println("PATHINGMT");
 		// Move towards location
 		if (!ml.equals(GridNav.target)) {
 			GridNav.beginNav(this, ml);
@@ -626,40 +632,41 @@ public strictfp class LandscaperRobot extends Robot {
 		GridNav.nav(rc, this);
 	}
 
-	private void tunnelOrBridge(MapLocation ml, Direction d) throws GameActionException {
+	private boolean tunnelOrBridge(MapLocation ml, Direction d) throws GameActionException {
 		int elTarget = rc.senseElevation(ml);
 		int elDistance = elTarget - robotElevation;
 		if (rc.senseFlooding(ml)) {
 			if (dirtCarrying > 0) {
 				rc.depositDirt(d);
-				return;
+				return true;
 			} else {
 				if (pitDirection != null) {
 					rc.digDirt(pitDirection);
-					return;
+					return true;
 				}
 			}
 		} else if (elDistance > 0) {
 			if (dirtCarrying > 0) {
 				if (pitDirection != null) {
 					rc.depositDirt(pitDirection);
-					return;
+					return true;
 				}
 			} else {
 				rc.digDirt(d);
-				return;
+				return true;
 			}
 		} else if (elDistance < 0) {
 			if (dirtCarrying > 0) {
 				rc.depositDirt(d);
-				return;
+				return true;
 			} else {
 				if (pitDirection != null) {
 					rc.digDirt(pitDirection);
-					return;
+					return true;
 				}
 			}
 		}
+		return false;
 	}
 
 	private void doTerraforming() throws GameActionException {
