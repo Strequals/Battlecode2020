@@ -22,7 +22,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private MapLocation nearestWater;
 	private MapLocation nearestSafe; //nearest path tile
 	private DroneState state;
-	private boolean rush = false; //avoid netguns + hq?
+	private boolean rush = false; //don't avoid netguns + hq?
 	private boolean sentEHQL = false;
 	private Direction lastDirection;
 	private int friendlyDrones;
@@ -32,6 +32,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	private RobotInfo allyToAssist;
 
 	private EnemyHqPossiblePosition enemyHqScouting = EnemyHqPossiblePosition.X_FLIP;
+	private MapLocation enemyHqScoutingLocation;
 
 	private MapLocation rushLocation;
 	private int turnsSinceRush;
@@ -851,7 +852,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			}
 		}*/
 
-		MapLocation enemyHqScoutingLocation = enemyHqScouting.getLocation(hqLocation, mapWidth, mapHeight);
+		enemyHqScoutingLocation = enemyHqScouting.getLocation(hqLocation, mapWidth, mapHeight);
 		if (rc.canSenseLocation(enemyHqScoutingLocation)) {
 			robot = rc.senseRobotAtLocation(enemyHqScoutingLocation);
 			if (robot != null && robot.team != team && robot.type == RobotType.HQ) {
@@ -884,6 +885,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		// TODO: What state should it transition to?
 		enemyHqLocation = location;
 		state = DroneState.ASSAULTING;
+		enemyHqScoutingLocation = null;
 		System.out.println("======== Found it!!! ========");
 	}
 
@@ -900,6 +902,11 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	public boolean canMove(RobotController rc, Direction d) {
 		MapLocation ml = location.add(d);
 		if (!rush ) {
+			if (enemyHqScoutingLocation != null) {
+				if (enemyHqScoutingLocation.isWithinDistanceSquared(ml,GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED)) {
+					return false;
+				}
+			}
 			ArrayList<MapLocation> enemyGuns = enemyNetguns;
 			MapLocation enemyGun;
 			for (int i = enemyGuns.size(); i-->0;) {
@@ -918,16 +925,17 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 
 
-		if (canMove(rc, d)) {
+		if (rc.canMove(d)) {
 			rc.move(d);
 			return true;
 		}
 		Direction dr = d.rotateRight();
 		Direction dl = d.rotateLeft();
-		if (canMove(rc, dr)) {
+		if (rc.canMove(dr)) {
 			rc.move(dr);
 			return true;
-		} else if (canMove(rc, dl)) {
+		}
+		if (rc.canMove(dl)) {
 			rc.move(dl);
 			return true;
 		}

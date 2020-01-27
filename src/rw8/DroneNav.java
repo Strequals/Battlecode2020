@@ -26,9 +26,11 @@ public class DroneNav {
 
 	//Cory Li's Bug Algorithm - https://github.com/TheDuck314/battlecode2015/blob/master/teams/zephyr26_final/Nav.java
 	public static void beginNav(RobotController rc, DeliveryDroneRobot r, MapLocation ml) {
+		if (target == null || ml.distanceSquaredTo(target) > 2) {
+			state = BugState.MOTION_TO_GOAL;
+		}
 		target = ml;
 		position = r.location;
-		state = BugState.MOTION_TO_GOAL;
 	}
 
 	public static void nav(RobotController rc, DeliveryDroneRobot r) throws GameActionException{
