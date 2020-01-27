@@ -327,6 +327,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 			break;
 		case 11:
 			if (location.isAdjacentTo(hqLocation)) rushDetected = true;
+         break;
 		case 15:
 			MapLocation l = new MapLocation(x,y);
 			if (Utility.chebyshev(l, hqLocation) <= 4 && Utility.chebyshev(location, hqLocation) <= 2) {
@@ -335,6 +336,10 @@ public strictfp class DesignSchoolRobot extends Robot {
 				wallHoleLocation = l;
 				//if (numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) numDefenders++;
 			}
+         break;
+      case 16:
+         cooldown += 10;
+         break;
 		}
 
 	}

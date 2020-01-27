@@ -912,8 +912,13 @@ public strictfp class LandscaperRobot extends Robot {
 			                            Communications.queueMessage(rc, 1, 15, nearestFillTile.x, nearestFillTile.y);
 			                            communicationDelay = 20*(nearbyTerraformers+1);
 			                        }
+                                 if (nearbyTerraformers > 5) {
+                                    Communications.queueMessage(rc, 1, 16, 0, 0);
+                                    communicationDelay = 20*(nearbyTerraformers+1);
+                                 }
 			                    } else {
-			                        if (communicationDelay > 0)communicationDelay--;
+			                        if (communicationDelay > 0)
+                                    communicationDelay--;
 			                    }
 			                    return;
 			                }
