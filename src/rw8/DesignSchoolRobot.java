@@ -329,7 +329,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 			if (location.isAdjacentTo(hqLocation)) rushDetected = true;
 		case 15:
 			MapLocation l = new MapLocation(x,y);
-			if (Utility.chebyshev(l, hqLocation) <= 4) {
+			if (Utility.chebyshev(l, hqLocation) <= 4 && Utility.chebyshev(location, hqLocation) <= 2) {
 				
 				//System.out.println("queueing a defender");
 				wallHoleLocation = l;

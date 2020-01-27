@@ -648,11 +648,12 @@ public strictfp class LandscaperRobot extends Robot {
 
 	private void doTerraforming() throws GameActionException {
 		//System.out.println("Terraforming state: " + terraformingState);
-      if(stuckLocation == null || stuckLocation != location) {
+      if(stuckLocation == null || !stuckLocation.equals(location)) {
          stuckLocation = location;
+         turnsStuck = 0;
       }
       turnsStuck++;
-      if(turnsStuck > 100) {
+      if(turnsStuck > 100 && enemyHqLocation != null && location.isWithinDistanceSquared(enemyHqLocation, 64)) {
          rc.disintegrate();
       }
 		int csDist;
@@ -679,6 +680,8 @@ public strictfp class LandscaperRobot extends Robot {
 				if (dirtCarrying == 0) {
 					if (pitDirection != null) {
 						rc.digDirt(pitDirection);
+					} else {
+						rc.digDirt(Direction.CENTER);
 					}
 				} else {
 					rc.depositDirt(location.directionTo(targetBuildingLocation));
@@ -1013,6 +1016,7 @@ public strictfp class LandscaperRobot extends Robot {
 			if (Utility.chebyshev(hqLocation, ml15) <= 4) {
 				if (Utility.chebyshev(location, hqLocation) <= 2) {
 					diagonalTarget = ml15;
+					hqFill = ml15;
 				} else {
 				
 					hqFill = ml15;
