@@ -6,8 +6,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 	private MapLocation enemyHqLocation;
 
 	private int numDefenders = 0;
-	
-	
+
+
 	private int nearbyAlliedLandscapers = 0;
 	private int nearbyAlliedVaporators = 0;
 	private boolean isRefinery;
@@ -18,17 +18,17 @@ public strictfp class DesignSchoolRobot extends Robot {
 	private MapLocation wallHoleLocation;
 
 	private DesignSchoolState designSchoolState = DesignSchoolState.TERRAFORMING;
-	
+
 	static final int MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL = 5;
 	static final int MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER = 550;
 	static final int MIN_TERRAFORMER_COUNT = 3;
 	static final int ROUND_COOLDOWN_FACTOR = 50;
-	
+
 	static final int WEIGHT = 200; //need 150 extra soup per nearby landscaper to build
 	static final int VAPORATOR_WEIGHT = 5; //need 150 less soup per nearby vaporator to build
 	static final int BASE_TURTLE_WEIGHT = 450;
 	static final int TURTLE_WEIGHT = 15;
-	
+
 	enum DesignSchoolState {
 		BUILDING_TURTLES, RUSHING, TERRAFORMING
 	}
@@ -54,7 +54,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 		rushDetected = false;
 		fcBuilt = false;
 		isAlliedDrone = false;
-		
+
 		if (round == roundCreated) {
 			if (location.distanceSquaredTo(hqLocation) <= 2) {
 				numDefenders = MIN_TERRAFORMER_COUNT;
@@ -117,7 +117,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 					break;
 				case DELIVERY_DRONE:
 					//pew pew pew
-					
+
 					return;
 				case DESIGN_SCHOOL:
 					rushDetected = true;
@@ -146,15 +146,15 @@ public strictfp class DesignSchoolRobot extends Robot {
 			designSchoolState = DesignSchoolState.TERRAFORMING;
 		}
 		if (cooldown>0) cooldown--;
-		
+
 		System.out.println("cooldown:"+cooldown+", numDefenders:"+numDefenders+", nearbyAlliedLandscapers:"+nearbyAlliedLandscapers+", wallHole:"+wallHoleLocation);
 		if (wallHoleLocation != null && numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) {
 			System.out.println("queueing a defender:"+wallHoleLocation);
 			numDefenders++;
 		}
-		
+
 		if (numDefenders > 0) {
-			
+
 			//if there is no refinery, do not finish the wall
 			//if the fulfillment center has not been built and two or more landscapers exist, do not build more
 			//if ((numDefenders == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numDefenders <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost) || (!isAlliedDrone && numDefenders <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
@@ -164,7 +164,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 			if (nearbyAlliedVaporators == 0 && round < 400 && soup < RobotType.VAPORATOR.cost + 100 && !rushDetected) {
 				return;
 			}
-			
+
 			Direction hqDirection = location.directionTo(hqLocation);
 			if (rc.canBuildRobot(RobotType.LANDSCAPER, hqDirection)) {
 				rc.buildRobot(RobotType.LANDSCAPER, hqDirection);
@@ -180,25 +180,25 @@ public strictfp class DesignSchoolRobot extends Robot {
 					rc.buildRobot(RobotType.LANDSCAPER, left);
 					numDefenders--;
 					cooldown+=round/ROUND_COOLDOWN_FACTOR;
-					
+
 					return;
 				}
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, right)) {
 					rc.buildRobot(RobotType.LANDSCAPER, right);
 					numDefenders--;
 					cooldown+=round/ROUND_COOLDOWN_FACTOR;
-					
-					
+
+
 					return;
 				}
 
 			}
-			
+
 
 		}
-		
+
 		if (cooldown>0) return;
-		
+
 		if (soup >= MIN_GLOBAL_SOUP_TO_BUILD_TERRAFORMER + WEIGHT * nearbyAlliedLandscapers - VAPORATOR_WEIGHT * nearbyAlliedVaporators) {
 			Direction[] dirs = Utility.directions;
 			Direction d;
@@ -212,8 +212,8 @@ public strictfp class DesignSchoolRobot extends Robot {
 				}
 			}
 		}
-		
-		
+
+
 		/*switch (designSchoolState) {
 			case BUILDING_TURTLES:
 				buildTurtles();
@@ -229,7 +229,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 
 	private void buildTurtles() throws GameActionException {
 		if (numDefenders > 0) {
-			
+
 			//if there is no refinery, do not finish the wall
 			//if the fulfillment center has not been built and two or more landscapers exist, do not build more
 			//if ((numDefenders == 1 && (soup < RobotType.REFINERY.cost + RobotType.LANDSCAPER.cost || !isRefinery)) || (!fcBuilt && numDefenders <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.FULFILLMENT_CENTER.cost) || (!isAlliedDrone && numDefenders <= 7 && soup < RobotType.LANDSCAPER.cost + RobotType.DELIVERY_DRONE.cost)) {
@@ -239,7 +239,7 @@ public strictfp class DesignSchoolRobot extends Robot {
 			if (nearbyAlliedVaporators == 0 && round < 400 && soup < RobotType.VAPORATOR.cost + 100 && !rushDetected) {
 				return;
 			}
-			
+
 			Direction hqDirection = location.directionTo(hqLocation);
 			if (rc.canBuildRobot(RobotType.LANDSCAPER, hqDirection)) {
 				rc.buildRobot(RobotType.LANDSCAPER, hqDirection);
@@ -254,50 +254,50 @@ public strictfp class DesignSchoolRobot extends Robot {
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, left)) {
 					rc.buildRobot(RobotType.LANDSCAPER, left);
 					numDefenders--;
-					
-					
+
+
 					return;
 				}
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, right)) {
 					rc.buildRobot(RobotType.LANDSCAPER, right);
 					numDefenders--;
-					
-					
+
+
 					return;
 				}
 
 			}
-			
+
 
 		}
 	}
 
 	private void rush() throws GameActionException {
-	    if (nearbyAlliedLandscapers < MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL) {
-            Direction[] dirs = Utility.directions;
+		if (nearbyAlliedLandscapers < MAX_NEARBY_LANDSCAPERS_RUSH_DESIGN_SCHOOL) {
+			Direction[] dirs = Utility.directions;
 
-            Direction d;
-            MapLocation ml;
+			Direction d;
+			MapLocation ml;
 
-            Direction potentialBuildDirection = null;
+			Direction potentialBuildDirection = null;
 
-            for (int i = dirs.length; --i >= 0; ) {
-                d = dirs[i];
-                if (rc.canBuildRobot(RobotType.LANDSCAPER, d) && !rc.senseFlooding(location.add(d))) {
-                    ml = location.add(d);
-                    if (ml.isAdjacentTo(enemyHqLocation)) {
-                        rc.buildRobot(RobotType.LANDSCAPER, d);
-                        return;
-                    } else {
-                        potentialBuildDirection = d;
-                    }
-                }
-            }
+			for (int i = dirs.length; --i >= 0; ) {
+				d = dirs[i];
+				if (rc.canBuildRobot(RobotType.LANDSCAPER, d) && !rc.senseFlooding(location.add(d))) {
+					ml = location.add(d);
+					if (ml.isAdjacentTo(enemyHqLocation)) {
+						rc.buildRobot(RobotType.LANDSCAPER, d);
+						return;
+					} else {
+						potentialBuildDirection = d;
+					}
+				}
+			}
 
-            if (potentialBuildDirection != null) {
-                rc.buildRobot(RobotType.LANDSCAPER, potentialBuildDirection);
-            }
-        }
+			if (potentialBuildDirection != null) {
+				rc.buildRobot(RobotType.LANDSCAPER, potentialBuildDirection);
+			}
+		}
 	}
 
 	private void terraform() throws GameActionException {
@@ -332,12 +332,17 @@ public strictfp class DesignSchoolRobot extends Robot {
 			MapLocation l = new MapLocation(x,y);
 			System.out.println("15:"+l+", csl" + Utility.chebyshev(l, hqLocation));
 			if (Utility.chebyshev(l, hqLocation) <= 4 && Utility.chebyshev(location, hqLocation) <= 2) {
-				
+
 				//System.out.println("queueing a defender");
 				System.out.println("Wall hole detected");
 				wallHoleLocation = l;
 				//if (numDefenders == 0 && nearbyAlliedLandscapers == 0 && cooldown == 0) numDefenders++;
 			}
+			break;
+
+		case 16:
+			cooldown += 10;
+			break;
 		}
 
 	}
