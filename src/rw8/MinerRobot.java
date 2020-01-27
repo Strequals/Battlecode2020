@@ -58,6 +58,7 @@ public strictfp class MinerRobot extends Robot {
 	private int vaporatorsInWall;
 	private RobotInfo nearestEDrone;
 	private MapLocation frontLocation;
+	private ArrayList<MapLocation> enemyDrones;
 
 	public MapLocation nearestTerraformer;
 	private int maxWaitTurns = 10;
@@ -67,7 +68,8 @@ public strictfp class MinerRobot extends Robot {
 	public static final int MOVE_TO_MATRIX_ROUND = 500; 
 	public static final int MOVE_TO_MATRIX_BUILDER = 100; //Builder should move faster to matrix
 	public static final int VAPORATOR_WEIGHT = 20; // need VAPORATOR_WEIGHT more soup to build a vaporator with every vaporator in sight
-
+	public static final int RUN_AWAY_DISTANCE = 2;
+	
 	public MinerState prevState; //Stores state when switching to move_matrix state
 
 	public ArrayList<MapLocation> refineries;
@@ -96,6 +98,7 @@ public strictfp class MinerRobot extends Robot {
 		refineries = new ArrayList<MapLocation>();
 		random = round % 256;
 		soupCommunicateCooldown = 0;
+		enemyDrones = new ArrayList<MapLocation>();
 	}
 
 	@Override
@@ -103,16 +106,17 @@ public strictfp class MinerRobot extends Robot {
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
 		int nearbyMiners = 1;
-      int netgunDistance = 10000;
-      
+		int netgunDistance = 10000;
+
 		isFreeFriendlyDrone = false;
 
 		hqInRange = false;
 		nearestTerraformer = null;
 		int terraformerDistance = 1000;
-      int droneDist = 1000;
+		int droneDist = 1000;
 		numVaporators = 0;
 		vaporatorsInWall = 0;
+		enemyDrones.clear();
 
 		fcBuilt = false;
 		dsBuilt = false;
@@ -131,7 +135,7 @@ public strictfp class MinerRobot extends Robot {
 					break;
 				case DESIGN_SCHOOL:
 					//if (rc.senseElevation(r.location) >= robotElevation-3) {
-						dsBuilt = true;
+					dsBuilt = true;
 					//}
 					if (r.location.isAdjacentTo(hqLocation)) {
 						builderDS = true;
@@ -156,7 +160,7 @@ public strictfp class MinerRobot extends Robot {
 					break;
 				case FULFILLMENT_CENTER:
 					//if (rc.senseElevation(r.location) >= robotElevation-3) {
-						fcBuilt = true;
+					fcBuilt = true;
 					//}
 					if (r.location.isAdjacentTo(hqLocation)) {
 						builderFC = true;
@@ -192,11 +196,12 @@ public strictfp class MinerRobot extends Robot {
 				case DELIVERY_DRONE:
 					enemyBuiltDrones = true;
 					enemyDroneSpotted = true;
-               int distance = location.distanceSquaredTo(r.location);
-               if(distance < droneDist) {
-                  droneDist = distance;
-               }
-               nearestEDrone = r;
+					int distance = Utility.chebyshev(location,r.location);
+					if(distance < droneDist) {
+						droneDist = distance;
+					}
+					nearestEDrone = r;
+					enemyDrones.add(r.location);
 					break;
 				case MINER:
 					enemySpotted = true;
@@ -232,14 +237,14 @@ public strictfp class MinerRobot extends Robot {
 		random = (A*random+B)%256;
 
 		if(/*droneDetected && */netgunDistance > 5 && droneDist <=13) {  //not needed, since if no drones, default drone distance is 100
-         if(doBuilding())
-            return;
+			if(doBuilding())
+				return;
 			escape();
 			return;
 		}
-		else if(droneDist <= 8) {
-         if(doBuilding())
-            return;
+		else if(droneDist <= RUN_AWAY_DISTANCE) {
+			if(doBuilding())
+				return;
 			escape();
 			return;
 		}
@@ -352,7 +357,7 @@ public strictfp class MinerRobot extends Robot {
 			minerState = prevState;
 		}
 		//}
-		
+
 		if (round > MAX_VAPORATOR_BUILD_ROUND && enemyHqLocation != null) {
 			minerState = MinerState.ATTACKING_ENEMY_HQ;
 		}
@@ -696,7 +701,7 @@ public strictfp class MinerRobot extends Robot {
 			}
 			break;
 		case ATTACKING_ENEMY_HQ:
-			if (location.distanceSquaredTo(enemyHqLocation) >= ENEMY_HQ_RANGE) {
+			if (location.distanceSquaredTo(enemyHqLocation) >= 15) {
 				if (Nav.target == null || !Nav.target.equals(enemyHqLocation)) {
 					Nav.beginNav(rc, this, enemyHqLocation);
 				}
@@ -708,29 +713,29 @@ public strictfp class MinerRobot extends Robot {
 		}
 	}
 
-   private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
-      //System.out.println("Running...");
-      if(nearestNetgun != null) {
-         if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
-            if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
-               Nav.beginNav(rc, this, nearestNetgun);
-            }
-            Nav.nav(rc, this);
-            return;
-         }
-      }
-      else {
-         if(location.add(location.directionTo(hqLocation)).distanceSquaredTo(nearestEDrone.location) >= 8) {
-            if(Nav.target == null || !Nav.target.equals(hqLocation)) {
-               Nav.beginNav(rc, this, hqLocation);
-            }
-            Nav.nav(rc, this);
-            return;
-         }
-      }
-      fuzzy(rc, nearestEDrone.location.directionTo(location));
-      System.out.println("Running with fuzzy");
-   }
+	private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
+		//System.out.println("Running...");
+		if(nearestNetgun != null) {
+			if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
+				if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
+					Nav.beginNav(rc, this, nearestNetgun);
+				}
+				Nav.nav(rc, this);
+				return;
+			}
+		}
+		else {
+			if(location.add(location.directionTo(hqLocation)).distanceSquaredTo(nearestEDrone.location) >= 8) {
+				if(Nav.target == null || !Nav.target.equals(hqLocation)) {
+					Nav.beginNav(rc, this, hqLocation);
+				}
+				Nav.nav(rc, this);
+				return;
+			}
+		}
+		fuzzy(rc, nearestEDrone.location.directionTo(location));
+		System.out.println("Running with fuzzy");
+	}
 
 	public void mine(RobotController rc) {
 
@@ -754,7 +759,7 @@ public strictfp class MinerRobot extends Robot {
 		return false;
 	}
 
-   
+
 	public void tryBuildFC() throws GameActionException {
 		int hqDist = location.distanceSquaredTo(hqLocation);
 		if (hqDist <= 4) {
@@ -842,7 +847,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 		Nav.nav(rc, this);
 	}
-	
+
 	public void tryBuildVP() throws GameActionException {
 		int hqDist = location.distanceSquaredTo(hqLocation);
 		if (hqDist <= 4) {
@@ -1094,6 +1099,14 @@ public strictfp class MinerRobot extends Robot {
 	@Override
 	public boolean canMove(Direction d) throws GameActionException {
 		MapLocation ml = rc.adjacentLocation(d);
+		
+		ArrayList<MapLocation> eDrones = enemyDrones;
+		MapLocation eDroneLoc;
+		for (int i = eDrones.size(); i-->0;) {
+			eDroneLoc = eDrones.get(i);
+			if (Utility.chebyshev(location, eDroneLoc)<=RUN_AWAY_DISTANCE+1) return false;
+		}
+		
 		if (robotElevation >= Utility.MAX_HEIGHT_THRESHOLD && pathTile(location)) {
 			return rc.canMove(d) && !rc.senseFlooding(ml) && pathTile(ml) && rc.senseElevation(ml) >= Utility.MAX_HEIGHT_THRESHOLD;
 		}
@@ -1176,7 +1189,7 @@ public strictfp class MinerRobot extends Robot {
 						for (int i = 8; i-->0;) {
 							d = dirs[i];
 							ml = location.add(d);
-							
+
 							if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 								if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
 									if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD && !ml.isWithinDistanceSquared(hqLocation, 8)) continue;
@@ -1199,7 +1212,7 @@ public strictfp class MinerRobot extends Robot {
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
-						
+
 						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 							if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d)) {
 								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
@@ -1219,7 +1232,7 @@ public strictfp class MinerRobot extends Robot {
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
-						
+
 						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 							if (rc.canBuildRobot(RobotType.VAPORATOR, d)) {
 								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
@@ -1238,7 +1251,7 @@ public strictfp class MinerRobot extends Robot {
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
-						
+
 						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 							if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, d)) {
 								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD) continue;
@@ -1248,7 +1261,7 @@ public strictfp class MinerRobot extends Robot {
 						}
 					}
 				}
-				
+
 				if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt) {
 					Direction[] dirs = Utility.directions;
 					Direction d;
@@ -1256,7 +1269,7 @@ public strictfp class MinerRobot extends Robot {
 					for (int i = 8; i-->0;) {
 						d = dirs[i];
 						ml = location.add(d);
-						
+
 						if (Utility.chebyshev(ml, hqLocation) > 2 && buildingTile(ml)) {
 							if (rc.canBuildRobot(RobotType.NET_GUN, d)) {
 								if (rc.senseElevation(ml) < Utility.MAX_HEIGHT_THRESHOLD && !ml.isWithinDistanceSquared(hqLocation, 8)) continue;
