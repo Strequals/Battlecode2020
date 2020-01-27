@@ -735,7 +735,11 @@ public strictfp class LandscaperRobot extends Robot {
 			break;
 		case NORMAL:
 			if (nearestFillTile != null) {
+				boolean isHqFill = nearestFillTile.isWithinDistanceSquared(hqLocation, 8);
+
 				// Check if still needs filling
+				
+				if (isHqFill) {
 				if (rc.canSenseLocation(nearestFillTile)) {
 					int elev = rc.senseElevation(nearestFillTile);
 					if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
@@ -747,6 +751,19 @@ public strictfp class LandscaperRobot extends Robot {
 						}
 					}
 				}
+				} else {
+					if (rc.canSenseLocation(nearestFillTile)) {
+						int elev = rc.senseElevation(nearestFillTile);
+						if (!rc.senseFlooding(nearestFillTile)) {
+							nearestFillTile = null;
+						} else {
+							RobotInfo ri = rc.senseRobotAtLocation(nearestFillTile);
+							if (ri != null && ri.team == team && ri.type.isBuilding()) {
+								nearestFillTile = null;
+							}
+						}
+					}
+				}
 			}
 
 			if (hqFill != null) {
@@ -754,7 +771,7 @@ public strictfp class LandscaperRobot extends Robot {
 				MapLocation hqFillLoc = hqFill.mapLocation;
 				if (rc.canSenseLocation(hqFillLoc)) {
 					int elev = rc.senseElevation(hqFillLoc);
-					if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
+					if (!rc.senseFlooding(hqFillLoc)) {
 						hqFill = null;
 					} else {
 						RobotInfo ri = rc.senseRobotAtLocation(hqFillLoc);
@@ -948,6 +965,13 @@ public strictfp class LandscaperRobot extends Robot {
 			if (nearestFillTile != null) {
 				if (location.isAdjacentTo(nearestFillTile) && Utility.chebyshev(nearestFillTile, hqLocation) == 2) {
 					if (dirtCarrying == 0) {
+						if (pitDirection != null) {
+							if (rc.canDigDirt(pitDirection)) {
+								rc.digDirt(pitDirection);
+								return;
+							}
+						}
+						
 						Direction direction = location.directionTo(hqLocation);
 						// TODO: Find alternate direction if this doesn't work
 						if (rc.canDigDirt(direction)) {
