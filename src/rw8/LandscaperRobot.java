@@ -971,7 +971,7 @@ public strictfp class LandscaperRobot extends Robot {
 
 	private boolean escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
 		if(nearestNetgun != null) {
-			if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
+			if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 3) {
 				if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
 					Nav.beginNav(rc, this, nearestNetgun);
 				}
@@ -980,7 +980,7 @@ public strictfp class LandscaperRobot extends Robot {
 			}
 		}
 		else {
-			if(location.add(location.directionTo(hqLocation)).distanceSquaredTo(nearestEDrone.location) >= 8) {
+			if(location.add(location.directionTo(hqLocation)).distanceSquaredTo(nearestEDrone.location) >= 3) {
 				if(Nav.target == null || !Nav.target.equals(hqLocation)) {
 					Nav.beginNav(rc, this, hqLocation);
 				}
