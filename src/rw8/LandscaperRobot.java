@@ -1,6 +1,9 @@
 package rw8;
 
 import static rw8.Utility.TERRAFORM_THRESHOLD;
+
+import java.util.ArrayList;
+
 import battlecode.common.*;
 
 public strictfp class LandscaperRobot extends Robot {
@@ -8,7 +11,8 @@ public strictfp class LandscaperRobot extends Robot {
 	private enum LandscaperState {
 		DEFENSE,
 		ASSAULTING_HQ,
-		TERRAFORMING
+		TERRAFORMING,
+		STATE_MACHINES_ARE_BAD
 	}
 
 	private LandscaperState state;
@@ -52,11 +56,14 @@ public strictfp class LandscaperRobot extends Robot {
 	private int nearbyTerraformers = 0;
 	private int communicationDelay;
 	private MapLocation diagonalTarget;
-   private MapLocation stuckLocation;
-   private int turnsStuck = 0;
-	
+	private MapLocation stuckLocation;
+	private int turnsStuck = 0;
+
+	private ArrayList<MapLocation> enemyDrones;
+
 	public static final int TERRAFORM_TOWARDS_ENEMY_ROUND = 550;
 	public static final int FINAL_HQ_DISTANCE = 64;
+	public static final int RUN_AWAY_DISTANCE = 2;
 
 
 	LandscaperRobot(RobotController rc) throws GameActionException {
@@ -76,6 +83,7 @@ public strictfp class LandscaperRobot extends Robot {
 		rushDigging = true;
 		turnsNavedHq = 0;
 		communicationDelay = 0;
+		enemyDrones = new ArrayList<MapLocation>();
 
 		state = getInitialState();
 	}
@@ -128,6 +136,7 @@ public strictfp class LandscaperRobot extends Robot {
 		boolean rushDetected = false;
 
 		terraformingState = TerraformingState.NORMAL;
+		enemyDrones.clear();
 
 		// Process nearby robots
 		RobotInfo[] ri = nearbyRobots;
@@ -184,13 +193,14 @@ public strictfp class LandscaperRobot extends Robot {
 				switch (r.getType()) {
 				case DELIVERY_DRONE:
 					isDroneThreat = true;
-					distance = location.distanceSquaredTo(r.location); //distance squared has enough numbers to differentiate, and i can't get it to work on chebyevgfaevg distance for some reason
+					distance = Utility.chebyshev(location, r.location); //distance squared has enough numbers to differentiate, and i can't get it to work on chebyevgfaevg distance for some reason
 					if (distance < droneDist) {
 						droneDist = distance;
 						nearestEDrone = r;
 					}
+					enemyDrones.add(r.location);
 					break;
-               
+
 				case NET_GUN:
 				case FULFILLMENT_CENTER:
 				case VAPORATOR:
@@ -241,7 +251,7 @@ public strictfp class LandscaperRobot extends Robot {
 					if (Utility.chebyshev(r.location, hqLocation)<=4) {
 						rushDetected = true;
 					}
-               break;
+					break;
 				}
 			}
 		}
@@ -264,11 +274,11 @@ public strictfp class LandscaperRobot extends Robot {
 			//break;
 		case TERRAFORMING:
 
-// 			if ((netgunDistance > 5 && droneDist <= 3) || droneDist <= 1) {
-// 				//TODO: whatever goes here
-// 			} else 
-         if ((netgunDistance > 5 && droneDist <= 13) || droneDist <= 8) {
-				terraformingState = TerraformingState.ESCAPE;
+			// 			if ((netgunDistance > 5 && droneDist <= 3) || droneDist <= 1) {
+			// 				//TODO: whatever goes here
+			// 			} else 
+			if (droneDist <= RUN_AWAY_DISTANCE) {//(netgunDistance > 5 && droneDist <= 13) || 
+				if (escape()) return LandscaperState.STATE_MACHINES_ARE_BAD;
 			}
 		}
 
@@ -484,7 +494,7 @@ public strictfp class LandscaperRobot extends Robot {
 		}
 		Nav.nav(rc, this);
 	}
-	
+
 	/**
 	 * Moves towards the given MapLocation, filling in tiles along the way. 
 	 * @param ml The location to terraform towards
@@ -649,14 +659,14 @@ public strictfp class LandscaperRobot extends Robot {
 
 	private void doTerraforming() throws GameActionException {
 		//System.out.println("Terraforming state: " + terraformingState);
-      if(stuckLocation == null || !stuckLocation.equals(location)) {
-         stuckLocation = location;
-         turnsStuck = 0;
-      }
-      turnsStuck++;
-      if(turnsStuck > 100 && enemyHqLocation != null && location.isWithinDistanceSquared(enemyHqLocation, 64)) {
-         rc.disintegrate();
-      }
+		if(stuckLocation == null || !stuckLocation.equals(location)) {
+			stuckLocation = location;
+			turnsStuck = 0;
+		}
+		turnsStuck++;
+		if(turnsStuck > 100 && enemyHqLocation != null && location.isWithinDistanceSquared(enemyHqLocation, 64)) {
+			rc.disintegrate();
+		}
 		int csDist;
 		switch (terraformingState) {
 		case HELP_MINER_UP:
@@ -699,35 +709,35 @@ public strictfp class LandscaperRobot extends Robot {
 			break;
 		case NORMAL:
 			if (nearestFillTile != null) {
-                // Check if still needs filling
-                if (rc.canSenseLocation(nearestFillTile)) {
-                	int elev = rc.senseElevation(nearestFillTile);
-                    if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
-                        nearestFillTile = null;
-                    } else {
-                        RobotInfo ri = rc.senseRobotAtLocation(nearestFillTile);
-                        if (ri != null && ri.team == team && ri.type.isBuilding()) {
-                            nearestFillTile = null;
-                        }
-                    }
-                }
-            }
-            
-            if (hqFill != null) {
-                // Check if still needs filling
-                if (rc.canSenseLocation(hqFill)) {
-                	int elev = rc.senseElevation(hqFill);
-                    if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
-                        hqFill = null;
-                    } else {
-                        RobotInfo ri = rc.senseRobotAtLocation(hqFill);
-                        if (ri != null && ri.team == team && ri.type.isBuilding()) {
-                            hqFill = null;
-                        }
-                    }
-                }
-            }
-			
+				// Check if still needs filling
+				if (rc.canSenseLocation(nearestFillTile)) {
+					int elev = rc.senseElevation(nearestFillTile);
+					if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
+						nearestFillTile = null;
+					} else {
+						RobotInfo ri = rc.senseRobotAtLocation(nearestFillTile);
+						if (ri != null && ri.team == team && ri.type.isBuilding()) {
+							nearestFillTile = null;
+						}
+					}
+				}
+			}
+
+			if (hqFill != null) {
+				// Check if still needs filling
+				if (rc.canSenseLocation(hqFill)) {
+					int elev = rc.senseElevation(hqFill);
+					if (elev >= Utility.MAX_HEIGHT_THRESHOLD) {
+						hqFill = null;
+					} else {
+						RobotInfo ri = rc.senseRobotAtLocation(hqFill);
+						if (ri != null && ri.team == team && ri.type.isBuilding()) {
+							hqFill = null;
+						}
+					}
+				}
+			}
+
 			// Move off of pit
 			if (pitTile(location)) {
 				Direction[] dirs = Utility.directions;
@@ -776,186 +786,186 @@ public strictfp class LandscaperRobot extends Robot {
 					}
 				}
 			}
-         
-         
-//			if (backupFill != null && Utility.chebyshev(location, backupFill) <= 2) {
-//				backupFill = null;
-//			}
-//
-//			if (fillTarget != null) {
-//				if (rc.canSenseLocation(fillTarget)) {
-//					if (rc.senseElevation(fillTarget) >= Utility.MAX_HEIGHT_THRESHOLD) {
-//						fillTarget = null;
-//					}
-//				}
-//			}
-//
-//			if (fillTarget == null) {
-//				if (backupFill != null) {
-//					fillTarget = backupFill;
-//				}
-//			}
-//
-//			if (fillTarget == null) {
-//				if (enemyHqLocation != null) {
-//					if (moveTerraform(enemyHqLocation)) {
-//						if (communicationDelay == 0) {
-//							if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
-//								Communications.queueMessage(rc, 1, 15, location.x, location.y);
-//								communicationDelay = 20*(nearbyTerraformers+1);
-//							}
-//						} else {
-//							if (communicationDelay > 0)communicationDelay--;
-//						}
-//					
-//					}
-//					return;
-//				} else {
-//					System.out.println("enemy hq location unknown, pathing around HQ");
-//					moveTerraform(hqLocation);
-//				}
-//			} else {
-//				if (moveTerraform(fillTarget)) {
-//					if (communicationDelay == 0 && Utility.chebyshev(location, fillTarget)==1) {
-//						if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
-//							Communications.queueMessage(rc, 1, 15, fillTarget.x, fillTarget.y);
-//							communicationDelay = 20*(nearbyTerraformers+1);
-//						}
-//					} else {
-//						if (communicationDelay > 0)communicationDelay--;
-//					}
-//				}
-//				
-//				return;
-//			}
+
+
+			//			if (backupFill != null && Utility.chebyshev(location, backupFill) <= 2) {
+			//				backupFill = null;
+			//			}
+			//
+			//			if (fillTarget != null) {
+			//				if (rc.canSenseLocation(fillTarget)) {
+			//					if (rc.senseElevation(fillTarget) >= Utility.MAX_HEIGHT_THRESHOLD) {
+			//						fillTarget = null;
+			//					}
+			//				}
+			//			}
+			//
+			//			if (fillTarget == null) {
+			//				if (backupFill != null) {
+			//					fillTarget = backupFill;
+			//				}
+			//			}
+			//
+			//			if (fillTarget == null) {
+			//				if (enemyHqLocation != null) {
+			//					if (moveTerraform(enemyHqLocation)) {
+			//						if (communicationDelay == 0) {
+			//							if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
+			//								Communications.queueMessage(rc, 1, 15, location.x, location.y);
+			//								communicationDelay = 20*(nearbyTerraformers+1);
+			//							}
+			//						} else {
+			//							if (communicationDelay > 0)communicationDelay--;
+			//						}
+			//					
+			//					}
+			//					return;
+			//				} else {
+			//					System.out.println("enemy hq location unknown, pathing around HQ");
+			//					moveTerraform(hqLocation);
+			//				}
+			//			} else {
+			//				if (moveTerraform(fillTarget)) {
+			//					if (communicationDelay == 0 && Utility.chebyshev(location, fillTarget)==1) {
+			//						if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
+			//							Communications.queueMessage(rc, 1, 15, fillTarget.x, fillTarget.y);
+			//							communicationDelay = 20*(nearbyTerraformers+1);
+			//						}
+			//					} else {
+			//						if (communicationDelay > 0)communicationDelay--;
+			//					}
+			//				}
+			//				
+			//				return;
+			//			}
 
 
 
 
-			                
-			                
-			                
-			
-			                if (backupFill != null && Utility.chebyshev(location, backupFill) <= 2) {
-			                    backupFill = null;
-			                }
-			
-			                if (nearestFillTile == null) {
-			                	if (hqFill != null) {
-			                		nearestFillTile = hqFill;
-			                		hqFill = null;
-			                		
-			                	} else {
-			                    // Find tile to fill
-			                    MapLocation ml;
-			                    int rSq = senseRadiusSq;
-			                    int radius = Math.min((int)(Math.sqrt(rSq)), Utility.MAX_TERRAFORM_RANGE);
-			                    int dx;
-			                    int dy;
-			                    int rad;
-			                    long elev;
-			                    long dElev;
-			                    int bestPriority = 100000;
-			                    int priority;
-			                    int rank;
-			                    RobotInfo ri;
-			                    int lowerx=Math.max(0, location.x - radius);
-			                    int upperx=Math.min(mapWidth - 1, location.x + radius);
-			                    int lowery=Math.max(0, location.y - radius);
-			                    int uppery=Math.min(mapHeight - 1, location.y + radius);
-			                    for (int x = lowerx; x <= upperx; x++) {
-			                        for (int y = lowery; y <= uppery; y++) {
-			                            dx = x - location.x;
-			                            dy = y - location.y;
-			                            rad = dx * dx + dy * dy;
-			                            if (rad > rSq) 
-                                       continue;
-			                            ml = new MapLocation(x, y);
-			
-			                            csDist = Utility.chebyshev(ml, location);
-			                            if (!pathTile(ml)) continue;
-			                            elev = rc.senseElevation(ml);
-			
-			                            dElev = (robotElevation) - elev;
-			                            if (dElev > TERRAFORM_THRESHOLD) continue;
-			                            rank = Utility.chebyshev(ml, hqLocation) * 4;
-			                            // Don't create a huge bubble around HQ, just enough to keep floods out
-			                            rank = rank < 7 ? rank : 0;
-			                            if (rank == 1) continue;
-			                            //heuristic
-			                            priority = csDist + rank;
-			                            if (enemyHqLocation != null) {
-			                                priority += Utility.chebyshev(ml, enemyHqLocation) * 2;
-			                            }
-			                            if (dElev < 0) {
-			                                dElev = -dElev;
-			                                priority -= 100; //Prioritize filling in lower tiles rather than digging higher ones
-			                            }
-			                            if (elev >= Utility.MAX_HEIGHT_THRESHOLD) continue;
-			                            if (dElev > 0) {
-			                                if (priority < bestPriority) {
-			                                    ri = rc.senseRobotAtLocation(ml);
-			                                    if (ri != null && (ri.type.isBuilding() || (ri.team == team && ri.type == RobotType.LANDSCAPER))) continue;
-			                                    bestPriority = priority;
-			                                    nearestFillTile = ml;
-			                                }
-			
-			                            }
-			                        }
-			                    }
-			                	}
-			                }
-			
-			                if (nearestFillTile != null) {
-			                    boolean filled = moveTerraform(nearestFillTile);
-			                    if (filled && pitDirection != null && communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile)==1) {
-			                        if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
-			                            Communications.queueMessage(rc, 1, 15, nearestFillTile.x, nearestFillTile.y);
-			                            communicationDelay = 20*(nearbyTerraformers+1);
-			                        }
-                                 if (nearbyTerraformers > 5) {
-                                    Communications.queueMessage(rc, 1, 16, 0, 0);
-                                    communicationDelay = 20*(nearbyTerraformers+1);
-                                 }
-			                    } else {
-			                        if (communicationDelay > 0)
-                                    communicationDelay--;
-			                    }
-			                    return;
-			                }
-			
-			                
-			
-			                // Move towards terraform edge
-			                if (backupFill != null) {
-			                    moveTerraform(backupFill);
-			                    return;
-			                }
-			                
-			                //Move towards enemy HQ
-			                if (enemyHqLocation != null && !location.isWithinDistanceSquared(enemyHqLocation, FINAL_HQ_DISTANCE)) {
-			                	moveTerraform(enemyHqLocation);
-			                	return;
-			                }
-			                
-			                //pick up dirt so if an assaulter carries to enemy HQ, can begin placing immediately
-			                if (dirtCarrying < RobotType.LANDSCAPER.dirtLimit) {
-			                	if (pitDirection != null) rc.digDirt(pitDirection);
-			                	return;
-			                }
-			                moveTerraform(hqLocation);
-			                break;
+
+
+
+
+			if (backupFill != null && Utility.chebyshev(location, backupFill) <= 2) {
+				backupFill = null;
+			}
+
+			if (nearestFillTile == null) {
+				if (hqFill != null) {
+					nearestFillTile = hqFill;
+					hqFill = null;
+
+				} else {
+					// Find tile to fill
+					MapLocation ml;
+					int rSq = senseRadiusSq;
+					int radius = Math.min((int)(Math.sqrt(rSq)), Utility.MAX_TERRAFORM_RANGE);
+					int dx;
+					int dy;
+					int rad;
+					long elev;
+					long dElev;
+					int bestPriority = 100000;
+					int priority;
+					int rank;
+					RobotInfo ri;
+					int lowerx=Math.max(0, location.x - radius);
+					int upperx=Math.min(mapWidth - 1, location.x + radius);
+					int lowery=Math.max(0, location.y - radius);
+					int uppery=Math.min(mapHeight - 1, location.y + radius);
+					for (int x = lowerx; x <= upperx; x++) {
+						for (int y = lowery; y <= uppery; y++) {
+							dx = x - location.x;
+							dy = y - location.y;
+							rad = dx * dx + dy * dy;
+							if (rad > rSq) 
+								continue;
+							ml = new MapLocation(x, y);
+
+							csDist = Utility.chebyshev(ml, location);
+							if (!pathTile(ml)) continue;
+							elev = rc.senseElevation(ml);
+
+							dElev = (robotElevation) - elev;
+							if (dElev > TERRAFORM_THRESHOLD) continue;
+							rank = Utility.chebyshev(ml, hqLocation) * 4;
+							// Don't create a huge bubble around HQ, just enough to keep floods out
+							rank = rank < 7 ? rank : 0;
+							if (rank == 1) continue;
+							//heuristic
+							priority = csDist + rank;
+							if (enemyHqLocation != null) {
+								priority += Utility.chebyshev(ml, enemyHqLocation) * 2;
+							}
+							if (dElev < 0) {
+								dElev = -dElev;
+								priority -= 100; //Prioritize filling in lower tiles rather than digging higher ones
+							}
+							if (elev >= Utility.MAX_HEIGHT_THRESHOLD) continue;
+							if (dElev > 0) {
+								if (priority < bestPriority) {
+									ri = rc.senseRobotAtLocation(ml);
+									if (ri != null && (ri.type.isBuilding() || (ri.team == team && ri.type == RobotType.LANDSCAPER))) continue;
+									bestPriority = priority;
+									nearestFillTile = ml;
+								}
+
+							}
+						}
+					}
+				}
+			}
+
+			if (nearestFillTile != null) {
+				boolean filled = moveTerraform(nearestFillTile);
+				if (filled && pitDirection != null && communicationDelay == 0 && Utility.chebyshev(location, nearestFillTile)==1) {
+					if (nearbyTerraformers < Utility.MAX_NEARBY_TERRAFORMERS) {
+						Communications.queueMessage(rc, 1, 15, nearestFillTile.x, nearestFillTile.y);
+						communicationDelay = 20*(nearbyTerraformers+1);
+					}
+					if (nearbyTerraformers > 5) {
+						Communications.queueMessage(rc, 1, 16, 0, 0);
+						communicationDelay = 20*(nearbyTerraformers+1);
+					}
+				} else {
+					if (communicationDelay > 0)
+						communicationDelay--;
+				}
+				return;
+			}
+
+
+
+			// Move towards terraform edge
+			if (backupFill != null) {
+				moveTerraform(backupFill);
+				return;
+			}
+
+			//Move towards enemy HQ
+			if (enemyHqLocation != null && !location.isWithinDistanceSquared(enemyHqLocation, FINAL_HQ_DISTANCE)) {
+				moveTerraform(enemyHqLocation);
+				return;
+			}
+
+			//pick up dirt so if an assaulter carries to enemy HQ, can begin placing immediately
+			if (dirtCarrying < RobotType.LANDSCAPER.dirtLimit) {
+				if (pitDirection != null) rc.digDirt(pitDirection);
+				return;
+			}
+			moveTerraform(hqLocation);
+			break;
 		}
 	}
 
-	private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
+	private boolean escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
 		if(nearestNetgun != null) {
 			if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
 				if(Nav.target == null || !Nav.target.equals(nearestNetgun)) {
 					Nav.beginNav(rc, this, nearestNetgun);
 				}
 				Nav.nav(rc, this);
-				return;
+				return true;
 			}
 		}
 		else {
@@ -964,10 +974,10 @@ public strictfp class LandscaperRobot extends Robot {
 					Nav.beginNav(rc, this, hqLocation);
 				}
 				Nav.nav(rc, this);
-				return;
+				return true;
 			}
 		}
-		fuzzy(rc, nearestEDrone.location.directionTo(location));
+		return fuzzy(rc, nearestEDrone.location.directionTo(location));
 	}
 
 	public boolean fuzzy(RobotController rc, Direction d) throws GameActionException {
@@ -1015,6 +1025,25 @@ public strictfp class LandscaperRobot extends Robot {
 	}
 
 	@Override
+	public boolean canMove(Direction d) throws GameActionException {
+
+		ArrayList<MapLocation> eDrones = enemyDrones;
+		MapLocation eDroneLoc;
+		for (int i = eDrones.size(); i-->0;) {
+			eDroneLoc = eDrones.get(i);
+			if (Utility.chebyshev(location, eDroneLoc)<=RUN_AWAY_DISTANCE+1) return false;
+		}
+
+		if (location.isWithinDistanceSquared(hqLocation, 8)) {
+			return rc.canMove(d) && (hqFill == null || rc.senseElevation(location.add(d)) < Utility.MAX_HEIGHT_THRESHOLD);
+		}
+		else return rc.canMove(d) && pathTile(location.add(d));
+
+
+
+	}
+
+	@Override
 	public void processMessage(int m, int x, int y) {
 		switch (m) {
 		case 1:
@@ -1031,7 +1060,7 @@ public strictfp class LandscaperRobot extends Robot {
 					diagonalTarget = ml15;
 					hqFill = ml15;
 				} else {
-				
+
 					hqFill = ml15;
 				}
 			}

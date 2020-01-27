@@ -245,8 +245,7 @@ public strictfp class MinerRobot extends Robot {
 		else if(droneDist <= RUN_AWAY_DISTANCE) {
 			if(doBuilding())
 				return;
-			escape();
-			return;
+			if (escape()) return;
 		}
 
 		MapLocation ml;
@@ -713,7 +712,7 @@ public strictfp class MinerRobot extends Robot {
 		}
 	}
 
-	private void escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
+	private boolean escape() throws GameActionException {  //run towards nearest netgun (only trigger if dsquare distance to nearest netgun is greater than 5)
 		//System.out.println("Running...");
 		if(nearestNetgun != null) {
 			if(location.add(location.directionTo(nearestNetgun)).distanceSquaredTo(nearestEDrone.location) >= 8) {
@@ -721,7 +720,7 @@ public strictfp class MinerRobot extends Robot {
 					Nav.beginNav(rc, this, nearestNetgun);
 				}
 				Nav.nav(rc, this);
-				return;
+				return true;
 			}
 		}
 		else {
@@ -730,11 +729,10 @@ public strictfp class MinerRobot extends Robot {
 					Nav.beginNav(rc, this, hqLocation);
 				}
 				Nav.nav(rc, this);
-				return;
+				return true;
 			}
 		}
-		fuzzy(rc, nearestEDrone.location.directionTo(location));
-		System.out.println("Running with fuzzy");
+		return fuzzy(rc, nearestEDrone.location.directionTo(location));
 	}
 
 	public void mine(RobotController rc) {
