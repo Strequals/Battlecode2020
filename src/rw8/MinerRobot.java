@@ -1232,7 +1232,7 @@ public strictfp class MinerRobot extends Robot {
 					}
 				}
 				
-				if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted)) {
+				if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt) {
 					Direction[] dirs = Utility.directions;
 					Direction d;
 					ml = null;
