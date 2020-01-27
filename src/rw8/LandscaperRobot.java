@@ -877,7 +877,7 @@ public strictfp class LandscaperRobot extends Robot {
 			
 			                            dElev = (robotElevation) - elev;
 			                            if (dElev > TERRAFORM_THRESHOLD) continue;
-			                            rank = Utility.chebyshev(ml, hqLocation) * 2;
+			                            rank = Utility.chebyshev(ml, hqLocation) * 4;
 			                            // Don't create a huge bubble around HQ, just enough to keep floods out
 			                            rank = rank < 7 ? rank : 0;
 			                            if (rank == 1) continue;
