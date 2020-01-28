@@ -24,6 +24,8 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DESIGN_SCHOOL_WEIGHT = 550;
 	public static final int FULFILLMENT_CENTER_WEIGHT = 570;
 	public static final int ENEMY_HQ_RANGE = 48;
+	public static final int MIN_VAPORATORS_TO_BUILD_NETGUN = 5;
+	public static final int NETGUN_BASE = 800;
 	
 	public boolean placedNetgunsAtEnemyHQ = false;
 	public MapLocation soupMine;
@@ -42,6 +44,7 @@ public strictfp class MinerRobot extends Robot {
 	private boolean builderFC = false;
 	private boolean builderVP = false;
 	private boolean hqAvailable = true;
+	private boolean builderNG = false;
 	private int numVaporators;
 	private int wallVaporators;
 	private int numNetguns;
@@ -125,6 +128,7 @@ public strictfp class MinerRobot extends Robot {
 
 		fcBuilt = false;
 		dsBuilt = false;
+		ngBuilt = false;
 		isRefineryNearby = false;
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
@@ -157,6 +161,9 @@ public strictfp class MinerRobot extends Robot {
 						if (r.location.isWithinDistanceSquared(enemyHqLocation, ENEMY_HQ_RANGE)) {
 							numNetguns++;
 						}
+					}
+					if (r.location.isWithinDistanceSquared(hqLocation, 8)) {
+						builderNG = true;
 					}
 					break;
 				case LANDSCAPER:
@@ -846,11 +853,25 @@ public strictfp class MinerRobot extends Robot {
 
 			netGunLocation = hqLocation.add(direction).add(direction);
 		}
+		
+		if (rc.canSenseLocation(netGunLocation)) {
+			if (rc.senseFlooding(netGunLocation)) {
+				builderNG = true; //give up building netgun
+				return;
+			} else {
+				RobotInfo ri = rc.senseRobotAtLocation(netGunLocation);
+				if (ri != null && ri.team == team && ri.type.isBuilding()) {
+					builderNG = true;
+					return;
+				}
+			}
+		}
 
 		if (location.isAdjacentTo(netGunLocation)) {
 			Direction direction = location.directionTo(netGunLocation);
 			if (rc.canBuildRobot(RobotType.NET_GUN, direction)) {
 				rc.buildRobot(RobotType.NET_GUN, direction);
+				builderNG = true;
 				return;
 			}
 		}
@@ -1173,10 +1194,11 @@ public strictfp class MinerRobot extends Robot {
 	}
 
 	public boolean doBuilding() throws GameActionException {
-		if (round < TURTLE_ROUND) {
-			if (soup > RobotType.NET_GUN.cost) {
+		if (round < TURTLE_END) {
+			if (soup > RobotType.NET_GUN.cost && !builderNG) {
 				System.out.println("TryNetGun");
 				tryBuildNetGun();
+				return true;
 			} else if (!builderFC && soup > RobotType.FULFILLMENT_CENTER.cost) {
 				System.out.println("TryFC");
 				tryBuildFC();
@@ -1245,7 +1267,7 @@ public strictfp class MinerRobot extends Robot {
 				if (enemyHqLocation != null && location.distanceSquaredTo(enemyHqLocation) <= ENEMY_HQ_RANGE) {
 					if (numNetguns > MAX_NETGUNS_EHQ) return false;
 					//Build Netgun
-					if (soup > RobotType.NET_GUN.cost && hqDist >= 2) {// && enemyDroneSpotted
+					if (soup > RobotType.NET_GUN.cost && hqDist >= 2 && (!ngBuilt || soup > NETGUN_BASE)) {// && enemyDroneSpotted
 						Direction[] dirs = Utility.directions;
 						Direction d;
 						ml = null;
@@ -1324,8 +1346,8 @@ public strictfp class MinerRobot extends Robot {
 						}
 					}
 				}
-
-				if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted) && !ngBuilt) {
+				System.out.println("netgunBuild"+numVaporators);
+				if (soup > RobotType.NET_GUN.cost && (soup > 800 || enemyDroneSpotted || (numVaporators >= MIN_VAPORATORS_TO_BUILD_NETGUN && soup > NETGUN_BASE)) && !ngBuilt) {
 					Direction[] dirs = Utility.directions;
 					Direction d;
 					ml = null;

@@ -179,7 +179,7 @@ public strictfp class HQRobot extends Robot {
 			Communications.queueMessage(rc, 20, 1, location.x, location.y);
 		}
 
-		if (enemyHqLocation != null && round % 20 == 0) {
+		if (enemyHqLocation != null && round % 10 == 0) {
 			if (soup >= 1) Communications.queueMessage(rc, 1, 3, enemyHqLocation.x, enemyHqLocation.y);
 		}
 		

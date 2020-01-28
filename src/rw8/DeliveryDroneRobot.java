@@ -65,6 +65,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 	private ArrayList<MapLocation> enemyNetguns;
 	private static final int ASSAULT_ROUND = 1300;
+	private static final int ATTACK_ROUND = 1500;//after this turn created drones are automatically in attack mode
 
 	public DeliveryDroneRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -306,6 +307,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			carryingAssaulter = false;
 			carryingEnemy = false;
 			carryingAlly = false;
+			System.out.println(rushDetected+" "+rushLocation);
 			if (round < TURTLE_ROUND || rushDetected || (rushLocation != null)) {
 				state = DroneState.DEFENDING;
 			} else {
@@ -498,6 +500,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				if (friendlyDrones >= DRONE_COUNT_RUSH || (round >= FINAL_CRUNCH_ROUND && round % 50 == 0)) {// || round > FINAL_CRUNCH_ROUND
 					if (soup>1)Communications.queueMessage(rc, 1, 4, enemyHqLocation.x, enemyHqLocation.y);
 					//rush = true;
+					return;
 				}
 			}
 			
@@ -1053,10 +1056,15 @@ public strictfp class DeliveryDroneRobot extends Robot {
 				enemyNetguns.add(enemyHqLocation);
 			}
 			if (Utility.chebyshev(enemyHqLocation, location) <= CRUNCH_RANGE) {
-				if (state == DroneState.ATTACKING) {
-					rush = true;
-				} else if (state == DroneState.ASSAULTING) {
+				if (state == DroneState.ASSAULTING) {
 					assaulterRushDelay = ASSAULTER_DELAY;
+				} else {
+					if (state == DroneState.ATTACKING) {
+						rush = true;
+					} else {
+						state = DroneState.ATTACKING;
+						rush = true;
+					}
 				}
 			}
 			break;
