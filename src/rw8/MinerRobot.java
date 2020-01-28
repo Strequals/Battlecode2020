@@ -25,7 +25,8 @@ public strictfp class MinerRobot extends Robot {
 	public static final int FULFILLMENT_CENTER_WEIGHT = 570;
 	public static final int ENEMY_HQ_RANGE = 48;
 	public static final int MIN_VAPORATORS_TO_BUILD_NETGUN = 5;
-	public static final int NETGUN_BASE = 800;
+	public static final int NETGUN_BASE = 890;
+	public static final int NETGUN_DISTANCE_SCALAR = 10;
 	
 	public boolean placedNetgunsAtEnemyHQ = false;
 	public MapLocation soupMine;
@@ -49,6 +50,7 @@ public strictfp class MinerRobot extends Robot {
 	private int wallVaporators;
 	private int numNetguns;
 	private MapLocation nearestNetgun;
+	private int netgunDistance = 10000;
 	private boolean isBuilder;
 	private boolean isRefineryNearby = false;
 	private boolean isFreeFriendlyDrone;
@@ -84,7 +86,7 @@ public strictfp class MinerRobot extends Robot {
 	public static final int DISTANCE_REFINERY_THRESHOLD = 400; // minimum distance apart for refineries
 	public static final int DISTANCE_SOUP_THRESHOLD = 25; //maximum distance from refinery to soup deposit upon creation
 
-	public static final int MAX_VAPORATOR_BUILD_ROUND = 1200;
+	public static final int MAX_VAPORATOR_BUILD_ROUND = 1250;
 	public static final int FC_DIST = 8;
 
 	enum MinerState {
@@ -113,7 +115,6 @@ public strictfp class MinerRobot extends Robot {
 		RobotInfo[] ri = nearbyRobots;
 		RobotInfo r;
 		int nearbyMiners = 1;
-		int netgunDistance = 10000;
 
 		isFreeFriendlyDrone = false;
 
@@ -130,6 +131,16 @@ public strictfp class MinerRobot extends Robot {
 		dsBuilt = false;
 		ngBuilt = false;
 		isRefineryNearby = false;
+		
+		
+		if (nearestNetgun != null && rc.canSenseLocation(nearestNetgun)) {
+			RobotInfo nn = rc.senseRobotAtLocation(nearestNetgun);
+			if (nn == null || nn.team != team || nn.type != RobotType.NET_GUN) {
+				nearestNetgun = null;
+				netgunDistance = 1000;
+			}
+		}
+		
 		for (int i = ri.length; --i >= 0;) {
 			r = ri[i];
 			if (r.getTeam() == team) {
@@ -152,7 +163,7 @@ public strictfp class MinerRobot extends Robot {
 					break;
 				case NET_GUN:
 					ngBuilt = true;
-					int distance = location.distanceSquaredTo(r.location);
+					int distance = Utility.chebyshev(location, r.location);
 					if (distance <= netgunDistance) {
 						nearestNetgun = r.location;
 						netgunDistance = distance;       //won't update if the nearest netgun isnt in visual range, but not a problem
@@ -860,7 +871,7 @@ public strictfp class MinerRobot extends Robot {
 				return;
 			} else {
 				RobotInfo ri = rc.senseRobotAtLocation(netGunLocation);
-				if (ri != null && ri.team == team && ri.type.isBuilding()) {
+				if (ri != null) {
 					builderNG = true;
 					return;
 				}
@@ -1195,7 +1206,7 @@ public strictfp class MinerRobot extends Robot {
 
 	public boolean doBuilding() throws GameActionException {
 		if (round < TURTLE_END) {
-			if (soup > RobotType.NET_GUN.cost && !builderNG) {
+			if (!rushDetected && builderFC && builderDS && soup > RobotType.NET_GUN.cost && !builderNG) {
 				System.out.println("TryNetGun");
 				tryBuildNetGun();
 				return true;
@@ -1267,7 +1278,7 @@ public strictfp class MinerRobot extends Robot {
 				if (enemyHqLocation != null && location.distanceSquaredTo(enemyHqLocation) <= ENEMY_HQ_RANGE) {
 					if (numNetguns > MAX_NETGUNS_EHQ) return false;
 					//Build Netgun
-					if (soup > RobotType.NET_GUN.cost && hqDist >= 2 && (!ngBuilt || soup > NETGUN_BASE)) {// && enemyDroneSpotted
+					if (soup > NETGUN_BASE && enemyDroneSpotted && (nearestNetgun == null || soup > NETGUN_BASE - NETGUN_DISTANCE_SCALAR * netgunDistance) && hqDist >= 2 && !ngBuilt) {// && enemyDroneSpotted
 						Direction[] dirs = Utility.directions;
 						Direction d;
 						ml = null;
