@@ -98,6 +98,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		int targetDistance = 10000;
 		int allyDistance = 10000;
 		int distance;
+      boolean enemyLandscaperNextToHQ = false;
 		
 		if (targetRobot != null) {
 			if (rc.canSenseRobot(targetRobot.ID)) {
@@ -225,9 +226,15 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 					distance = location.distanceSquaredTo(r.location);
 					if (distance < targetDistance) {
+                  if(enemyLandscaperNextToHQ) { 
+                     if(r.location.distanceSquaredTo(hqLocation) > 2) {
+                        break;
+                     }
+                  }
 						targetLocation = r.location;
 						targetDistance = distance;
 						targetRobot = r;
+                  enemyLandscaperNextToHQ = r.location.distanceSquaredTo(hqLocation) <= 2;
 
 					}
 					if (Utility.chebyshev(r.location, hqLocation) < RUSH_RANGE) {
