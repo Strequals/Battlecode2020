@@ -98,6 +98,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		int targetDistance = 10000;
 		int allyDistance = 10000;
 		int distance;
+      boolean enemyLandscaperNextToHQ = false;
 		
 		if (targetRobot != null) {
 			if (rc.canSenseRobot(targetRobot.ID)) {
@@ -107,6 +108,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			} else if (location.isWithinDistanceSquared(targetLocation, GIVE_UP_RANGE)) {
 				targetRobot = null;
 				targetLocation = null;
+				targetDistance = 10000;
 			}
 		} else {
 			targetLocation = null;
@@ -115,13 +117,23 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			if (rc.canSenseRobot(targetFriendly.ID)) {
 				r = rc.senseRobot(targetFriendly.ID);
 				targetLocationf = r.location;
-				allyDistance = Utility.chebyshev(location, targetLocationf);
+				targetDistance = Utility.chebyshev(location, targetLocationf);
 			} else if (location.isWithinDistanceSquared(targetLocationf, GIVE_UP_RANGE)) {
 				targetFriendly = null;
 				targetLocationf = null;
+				targetDistance = 10000;
 			}
 		} else {
 			targetLocationf = null;
+		}
+		if (allyToAssist != null) {
+			if (rc.canSenseRobot(allyToAssist.ID)) {
+				r = rc.senseRobot(allyToAssist.ID);
+				allyDistance = Utility.chebyshev(location, allyToAssist.location);
+			} else if (location.isWithinDistanceSquared(allyToAssist.location, GIVE_UP_RANGE)) {
+				allyToAssist = null;
+				allyDistance = 10000;
+			}
 		}
 		System.out.println("TL:"+targetLocation);
 		System.out.println("TF:"+targetLocationf);
@@ -183,7 +195,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 							targetFriendly = r;
 						}
 					}
-					if(!pathTile(r.location)) {
+					if(!pathTile(r.location) && rc.senseElevation(r.location) < Utility.MAX_HEIGHT_THRESHOLD) {
 						distance = Utility.chebyshev(location, r.location);
 						if (distance < allyDistance) { //|| && (!pathTile(r.location)) state == DroneState.MINER_ASSIST, kinda hacky, only pick up miner if its not on the path, unless in miner assist mode
 							allyToAssist = r;
@@ -225,9 +237,15 @@ public strictfp class DeliveryDroneRobot extends Robot {
 
 					distance = location.distanceSquaredTo(r.location);
 					if (distance < targetDistance) {
+                  if(enemyLandscaperNextToHQ) { 
+                     if(r.location.distanceSquaredTo(hqLocation) > 2) {
+                        break;
+                     }
+                  }
 						targetLocation = r.location;
 						targetDistance = distance;
 						targetRobot = r;
+                  enemyLandscaperNextToHQ = r.location.distanceSquaredTo(hqLocation) <= 2;
 
 					}
 					if (Utility.chebyshev(r.location, hqLocation) < RUSH_RANGE) {
@@ -308,7 +326,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			carryingEnemy = false;
 			carryingAlly = false;
 			System.out.println(rushDetected+" "+rushLocation);
-			if (round < TURTLE_ROUND || rushDetected || (rushLocation != null)) {
+			if (round < TURTLE_ROUND || rushDetected || (rushLocation != null) && (enemyHqLocation == null || location.distanceSquaredTo(enemyHqLocation) > RUSH_RANGE)) {
 				state = DroneState.DEFENDING;
 			} else {
 				state = DroneState.ATTACKING;
@@ -495,7 +513,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	}
 
 	private void doInitiateRush() throws GameActionException {
-		if (enemyHqLocation != null) {
+		if (enemyHqLocation != null && assaulterRushDelay < 0) {
 			if (Utility.chebyshev(location, enemyHqLocation) <= CRUNCH_RANGE) {
 				if (friendlyDrones >= DRONE_COUNT_RUSH || (round >= FINAL_CRUNCH_ROUND && round % 50 == 0)) {// || round > FINAL_CRUNCH_ROUND
 					if (soup>1)Communications.queueMessage(rc, 1, 4, enemyHqLocation.x, enemyHqLocation.y);
@@ -602,6 +620,8 @@ public strictfp class DeliveryDroneRobot extends Robot {
 			if (pathTile(ml)) {
 				if (rc.canDropUnit(d) && !rc.senseFlooding(ml)) {
 					rc.dropUnit(d);
+					carryingAlly = false;
+					allyToAssist = null;
 					return true;
 				}
 			}
@@ -628,6 +648,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 	}
 
 	private boolean doTransport() throws GameActionException {
+		System.out.println("transport " + allyToAssist);
 		if(carryingAlly) {
 			if  (tryTransport()) return true;
 			scanForPath();
@@ -802,6 +823,7 @@ public strictfp class DeliveryDroneRobot extends Robot {
 		
 		System.out.println("TRYDROP");
 		if (doDropEnemy()) return;
+		if (round > MIN_TRANSPORT_ROUND && doTransport()) return;
 		
 		System.out.println("NAVEHQ" + enemyHqLocation);
 		if (enemyHqLocation != null) {

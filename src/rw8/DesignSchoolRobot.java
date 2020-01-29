@@ -73,9 +73,12 @@ public strictfp class DesignSchoolRobot extends Robot {
 					hqLocation = r.getLocation();
 					break;
 				case LANDSCAPER:
-					if (Utility.chebyshev(r.location, hqLocation) <=2) nearbyAlliedLandscapers++;
+					if (Utility.chebyshev(r.location, hqLocation) <=2) {// && rc.canSenseLocation(r.location)&& rc.senseElevation(r.location) < robotElevation - GameConstants.MAX_DIRT_DIFFERENCE + 1
+						nearbyAlliedLandscapers++;
+						
+					}
 					if (wallHoleLocation != null) {
-						if (r.location.isAdjacentTo(wallHoleLocation)) {
+						if (pathTile(r.location) && r.location.isAdjacentTo(wallHoleLocation)) {
 							wallHoleLocation = null;
 						}
 					}

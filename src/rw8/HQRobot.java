@@ -192,8 +192,8 @@ public strictfp class HQRobot extends Robot {
 
 		if (minerCooldown > 0) minerCooldown--;
 		if (ready && soup > RobotType.MINER.cost && minerCooldown <= 0 &&
-				(((minerRequested || nearbyMiners == 0) && soup > BASE_MINER + MINER_WEIGHT * numMiners)
-						|| numMiners<minMiners)) {
+				(((minerRequested || nearbyMiners == 0))
+						|| numMiners<minMiners) && soup > BASE_MINER + MINER_WEIGHT * nearbyMiners && (round < MinerRobot.MOVE_TO_MATRIX_ROUND || soup > 800)) {
 			//Try building miner
 			Direction[] dirs = Utility.directions;
 			for (int i = dirs.length; --i >= 0;) {

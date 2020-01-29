@@ -321,13 +321,17 @@ public strictfp class LandscaperRobot extends Robot {
 				if (dirtCarrying > 0) {
 					Direction d = location.directionTo(targetBuildingLocation);
 					rc.depositDirt(d);
-					break;
+					return;
 				} else if (pitDirection != null) {
-					rc.digDirt(pitDirection);
-					break;
-				} else {
-					rc.digDirt(Direction.CENTER);
+					RobotInfo pitInfo = rc.senseRobotAtLocation(location.add(pitDirection));
+					if (pitInfo == null || !(pitInfo.type.isBuilding() && pitInfo.team != team)) {
+						rc.digDirt(pitDirection);
+						return;
+					}
+					
 				}
+				rc.digDirt(Direction.CENTER);
+				return;
 			}
 
 			if (Nav.target == null || !Nav.target.equals(targetBuildingLocation)) {
